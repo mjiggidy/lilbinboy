@@ -4,6 +4,86 @@ from timecode import Timecode
 from ...lbb_common import LBUtilityTab
 from . import logic_trt
 
+
+class TRTModelColumn(QtCore.QObject):
+	def __init__(self, header_text:str):
+
+		super().__init__()
+		self.header_text = str(header_text)
+	
+	def header_data(self, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole):
+
+		if role==QtCore.Qt.ItemDataRole.DisplayRole:
+			return self.header_text
+	
+	def __str__(self):
+		return self.header_text
+
+class TRTDurationColumn(TRTModelColumn):
+
+	def header_data(self, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole):
+		if role==QtCore.Qt.ItemDataRole.DisplayRole:
+			return self.header_text
+	
+	def item_data(self, item:Timecode, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole):
+
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return str(item).lstrip("0:")
+		elif role == QtCore.Qt.ItemDataRole.FontRole:
+			return QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
+
+
+class TRTModel(QtCore.QAbstractItemModel):
+
+	def __init__(self):
+		"""Create and setup a new model"""
+		super().__init__()
+
+		self._datastruct:list[logic_trt.ReelInfo] = []
+		self._headers = [
+			TRTModelColumn(""),
+			TRTModelColumn("Sequence Name"),
+			TRTDurationColumn("Full Duration"),
+			TRTModelColumn("LFOA"),
+			TRTModelColumn("Date Modified"),
+			TRTDurationColumn("Trimmed Duration"),
+			TRTModelColumn("Bin Lock"),
+		]
+		
+		# Typically a list of data here
+		# Typically a dict of header keys and values here
+	
+	def index(self, row:int, column:int, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> QtCore.QModelIndex:
+		"""Returns the index of the item in the model specified by the given row, column and parent index."""
+
+		if parent.isValid():
+			return QtCore.QModelIndex()
+		
+		return self.createIndex(row, column, self._datastruct[row])
+	
+	def parent(self, child:QtCore.QModelIndex) -> QtCore.QModelIndex:
+		"""Returns the parent of the model item with the given index. If the item has no parent, an invalid QModelIndex is returned."""
+		return  QtCore.QModelIndex()
+
+	def rowCount(self, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> int:
+		"""Returns the number of rows under the given parent. When the parent is valid it means that is returning the number of children of parent."""
+		return 0 if parent.isValid() else len(self._datastruct)
+	
+	def columnCount(self, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> int:
+		"""Returns the number of columns for the children of the given parent."""
+		return 0 if parent.isValid() else len(self._headers)
+
+	def data(self, index:QtCore.QModelIndex, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole) -> str:
+		"""Returns the data stored under the given role for the item referred to by the index."""
+		col = self._headers[index.column()]
+		if str(col) == "Full Duration":
+			return col.item_data(self._datastruct[index.row()].reel.duration_total)
+
+	def headerData(self, section:int, orientation:QtCore.Qt.Orientation, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole) -> str:
+		"""Returns the data for the given role and section in the header with the specified orientation."""
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return self._headers[section].header_data(role)
+
 class TRTListItem(QtWidgets.QTreeWidgetItem):
 	"""A TRTListItem"""
 
@@ -56,20 +136,10 @@ class TRTSummaryItem():
 	value:str
 	"""The value of this item"""
 
-class TRTList(QtWidgets.QTreeWidget):
+class TRTList(QtWidgets.QTreeView):
 	"""TRT Readout"""
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-
-		self.setHeaderLabels([
-			"",
-			"Sequence Name",
-			"Full Duration",
-			"LFOA",
-			"Date Modified",
-			"Trimmed Duration",
-			"Bin Lock",
-		])
 
 		self.setColumnWidth(0, 24)
 		self.setColumnWidth(1, 128)
@@ -77,22 +147,6 @@ class TRTList(QtWidgets.QTreeWidget):
 		self.setIndentation(0)
 		self.setSortingEnabled(True)
 		self.sortByColumn(1, QtCore.Qt.SortOrder.AscendingOrder)
-
-		#self._add_demo_sequence_info()
-	
-	def add_sequence_info(self, sequence_info:logic_trt.ReelInfo):
-		self.addTopLevelItem(TRTListItem(sequence_info))
-
-	def _add_demo_sequence_info(self):
-
-
-		self.addTopLevelItems([
-			TRTListItem(["", "JW4 REEL 1 v24.3.1", "00:17:40:12", "1602+11", "2023-01-27 08:59:22",""]),
-			TRTListItem(["", "JW4 REEL 2 v24.0.87", "00:20:48:18", "1885+01", "2023-01-21 11:13:13",""]),
-			TRTListItem(["", "JW4 REEL 3 v24.5.8", "00:20:07:21", "1823+12", "2023-01-20 15:39:15",""]),
-			TRTListItem(["", "JW4 REEL 4 v24.3", "00:10:41:02", "973+09", "2023-01-21 11:29:19",""]),
-			TRTListItem(["", "JW4 REEL 5 v24.3.39", "00:20:38:04", "1869+03", "2023-01-19 22:05:27",""]),
-		])
 
 
 class TRTSummary(QtWidgets.QGroupBox):
@@ -177,18 +231,19 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self.setLayout(QtWidgets.QGridLayout())
 
+		self.model_trts = TRTModel()
 		self.list_trts = TRTList()
+		self.list_trts.setModel(self.model_trts)
 		self.btn_browser = QtWidgets.QPushButton("Choose Bins...")
 		self._setupWidgets()
 
-		self.get_sequence_info(pathlib.Path("/Users/mjordan/dev/lilbinboy/example_projects/SNL/01_EDITS").glob("*.avb"))
+		#self.get_sequence_info(pathlib.Path("/Users/mjordan/dev/lilbinboy/example_projects/SNL/01_EDITS").glob("*.avb"))
 
 	def get_sequence_info(self, paths):
 
 		summaries = logic_trt.get_latest_stats_from_bins(paths)
-		for summary in summaries:
-			self.list_trts.add_sequence_info(summary.reel)
-	
+		self.model_trts._datastruct = summaries
+
 	def _setupWidgets(self):
 
 		self.btn_browser.clicked.connect(self.choose_folder)
@@ -201,8 +256,10 @@ class LBTRTCalculator(LBUtilityTab):
 	
 	def set_bins(self, bin_paths: list[str]):
 
-		self.list_trts.clear()
+		self.model_trts.beginResetModel()
 		self.get_sequence_info(pathlib.Path(x) for x in bin_paths)
+		self.model_trts.endResetModel()
+
 	
 	def choose_folder(self):
 		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", filter="Avid Bin (*.avb)")
