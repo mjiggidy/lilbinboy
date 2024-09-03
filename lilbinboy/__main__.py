@@ -1,14 +1,21 @@
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore
 from . import lbb_common, lbb_features, APP_NAME
 
 
 app = QtWidgets.QApplication()
 
-app.setApplicationDisplayName(APP_NAME)
-app.setApplicationName(APP_NAME)
 app.setStyle("Fusion")
 
+app.setOrganizationName("GlowingPixel")
+app.setOrganizationDomain("glowingpixel.com")
+app.setApplicationName(APP_NAME)
+app_settings = QtCore.QSettings()
+
 wnd_main = lbb_common.LBMainWindow()
+wnd_main.setGeometry(app_settings.value("main/window_geometry", QtCore.QRect()))
+
+wnd_main.sig_resized.connect(lambda rect: app_settings.setValue("main/window_geometry", rect))
+
 wnd_main.show()
 
 for name, panel in lbb_features.features.items():

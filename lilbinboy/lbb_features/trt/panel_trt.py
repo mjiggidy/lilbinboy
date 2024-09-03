@@ -1,6 +1,8 @@
-import dataclasses
+import dataclasses, pathlib
 from PySide6 import QtWidgets, QtGui, QtCore
+from timecode import Timecode
 from ...lbb_common import LBUtilityTab
+from . import logic_trt
 
 @dataclasses.dataclass(frozen=True)
 class TRTSummaryItem():
@@ -25,6 +27,7 @@ class TRTList(QtWidgets.QTreeWidget):
 			"Date Modified",
 			"Bin Lock"
 		])
+
 		self.setColumnWidth(0, 24)
 		self.setColumnWidth(1, 128)
 		self.setAlternatingRowColors(True)
@@ -32,9 +35,22 @@ class TRTList(QtWidgets.QTreeWidget):
 		self.setSortingEnabled(True)
 		self.sortByColumn(1, QtCore.Qt.SortOrder.AscendingOrder)
 
-		self._add_demo_sequence_info()
+		#self._add_demo_sequence_info()
+	
+	def add_sequence_info(self, sequence_info:logic_trt.ReelInfo):
+
+		duration_head = Timecode("8:00")
+		duration_tail = Timecode("4:00")
+
+		tc_trimmed = sequence_info.duration_total - duration_head - duration_tail
+		tc_lfoa  = sequence_info.duration_total - duration_tail
+		str_lfoa = str(tc_lfoa.frame_number // 16) + "+" + str(tc_lfoa.frame_number % 16).zfill(2)
+		self.addTopLevelItem(QtWidgets.QTreeWidgetItem(
+			["", sequence_info.sequence_name, str(tc_trimmed), str_lfoa, str(sequence_info.date_modified),""]
+		))
 
 	def _add_demo_sequence_info(self):
+
 
 		self.addTopLevelItems([
 			QtWidgets.QTreeWidgetItem(["", "JW4 REEL 1 v24.3.1", "00:17:40:12", "1602+11", "2023-01-27 08:59:22",""]),
@@ -126,11 +142,21 @@ class LBTRTCalculator(LBUtilityTab):
 		super().__init__(*args, **kwargs)
 
 		self.setLayout(QtWidgets.QGridLayout())
+
+		self.list_trts = TRTList()
 		self._setupWidgets()
+
+		self.get_sequence_info(pathlib.Path("/Users/mjordan/dev/lilbinboy/example_projects/SNL/01_EDITS").glob("*.avb"))
+
+	def get_sequence_info(self, paths):
+
+		summaries = logic_trt.get_latest_stats_from_bins(paths)
+		for summary in summaries:
+			self.list_trts.add_sequence_info(summary.reel)
 	
 	def _setupWidgets(self):
 
-		self.layout().addWidget(TRTList())
+		self.layout().addWidget(self.list_trts)
 		self.layout().addWidget(TRTSummary())
 
 		self.layout().addWidget(TRTControlsTrims())
