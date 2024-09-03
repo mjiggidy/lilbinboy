@@ -4,6 +4,34 @@ from timecode import Timecode
 from ...lbb_common import LBUtilityTab
 from . import logic_trt
 
+class TRTListItem(QtWidgets.QTreeWidgetItem):
+	"""A TRTListItem"""
+	
+	def __init__(self, reel_info:logic_trt.ReelInfo):
+
+
+		super().__init__(QtWidgets.QTreeWidgetItem.ItemType.UserType)
+
+		# Icon
+		#self.setData(0, QtCore.Qt.ItemDataRole.DisplayRole, )
+
+		self.setData(1, QtCore.Qt.ItemDataRole.DisplayRole, str(reel_info.sequence_name))
+
+		self.setTextAlignment(2, QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
+		self.setData(2, QtCore.Qt.ItemDataRole.DisplayRole, str(reel_info.duration_total).lstrip("0:"))
+		self.setData(2, QtCore.Qt.ItemDataRole.FontRole, QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont))
+		self.setData(2, QtCore.Qt.ItemDataRole.InitialSortOrderRole, reel_info.duration_total.frame_number)
+
+		# LFOA F+F
+		ff = str(reel_info.duration_total.frame_number//16) + "+" + str(reel_info.duration_total.frame_number%16).zfill(2)
+		self.setTextAlignment(3, QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
+		self.setData(3, QtCore.Qt.ItemDataRole.DisplayRole, ff)
+		self.setData(3, QtCore.Qt.ItemDataRole.FontRole, QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont))
+
+		self.setData(4, QtCore.Qt.ItemDataRole.TextAlignmentRole, QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
+		self.setData(4, QtCore.Qt.ItemDataRole.FontRole, QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont))
+		self.setData(4, QtCore.Qt.ItemDataRole.DisplayRole, str(reel_info.date_modified))
+
 @dataclasses.dataclass(frozen=True)
 class TRTSummaryItem():
 	"""Item to display in a `TRTSummary` bar"""
@@ -22,7 +50,7 @@ class TRTList(QtWidgets.QTreeWidget):
 		self.setHeaderLabels([
 			"",
 			"Sequence Name",
-			"Trimmed Duration",
+			"Full Duration",
 			"LFOA",
 			"Date Modified",
 			"Bin Lock"
@@ -45,19 +73,17 @@ class TRTList(QtWidgets.QTreeWidget):
 		tc_trimmed = sequence_info.duration_total - duration_head - duration_tail
 		tc_lfoa  = sequence_info.duration_total - duration_tail
 		str_lfoa = str(tc_lfoa.frame_number // 16) + "+" + str(tc_lfoa.frame_number % 16).zfill(2)
-		self.addTopLevelItem(QtWidgets.QTreeWidgetItem(
-			["", sequence_info.sequence_name, str(tc_trimmed), str_lfoa, str(sequence_info.date_modified),""]
-		))
+		self.addTopLevelItem(TRTListItem(sequence_info))
 
 	def _add_demo_sequence_info(self):
 
 
 		self.addTopLevelItems([
-			QtWidgets.QTreeWidgetItem(["", "JW4 REEL 1 v24.3.1", "00:17:40:12", "1602+11", "2023-01-27 08:59:22",""]),
-			QtWidgets.QTreeWidgetItem(["", "JW4 REEL 2 v24.0.87", "00:20:48:18", "1885+01", "2023-01-21 11:13:13",""]),
-			QtWidgets.QTreeWidgetItem(["", "JW4 REEL 3 v24.5.8", "00:20:07:21", "1823+12", "2023-01-20 15:39:15",""]),
-			QtWidgets.QTreeWidgetItem(["", "JW4 REEL 4 v24.3", "00:10:41:02", "973+09", "2023-01-21 11:29:19",""]),
-			QtWidgets.QTreeWidgetItem(["", "JW4 REEL 5 v24.3.39", "00:20:38:04", "1869+03", "2023-01-19 22:05:27",""]),
+			TRTListItem(["", "JW4 REEL 1 v24.3.1", "00:17:40:12", "1602+11", "2023-01-27 08:59:22",""]),
+			TRTListItem(["", "JW4 REEL 2 v24.0.87", "00:20:48:18", "1885+01", "2023-01-21 11:13:13",""]),
+			TRTListItem(["", "JW4 REEL 3 v24.5.8", "00:20:07:21", "1823+12", "2023-01-20 15:39:15",""]),
+			TRTListItem(["", "JW4 REEL 4 v24.3", "00:10:41:02", "973+09", "2023-01-21 11:29:19",""]),
+			TRTListItem(["", "JW4 REEL 5 v24.3.39", "00:20:38:04", "1869+03", "2023-01-19 22:05:27",""]),
 		])
 
 
@@ -144,6 +170,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.setLayout(QtWidgets.QGridLayout())
 
 		self.list_trts = TRTList()
+		self.btn_browser = QtWidgets.QPushButton("Choose Bins...")
 		self._setupWidgets()
 
 		self.get_sequence_info(pathlib.Path("/Users/mjordan/dev/lilbinboy/example_projects/SNL/01_EDITS").glob("*.avb"))
@@ -156,7 +183,23 @@ class LBTRTCalculator(LBUtilityTab):
 	
 	def _setupWidgets(self):
 
+		self.btn_browser.clicked.connect(self.choose_folder)
+		self.layout().addWidget(self.btn_browser)
+		
 		self.layout().addWidget(self.list_trts)
+		
 		self.layout().addWidget(TRTSummary())
-
 		self.layout().addWidget(TRTControlsTrims())
+	
+	def set_bins(self, bin_paths: list[str]):
+
+		self.list_trts.clear()
+		self.get_sequence_info(pathlib.Path(x) for x in bin_paths)
+	
+	def choose_folder(self):
+		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", filter="Avid Bin (*.avb)")
+		
+		if not files:
+			return
+		
+		self.set_bins(files)
