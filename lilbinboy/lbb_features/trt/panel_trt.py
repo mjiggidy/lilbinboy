@@ -6,6 +6,9 @@ from . import logic_trt
 
 class TRTListItem(QtWidgets.QTreeWidgetItem):
 	"""A TRTListItem"""
+
+	HEAD_TRIM = Timecode("8:00")
+	TAIL_TRIM = Timecode("4:00")
 	
 	def __init__(self, reel_info:logic_trt.ReelInfo):
 
@@ -17,20 +20,31 @@ class TRTListItem(QtWidgets.QTreeWidgetItem):
 
 		self.setData(1, QtCore.Qt.ItemDataRole.DisplayRole, str(reel_info.sequence_name))
 
+		# Full duration
 		self.setTextAlignment(2, QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
 		self.setData(2, QtCore.Qt.ItemDataRole.DisplayRole, str(reel_info.duration_total).lstrip("0:"))
 		self.setData(2, QtCore.Qt.ItemDataRole.FontRole, QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont))
 		self.setData(2, QtCore.Qt.ItemDataRole.InitialSortOrderRole, reel_info.duration_total.frame_number)
 
+
 		# LFOA F+F
-		ff = str(reel_info.duration_total.frame_number//16) + "+" + str(reel_info.duration_total.frame_number%16).zfill(2)
+		tc_lfoa = reel_info.duration_total - self.TAIL_TRIM - 1 # -1?  Hmmmm....
+		ff = str(tc_lfoa.frame_number//16) + "+" + str(tc_lfoa.frame_number%16).zfill(2)
 		self.setTextAlignment(3, QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
 		self.setData(3, QtCore.Qt.ItemDataRole.DisplayRole, ff)
 		self.setData(3, QtCore.Qt.ItemDataRole.FontRole, QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont))
 
+		# Date modified
 		self.setData(4, QtCore.Qt.ItemDataRole.TextAlignmentRole, QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
 		self.setData(4, QtCore.Qt.ItemDataRole.FontRole, QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont))
 		self.setData(4, QtCore.Qt.ItemDataRole.DisplayRole, str(reel_info.date_modified))
+
+		# Trimmed duration
+		tc_trimmed = reel_info.duration_total - self.HEAD_TRIM - self.TAIL_TRIM
+		self.setTextAlignment(5, QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
+		self.setData(5, QtCore.Qt.ItemDataRole.DisplayRole, str(tc_trimmed).lstrip("0:"))
+		self.setData(5, QtCore.Qt.ItemDataRole.FontRole, QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont))
+		self.setData(5, QtCore.Qt.ItemDataRole.InitialSortOrderRole, tc_trimmed.frame_number)
 
 @dataclasses.dataclass(frozen=True)
 class TRTSummaryItem():
@@ -53,7 +67,8 @@ class TRTList(QtWidgets.QTreeWidget):
 			"Full Duration",
 			"LFOA",
 			"Date Modified",
-			"Bin Lock"
+			"Trimmed Duration",
+			"Bin Lock",
 		])
 
 		self.setColumnWidth(0, 24)
@@ -66,13 +81,6 @@ class TRTList(QtWidgets.QTreeWidget):
 		#self._add_demo_sequence_info()
 	
 	def add_sequence_info(self, sequence_info:logic_trt.ReelInfo):
-
-		duration_head = Timecode("8:00")
-		duration_tail = Timecode("4:00")
-
-		tc_trimmed = sequence_info.duration_total - duration_head - duration_tail
-		tc_lfoa  = sequence_info.duration_total - duration_tail
-		str_lfoa = str(tc_lfoa.frame_number // 16) + "+" + str(tc_lfoa.frame_number % 16).zfill(2)
 		self.addTopLevelItem(TRTListItem(sequence_info))
 
 	def _add_demo_sequence_info(self):
