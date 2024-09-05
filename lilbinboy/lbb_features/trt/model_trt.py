@@ -1,4 +1,4 @@
-from PySide6 import QtCore, GtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
 from . import logic_trt
 
@@ -23,19 +23,22 @@ class TRTModel(QtCore.QObject):
 
 	sig_data_changed = QtCore.Signal()
 
-	def __init__(self, bin_info_list:list[logic_trt.BinInfo]):
-		super().__init__(self)
+	def __init__(self, bin_info_list:list[logic_trt.BinInfo]=None):
+		super().__init__()
 
-		self._data = bin_info_list
+		self._data = bin_info_list or []
 
 		# TODO: Deal with
 		self._fps = 24
-		self._trim_head = Timecode("8:00", self._fps)
-		self._trim_tail = Timecode("4:00", self._fps)
+		self._trim_head = Timecode("8:00", rate=self._fps)
+		self._trim_tail = Timecode("4:00", rate=self._fps)
+	
+	def sequence_count(self) -> int:
+		return len(self._data)
 	
 	def set_data(self, bin_info_list:list[logic_trt.BinInfo]):
 		self._data = bin_info_list
-		self.sig_data_changed()
+		self.sig_data_changed.emit()
 	
 	def item_to_dict(self, index:int):
 		
@@ -55,7 +58,61 @@ class TRTModel(QtCore.QObject):
 		}
 	
 
-class TRTTreeView(QtWidgets.QTreeWidget):
+class TRTViewModel(QtCore.QAbstractItemModel):
+	
+	def __init__(self, trt_model:TRTModel, headers_list:list[TRTTreeViewHeaderItem]=None):
+		"""Create and setup a new model"""
+		super().__init__()
+
+		self.set_model(trt_model)
+		self._headers = headers_list or []
+
+		self.model().sig_data_changed.connect(self.modelReset)
+		
+		# Typically a list of data here
+		# Typically a dict of header keys and values here
+	
+	def set_model(self, trt_model:TRTModel):
+		self._model = trt_model
+		self.modelReset.emit()
+	
+	def model(self) -> TRTModel:
+		return self._model
+	
+	def set_headers(self, headers:list[TRTTreeViewHeaderItem]):
+		self._headers = headers
+		self.headerDataChanged.emit(QtCore.Qt.Orientation.Horizontal, 0, len(self._headers))
+	
+	def index(self, row:int, column:int, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> QtCore.QModelIndex:
+		"""Returns the index of the item in the model specified by the given row, column and parent index."""
+		return self.createIndex(row, column, self.model().item_to_dict(row))
+	
+	def parent(self, child:QtCore.QModelIndex) -> QtCore.QModelIndex:
+		"""Returns the parent of the model item with the given index. If the item has no parent, an invalid QModelIndex is returned."""
+		return QtCore.QModelIndex()
+
+	def rowCount(self, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> int:
+		"""Returns the number of rows under the given parent. When the parent is valid it means that is returning the number of children of parent."""
+		if parent.isValid():
+			return 0
+		else:
+			return self.model().sequence_count()
+	
+	def columnCount(self, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> int:
+		"""Returns the number of columns for the children of the given parent."""
+		return len(self._headers)
+
+	def data(self, index:QtCore.QModelIndex, role:int=QtCore.Qt.ItemDataRole.DisplayRole) -> QtCore.QObject:
+		"""Returns the data stored under the given role for the item referred to by the index."""
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return str(self.model().item_to_dict(index.column()))
+
+	def headerData(self, section:int, orientation:QtCore.Qt.Orientation, role:int=QtCore.Qt.ItemDataRole.DisplayRole) -> QtCore.QObject:
+		"""Returns the data for the given role and section in the header with the specified orientation."""
+		return self._headers[section].data(role)
+	
+
+class TRTTreeView(QtWidgets.QTreeView):
 	"""TRT Readout"""
 	def __init__(self, *args, **kwargs):
 

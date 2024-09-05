@@ -2,7 +2,7 @@ import dataclasses, pathlib
 from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
 from ...lbb_common import LBUtilityTab
-from . import logic_trt
+from . import logic_trt, model_trt
 
 class TRTListItem(QtWidgets.QTreeWidgetItem):
 	"""A TRTListItem"""
@@ -55,45 +55,6 @@ class TRTSummaryItem():
 
 	value:str
 	"""The value of this item"""
-
-class TRTList(QtWidgets.QTreeWidget):
-	"""TRT Readout"""
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
-		self.setHeaderLabels([
-			"",
-			"Sequence Name",
-			"Full Duration",
-			"LFOA",
-			"Date Modified",
-			"Trimmed Duration",
-			"Bin Lock",
-		])
-
-		self.setColumnWidth(0, 24)
-		self.setColumnWidth(1, 128)
-		self.setAlternatingRowColors(True)
-		self.setIndentation(0)
-		self.setSortingEnabled(True)
-		self.sortByColumn(1, QtCore.Qt.SortOrder.AscendingOrder)
-
-		#self._add_demo_sequence_info()
-	
-	def add_sequence_info(self, sequence_info:logic_trt.ReelInfo):
-		self.addTopLevelItem(TRTListItem(sequence_info))
-
-	def _add_demo_sequence_info(self):
-
-
-		self.addTopLevelItems([
-			TRTListItem(["", "JW4 REEL 1 v24.3.1", "00:17:40:12", "1602+11", "2023-01-27 08:59:22",""]),
-			TRTListItem(["", "JW4 REEL 2 v24.0.87", "00:20:48:18", "1885+01", "2023-01-21 11:13:13",""]),
-			TRTListItem(["", "JW4 REEL 3 v24.5.8", "00:20:07:21", "1823+12", "2023-01-20 15:39:15",""]),
-			TRTListItem(["", "JW4 REEL 4 v24.3", "00:10:41:02", "973+09", "2023-01-21 11:29:19",""]),
-			TRTListItem(["", "JW4 REEL 5 v24.3.39", "00:20:38:04", "1869+03", "2023-01-19 22:05:27",""]),
-		])
-
 
 class TRTSummary(QtWidgets.QGroupBox):
 
@@ -172,22 +133,46 @@ class TRTControlsTrims(TRTControls):
 class LBTRTCalculator(LBUtilityTab):
 	"""TRT Calculator"""
 
+	sig_modelchanged = QtCore.Signal()
+
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
+
 		self.setLayout(QtWidgets.QGridLayout())
 
-		self.list_trts = TRTList()
+		self._model = model_trt.TRTModel()
+		self.list_trts = model_trt.TRTTreeView()
+		self.list_trts.setModel(model_trt.TRTViewModel(self.model()))
+
+
+		self.list_trts.model().set_headers([
+			model_trt.TRTTreeViewHeaderItem("","icon"),
+			model_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
+			model_trt.TRTTreeViewHeaderItem("Full Duration","duration_total"),
+			model_trt.TRTTreeViewHeaderItem("Trimmed Duration","duration_trimmed"),
+			model_trt.TRTTreeViewHeaderItem("LFOA", "lfoa"),
+			model_trt.TRTTreeViewHeaderItem("Date Modified","date_modified"),
+			model_trt.TRTTreeViewHeaderItem("Bin Lock","bin_lock"),
+
+		])
+
+
 		self.btn_browser = QtWidgets.QPushButton("Choose Bins...")
+		
+		
 		self._setupWidgets()
 
-		self.get_sequence_info(pathlib.Path("/Users/mjordan/dev/lilbinboy/example_projects/SNL/01_EDITS").glob("*.avb"))
+	def setModel(self, model:model_trt.TRTModel):
+		self._model = model
+		self.list_trts.model().set_model(model)
+	
+	def model(self) -> model_trt.TRTModel:
+		return self._model
 
 	def get_sequence_info(self, paths):
 
-		summaries = logic_trt.get_latest_stats_from_bins(paths)
-		for summary in summaries:
-			self.list_trts.add_sequence_info(summary.reel)
+		self.model().set_data(logic_trt.get_latest_stats_from_bins(paths))
 	
 	def _setupWidgets(self):
 
@@ -201,11 +186,11 @@ class LBTRTCalculator(LBUtilityTab):
 	
 	def set_bins(self, bin_paths: list[str]):
 
-		self.list_trts.clear()
+		#self.list_trts.clear()
 		self.get_sequence_info(pathlib.Path(x) for x in bin_paths)
 	
 	def choose_folder(self):
-		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", filter="Avid Bin (*.avb)")
+		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", filter="Avid Bins (*.avb)")
 		
 		if not files:
 			return
