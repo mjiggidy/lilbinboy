@@ -2,6 +2,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
 from . import logic_trt
 
+
 class TRTTreeViewHeaderItem(QtCore.QObject):
 
 	def __init__(self, text:str, key:str):
@@ -10,14 +11,56 @@ class TRTTreeViewHeaderItem(QtCore.QObject):
 
 		self._text = str(text)
 		self._key  = str(key)
-	
-	def data(self, role:QtCore.Qt.ItemDataRole):
+
+	def header_data(self, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole):
 
 		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return self._text
+			return self.name()
 		
 		elif role == QtCore.Qt.ItemDataRole.UserRole:
-			return self._key
+			return self.field()
+	
+	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
+
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return str(bin_dict.get(self.field(), ""))
+		
+		elif role == QtCore.Qt.ItemDataRole.UserRole:
+			return bin_dict
+	
+	def name(self) -> str:
+		return self._text
+	
+	def field(self) -> str:
+		return self._key
+
+class TRTTreeViewHeaderDuration(TRTTreeViewHeaderItem):
+
+	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
+
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return str(bin_dict.get(self.field(), "")).lstrip("0:")
+		
+		elif role == QtCore.Qt.ItemDataRole.TextAlignmentRole:
+			return QtGui.Qt.AlignmentFlag.AlignRight | QtGui.Qt.AlignmentFlag.AlignVCenter
+		
+		elif role == QtCore.Qt.ItemDataRole.FontRole:
+			return QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
+		
+		elif role == QtCore.Qt.ItemDataRole.UserRole:
+			return bin_dict
+	
+	def header_data(self, role: QtCore.Qt.ItemDataRole = QtCore.Qt.ItemDataRole.DisplayRole):
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return self.name()
+		
+		elif role == QtCore.Qt.ItemDataRole.TextAlignmentRole:
+			return QtGui.Qt.AlignmentFlag.AlignRight
+		
+		elif role == QtCore.Qt.ItemDataRole.DecorationPropertyRole
+		
+		elif role == QtCore.Qt.ItemDataRole.UserRole:
+			return self.field()
 
 class TRTModel(QtCore.QObject):
 
@@ -81,7 +124,7 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 	
 	def set_headers(self, headers:list[TRTTreeViewHeaderItem]):
 		self._headers = headers
-		self.headerDataChanged.emit(QtCore.Qt.Orientation.Horizontal, 0, len(self._headers))
+		self.headerDataChanged.emit(QtCore.Qt.Orientation.Horizontal, 0, len(self._headers)-1)
 	
 	def index(self, row:int, column:int, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> QtCore.QModelIndex:
 		"""Returns the index of the item in the model specified by the given row, column and parent index."""
@@ -104,12 +147,12 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 
 	def data(self, index:QtCore.QModelIndex, role:int=QtCore.Qt.ItemDataRole.DisplayRole) -> QtCore.QObject:
 		"""Returns the data stored under the given role for the item referred to by the index."""
-		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return str(self.model().item_to_dict(index.column()))
+		header = self._headers[index.column()]
+		return header.item_data(self.model().item_to_dict(index.row()), role)
 
-	def headerData(self, section:int, orientation:QtCore.Qt.Orientation, role:int=QtCore.Qt.ItemDataRole.DisplayRole) -> QtCore.QObject:
+	def headerData(self, section:int, orientation:QtCore.Qt.Orientation=QtCore.Qt.Orientation.Horizontal, role:int=QtCore.Qt.ItemDataRole.DisplayRole) -> QtCore.QObject:
 		"""Returns the data for the given role and section in the header with the specified orientation."""
-		return self._headers[section].data(role)
+		return self._headers[section].header_data(role)
 	
 
 class TRTTreeView(QtWidgets.QTreeView):

@@ -149,9 +149,9 @@ class LBTRTCalculator(LBUtilityTab):
 		self.list_trts.model().set_headers([
 			model_trt.TRTTreeViewHeaderItem("","icon"),
 			model_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
-			model_trt.TRTTreeViewHeaderItem("Full Duration","duration_total"),
-			model_trt.TRTTreeViewHeaderItem("Trimmed Duration","duration_trimmed"),
-			model_trt.TRTTreeViewHeaderItem("LFOA", "lfoa"),
+			model_trt.TRTTreeViewHeaderDuration("Full Duration","duration_total"),
+			model_trt.TRTTreeViewHeaderDuration("Trimmed Duration","duration_trimmed"),
+			model_trt.TRTTreeViewHeaderDuration("LFOA", "lfoa"),
 			model_trt.TRTTreeViewHeaderItem("Date Modified","date_modified"),
 			model_trt.TRTTreeViewHeaderItem("Bin Lock","bin_lock"),
 
