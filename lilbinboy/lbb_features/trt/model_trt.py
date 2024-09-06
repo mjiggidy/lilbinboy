@@ -57,8 +57,6 @@ class TRTTreeViewHeaderDuration(TRTTreeViewHeaderItem):
 		elif role == QtCore.Qt.ItemDataRole.TextAlignmentRole:
 			return QtGui.Qt.AlignmentFlag.AlignRight
 		
-		elif role == QtCore.Qt.ItemDataRole.DecorationPropertyRole
-		
 		elif role == QtCore.Qt.ItemDataRole.UserRole:
 			return self.field()
 
