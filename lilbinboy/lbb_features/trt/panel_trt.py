@@ -170,7 +170,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		])
 
-		self.btn_browser = QtWidgets.QPushButton("Choose Bins...")
+		self.btn_add_bins = QtWidgets.QPushButton("Add Bins...")
 		
 		self._model.sig_data_changed.connect(self.update_summary)
 		
@@ -188,8 +188,10 @@ class LBTRTCalculator(LBUtilityTab):
 	
 	def _setupWidgets(self):
 
-		self.btn_browser.clicked.connect(self.choose_folder)
-		self.layout().addWidget(self.btn_browser)
+		self.btn_add_bins.clicked.connect(self.choose_folder)
+		self.btn_add_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd))
+
+		self.layout().addWidget(self.btn_add_bins)
 		
 		self.layout().addWidget(self.list_trts)
 		
@@ -211,6 +213,6 @@ class LBTRTCalculator(LBUtilityTab):
 
 	def update_summary(self):
 		self.trt_summary.add_summary_item(TRTSummaryItem(label="Sequences", value=self.model().sequence_count()))
-		self.trt_summary.add_summary_item(TRTSummaryItem(label="LFOA", value=self.model().total_lfoa()))
-		self.trt_summary.add_summary_item(TRTSummaryItem(label="Total F+F",  value=self.model().total_runtime()))
+		self.trt_summary.add_summary_item(TRTSummaryItem(label="Total F+F", value=self.model().total_lfoa()))
+		self.trt_summary.add_summary_item(TRTSummaryItem(label="Total Runtime",  value=self.model().total_runtime()))
 		
