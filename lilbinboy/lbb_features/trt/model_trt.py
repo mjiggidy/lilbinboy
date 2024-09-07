@@ -97,10 +97,11 @@ class TRTModel(QtCore.QObject):
 	def total_lfoa(self) -> str:
 
 		trt = self.total_runtime()
-		return self.tc_to_lfoa(trt-1)
+		return self.tc_to_lfoa(trt)
 	
 	def tc_to_lfoa(self, tc:Timecode) -> str:
-		return str(tc.frame_number // 16) + "+" + str(tc.frame_number % self.LFOA_PERFS_PER_FOOT).zfill(len(str(self.LFOA_PERFS_PER_FOOT)))
+		zpadding = len(str(self.LFOA_PERFS_PER_FOOT))
+		return str(tc.frame_number // 16) + "+" + str(tc.frame_number % self.LFOA_PERFS_PER_FOOT).zfill(zpadding)
 		
 	def _trim_head_amount(self, reel_info:logic_trt.ReelInfo) -> Timecode:
 		# TODO: Implement markers; indiciate if it was Marker or head trim
@@ -126,7 +127,7 @@ class TRTModel(QtCore.QObject):
 			"duration_trimmed": reel_info.duration_total - self._trim_head - self._trim_tail,
 			"head_trimmed": self._trim_head,
 			"tail_trimmed": self._trim_tail,
-			"lfoa": self.tc_to_lfoa(reel_info.duration_total - self._trim_tail),
+			"lfoa": self.tc_to_lfoa(reel_info.duration_total - self._trim_tail - 1), # TODO: Think through the -1 but I think it makes sense being zero-based instead of 1-based for durations? Like, LFOA may be on 0+00 but that means it's 0+01 frame long
 			"date_modified": reel_info.date_modified,
 			"bin_path": bin_info.path,
 			"bin_lock": bin_info.lock
