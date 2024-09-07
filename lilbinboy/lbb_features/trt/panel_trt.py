@@ -70,7 +70,7 @@ class TRTSummary(QtWidgets.QGroupBox):
 		self.__class__._fnt_label.setPointSizeF(8)
 
 		self.__class__._fnt_value.setBold(True)
-		self.__class__._fnt_value.setPointSizeF(14)
+		self.__class__._fnt_value.setPointSizeF(18)
 
 		self.setLayout(QtWidgets.QGridLayout())
 		self.layout().setHorizontalSpacing(24)
