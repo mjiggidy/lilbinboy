@@ -64,6 +64,8 @@ class TRTSummary(QtWidgets.QGroupBox):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
+		self._summary_items = dict()
+
 		self.__class__._fnt_label.setCapitalization(QtGui.QFont.Capitalization.AllUppercase)
 		self.__class__._fnt_label.setPointSizeF(8)
 
@@ -79,7 +81,7 @@ class TRTSummary(QtWidgets.QGroupBox):
 			"""Demo info for now"""
 			self.add_summary_item(TRTSummaryItem(
 				label="Sequences",
-				value="6"
+				value="0"
 			))
 
 			self.add_summary_item(TRTSummaryItem(
@@ -96,28 +98,38 @@ class TRTSummary(QtWidgets.QGroupBox):
 
 			self.add_summary_item(TRTSummaryItem(
 				label="Total F+F",
-				value="29208+04"
+				value="0+00"
 			))
 
 			self.add_summary_item(TRTSummaryItem(
 				label="Total Runtime",
-				value="01:02:33:04"
+				value="00:00:00:00"
 			))
 	
 	def add_summary_item(self, item:TRTSummaryItem):
 
-		lbl_value = QtWidgets.QLabel(item.value)
-		lbl_value.setFont(self.__class__._fnt_value)
-		lbl_value.setAlignment(QtGui.Qt.AlignmentFlag.AlignCenter)
-		lbl_value.setTextInteractionFlags(QtGui.Qt.TextInteractionFlag.TextSelectableByMouse|QtGui.Qt.TextInteractionFlag.TextSelectableByKeyboard)
-
-		lbl_label = QtWidgets.QLabel(item.label)
-		lbl_label.setFont(self.__class__._fnt_label)
-		lbl_label.setAlignment(QtGui.Qt.AlignmentFlag.AlignCenter)
-		lbl_label.setBuddy(lbl_value)
+		if str(item.label) in self._summary_items:
+			label, value = self._summary_items[str(item.label)]
+			value.setText(str(item.value))
 		
-		self.layout().addWidget(lbl_value, 0, self.layout().columnCount())
-		self.layout().addWidget(lbl_label, 1, self.layout().columnCount()-1)
+		else:
+			
+			lbl_value = QtWidgets.QLabel(str(item.value))
+			lbl_value.setFont(self.__class__._fnt_value)
+			lbl_value.setAlignment(QtGui.Qt.AlignmentFlag.AlignCenter)
+			lbl_value.setTextInteractionFlags(QtGui.Qt.TextInteractionFlag.TextSelectableByMouse|QtGui.Qt.TextInteractionFlag.TextSelectableByKeyboard)
+
+			lbl_label = QtWidgets.QLabel(str(item.label))
+			lbl_label.setFont(self.__class__._fnt_label)
+			lbl_label.setAlignment(QtGui.Qt.AlignmentFlag.AlignCenter)
+			lbl_label.setBuddy(lbl_value)
+
+			self._summary_items.update({
+				str(item.label): (lbl_label, lbl_value)
+			})
+			
+			self.layout().addWidget(lbl_value, 0, self.layout().columnCount())
+			self.layout().addWidget(lbl_label, 1, self.layout().columnCount()-1)
 	
 
 class TRTControls(QtWidgets.QGroupBox):
@@ -143,6 +155,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self._model = model_trt.TRTModel()
 		self.list_trts = model_trt.TRTTreeView()
+		self.trt_summary = TRTSummary()
 		self.list_trts.setModel(model_trt.TRTViewModel(self.model()))
 
 
@@ -157,9 +170,9 @@ class LBTRTCalculator(LBUtilityTab):
 
 		])
 
-
 		self.btn_browser = QtWidgets.QPushButton("Choose Bins...")
 		
+		self._model.sig_data_changed.connect(self.update_summary)
 		
 		self._setupWidgets()
 
@@ -171,7 +184,6 @@ class LBTRTCalculator(LBUtilityTab):
 		return self._model
 
 	def get_sequence_info(self, paths):
-
 		self.model().set_data(logic_trt.get_latest_stats_from_bins(paths))
 	
 	def _setupWidgets(self):
@@ -181,7 +193,7 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		self.layout().addWidget(self.list_trts)
 		
-		self.layout().addWidget(TRTSummary())
+		self.layout().addWidget(self.trt_summary)
 		self.layout().addWidget(TRTControlsTrims())
 	
 	def set_bins(self, bin_paths: list[str]):
@@ -196,3 +208,9 @@ class LBTRTCalculator(LBUtilityTab):
 			return
 		
 		self.set_bins(files)
+
+	def update_summary(self):
+		self.trt_summary.add_summary_item(TRTSummaryItem(label="Sequences", value=self.model().sequence_count()))
+		self.trt_summary.add_summary_item(TRTSummaryItem(label="LFOA", value=self.model().total_lfoa()))
+		self.trt_summary.add_summary_item(TRTSummaryItem(label="Total F+F",  value=self.model().total_runtime()))
+		

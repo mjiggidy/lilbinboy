@@ -64,6 +64,8 @@ class TRTModel(QtCore.QObject):
 
 	sig_data_changed = QtCore.Signal()
 
+	LFOA_PERFS_PER_FOOT = 16
+
 	def __init__(self, bin_info_list:list[logic_trt.BinInfo]=None):
 		super().__init__()
 
@@ -75,7 +77,39 @@ class TRTModel(QtCore.QObject):
 		self._trim_tail = Timecode("4:00", rate=self._fps)
 	
 	def sequence_count(self) -> int:
+		"""Number of sequences being considered"""
 		return len(self._data)
+	
+	def bin_count(self) -> int:
+		"""Number of individual bins involved in this"""
+		return len(set(b.path for b in self._data))
+	
+	def total_runtime(self) -> Timecode:
+		
+		trt = Timecode(0, rate=self._fps)
+
+		for bin_info in self._data:
+			reel_info = bin_info.reel
+			trt += reel_info.duration_total - self._trim_head_amount(reel_info) - self._trim_tail_amount(reel_info)
+		
+		return trt
+	
+	def total_lfoa(self) -> str:
+
+		trt = self.total_runtime()
+		return self.tc_to_lfoa(trt-1)
+	
+	def tc_to_lfoa(self, tc:Timecode) -> str:
+		return str(tc.frame_number // 16) + "+" + str(tc.frame_number % self.LFOA_PERFS_PER_FOOT).zfill(len(str(self.LFOA_PERFS_PER_FOOT)))
+		
+	def _trim_head_amount(self, reel_info:logic_trt.ReelInfo) -> Timecode:
+		# TODO: Implement markers; indiciate if it was Marker or head trim
+		return self._trim_head
+	
+	def _trim_tail_amount(self, reel_info:logic_trt.ReelInfo) -> Timecode:
+		# TODO: Implement markers; indiciate if it was Marker or tail trim
+		return self._trim_tail
+
 	
 	def set_data(self, bin_info_list:list[logic_trt.BinInfo]):
 		self._data = bin_info_list
@@ -92,7 +126,7 @@ class TRTModel(QtCore.QObject):
 			"duration_trimmed": reel_info.duration_total - self._trim_head - self._trim_tail,
 			"head_trimmed": self._trim_head,
 			"tail_trimmed": self._trim_tail,
-			"lfoa": str((reel_info.duration_total - self._trim_tail).frame_number // 16) + "+" + str((reel_info.duration_total - self._trim_tail).frame_number % 16).zfill(2),
+			"lfoa": self.tc_to_lfoa(reel_info.duration_total - self._trim_tail),
 			"date_modified": reel_info.date_modified,
 			"bin_path": bin_info.path,
 			"bin_lock": bin_info.lock
