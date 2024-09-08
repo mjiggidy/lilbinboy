@@ -66,6 +66,52 @@ class TRTTreeViewHeaderDuration(TRTTreeViewHeaderItem):
 		elif role == QtCore.Qt.ItemDataRole.UserRole:
 			return self.field()
 		
+class TRTTreeViewHeaderIcon(TRTTreeViewHeaderItem):
+
+	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
+
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return ""
+		
+		elif role == QtCore.Qt.ItemDataRole.UserRole:
+			return bin_dict
+		
+		elif role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
+			return 0
+		
+		elif role == QtCore.Qt.ItemDataRole.DecorationRole:
+			return QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.FolderOpen)
+	
+	def header_data(self, role: QtCore.Qt.ItemDataRole = QtCore.Qt.ItemDataRole.DisplayRole):
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return self.name()
+		
+		elif role == QtCore.Qt.ItemDataRole.UserRole:
+			return self.field()
+		
+class TRTTreeViewHeaderBinLock(TRTTreeViewHeaderItem):
+
+	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
+
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return ""
+		
+		elif role == QtCore.Qt.ItemDataRole.UserRole:
+			return bin_dict
+		
+		elif role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
+			return 0
+		
+		elif role == QtCore.Qt.ItemDataRole.DecorationRole:
+			return QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.SystemLockScreen)
+	
+	def header_data(self, role: QtCore.Qt.ItemDataRole = QtCore.Qt.ItemDataRole.DisplayRole):
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return self.name()
+		
+		elif role == QtCore.Qt.ItemDataRole.UserRole:
+			return self.field()
+		
 class TRTTreeViewHeaderDateTime(TRTTreeViewHeaderItem):
 
 	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
