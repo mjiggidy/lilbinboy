@@ -25,6 +25,9 @@ class TRTTreeViewHeaderItem(QtCore.QObject):
 		if role == QtCore.Qt.ItemDataRole.DisplayRole:
 			return str(bin_dict.get(self.field(), ""))
 		
+		if role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
+			return bin_dict.get(self.field(),"")
+		
 		elif role == QtCore.Qt.ItemDataRole.UserRole:
 			return bin_dict
 	
@@ -49,6 +52,35 @@ class TRTTreeViewHeaderDuration(TRTTreeViewHeaderItem):
 		
 		elif role == QtCore.Qt.ItemDataRole.UserRole:
 			return bin_dict
+		
+		elif role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
+			return int(bin_dict.get("duration_total",""))
+	
+	def header_data(self, role: QtCore.Qt.ItemDataRole = QtCore.Qt.ItemDataRole.DisplayRole):
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return self.name()
+		
+		elif role == QtCore.Qt.ItemDataRole.TextAlignmentRole:
+			return QtGui.Qt.AlignmentFlag.AlignRight
+		
+		elif role == QtCore.Qt.ItemDataRole.UserRole:
+			return self.field()
+		
+class TRTTreeViewHeaderDateTime(TRTTreeViewHeaderItem):
+
+	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
+
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return str(bin_dict.get(self.field(), ""))
+		
+		elif role == QtCore.Qt.ItemDataRole.TextAlignmentRole:
+			return QtGui.Qt.AlignmentFlag.AlignRight | QtGui.Qt.AlignmentFlag.AlignVCenter
+		
+		elif role == QtCore.Qt.ItemDataRole.UserRole:
+			return bin_dict
+		
+		elif role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
+			return int(bin_dict.get(self.field()).timestamp())
 	
 	def header_data(self, role: QtCore.Qt.ItemDataRole = QtCore.Qt.ItemDataRole.DisplayRole):
 		if role == QtCore.Qt.ItemDataRole.DisplayRole:
@@ -187,6 +219,8 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		"""Returns the data for the given role and section in the header with the specified orientation."""
 		return self._headers[section].header_data(role)
 	
+class TRTViewSortModel(QtCore.QSortFilterProxyModel):
+	pass
 
 class TRTTreeView(QtWidgets.QTreeView):
 	"""TRT Readout"""

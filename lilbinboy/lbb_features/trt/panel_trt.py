@@ -156,19 +156,24 @@ class LBTRTCalculator(LBUtilityTab):
 		self._model = model_trt.TRTModel()
 		self.list_trts = model_trt.TRTTreeView()
 		self.trt_summary = TRTSummary()
-		self.list_trts.setModel(model_trt.TRTViewModel(self.model()))
+		
+		self.list_viewmodel = model_trt.TRTViewModel(self.model())
+		
+		self.list_trts.setModel(model_trt.TRTViewSortModel())
+		self.list_trts.model().setSortRole(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
 
-
-		self.list_trts.model().set_headers([
+		self.list_viewmodel.set_headers([
 			model_trt.TRTTreeViewHeaderItem("","icon"),
 			model_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
 			model_trt.TRTTreeViewHeaderDuration("Full Duration","duration_total"),
 			model_trt.TRTTreeViewHeaderDuration("Trimmed Duration","duration_trimmed"),
 			model_trt.TRTTreeViewHeaderDuration("LFOA", "lfoa"),
-			model_trt.TRTTreeViewHeaderItem("Date Modified","date_modified"),
+			model_trt.TRTTreeViewHeaderDateTime("Date Modified","date_modified"),
 			model_trt.TRTTreeViewHeaderItem("Bin Lock","bin_lock"),
 
 		])
+
+		self.list_trts.model().setSourceModel(self.list_viewmodel)
 
 		self.btn_add_bins = QtWidgets.QPushButton("Add Bins...")
 		
@@ -178,7 +183,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 	def setModel(self, model:model_trt.TRTModel):
 		self._model = model
-		self.list_trts.model().set_model(model)
+		self.list_viewmodel.set_model(model)
 	
 	def model(self) -> model_trt.TRTModel:
 		return self._model
