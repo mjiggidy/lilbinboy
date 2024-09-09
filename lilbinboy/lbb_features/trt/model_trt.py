@@ -152,7 +152,7 @@ class TRTModel(QtCore.QObject):
 		# TODO: Deal with
 		self._fps = 24
 		self._trim_head = Timecode("8:00", rate=self._fps)
-		self._trim_tail = Timecode("4:00", rate=self._fps)
+		self._trim_tail = Timecode("3:00", rate=self._fps)
 	
 	def sequence_count(self) -> int:
 		"""Number of sequences being considered"""

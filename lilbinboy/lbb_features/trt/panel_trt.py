@@ -1,4 +1,4 @@
-import dataclasses, pathlib
+import dataclasses, pathlib, re
 from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
 from ...lbb_common import LBUtilityTab
@@ -156,6 +156,9 @@ class TRTControlsTrims(TRTControls):
 
 class LBSpinBoxTC(QtWidgets.QSpinBox):
 
+	PAT_VALID_TEXT = re.compile(r"^(\d+:){0,3}\d+$")
+	PAT_INTER_TEXT = re.compile(r"^(\d+:?){1,4}$")
+
 	def __init__(self, *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
@@ -169,6 +172,18 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 	@QtCore.Slot()
 	def updateMaximumTC(self):
 		self.setMaximum(Timecode("99:99:99:99", rate=self.rate()).frame_number)
+
+	def validate(self, input:str, pos:int) -> bool:
+		print(self.__class__.PAT_VALID_TEXT.match(input))
+		if self.__class__.PAT_VALID_TEXT.match(input):
+			return QtGui.QValidator.State.Acceptable 
+		elif self.__class__.PAT_INTER_TEXT.match(input):
+			return QtGui.QValidator.State.Intermediate
+		elif not input and pos == 0:
+			return QtGui.QValidator.State.Intermediate 
+		else:
+			return QtGui.QValidator.State.Invalid
+		
 
 	def rate(self) -> int:
 		return self._rate
@@ -219,7 +234,10 @@ class LBTRTCalculator(LBUtilityTab):
 		self._setupWidgets()
 
 		self._model.sig_data_changed.connect(self.update_summary)
-		self._model.sig_data_changed.connect(self.trt_trims._from_head)
+		self._model.sig_data_changed.connect(self.trt_trims._from_head.setRate(self.model().rate()))
+		self._model.sig_data_changed.connect(self.trt_trims._from_tail.setRate(self.model().rate()))
+		self._model.sig_data_changed.connect(self.trt_trims._from_head.setValue(self.model().trimFromHead().frame_number))
+		self._model.sig_data_changed.connect(self.trt_trims._from_tail.setValue(self.model().trimFromTail().frame_number))
 
 	def setModel(self, model:model_trt.TRTModel):
 		self._model = model
