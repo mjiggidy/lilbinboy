@@ -197,6 +197,10 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 class LBTRTCalculator(LBUtilityTab):
 	"""TRT Calculator"""
 
+	PATH_ICON = __file__+"../../../../res/icon_trt.png"
+	#print(pathlib.Path(PATH_ICON).resolve())
+	#print(QtCore.QFile(PATH_ICON).exists())
+
 	sig_modelchanged = QtCore.Signal()
 
 	def __init__(self, *args, **kwargs):

@@ -25,5 +25,8 @@ wnd_main.show()
 
 for name, panel in lbb_features.features.items():
 	wnd_main.centralWidget().addTab(panel(), str(name))
+	print("For you I add", panel.PATH_ICON)
+	wnd_main.centralWidget().setTabIcon(wnd_main.centralWidget().count()-1, QtGui.QIcon(panel.PATH_ICON))
+	print(wnd_main.centralWidget().tabIcon(wnd_main.centralWidget().count()-1))
 
 app.exec()
