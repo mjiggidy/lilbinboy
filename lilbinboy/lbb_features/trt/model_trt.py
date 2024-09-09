@@ -172,8 +172,28 @@ class TRTModel(QtCore.QObject):
 		
 		return trt
 	
+	def rate(self) -> int:
+		return self._fps
+	
+	def setRate(self, rate:int) -> int:
+		self._fps = rate
+		self.sig_data_changed.emit()
+	
+	def trimFromHead(self) -> Timecode:
+		return self._trim_head
+	
+	def setTrimFromHead(self, timecode:Timecode):
+		self._trim_head = timecode
+		self.sig_data_changed.emit()
+	
+	def trimFromTail(self) -> Timecode:
+		return self._trim_tail
+	
+	def setTrimFromTail(self, timecode:Timecode):
+		self._trim_tail = timecode
+		self.sig_data_changed.emit()
+	
 	def total_lfoa(self) -> str:
-
 		trt = self.total_runtime()
 		return self.tc_to_lfoa(trt)
 	

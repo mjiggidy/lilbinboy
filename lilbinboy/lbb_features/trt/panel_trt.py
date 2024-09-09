@@ -137,10 +137,47 @@ class TRTControls(QtWidgets.QGroupBox):
 
 class TRTControlsTrims(TRTControls):
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
+	def __init__(self):
 
-		self.setTitle("Trimming")
+		super().__init__()
+
+		self.setLayout(QtWidgets.QHBoxLayout())
+
+		self._from_head = LBSpinBoxTC()
+		self._from_tail = LBSpinBoxTC()
+
+		self.layout().addWidget(QtWidgets.QLabel("From Head"))
+		self.layout().addWidget(self._from_head)
+
+		self.layout().addWidget(QtWidgets.QLabel("From Tail"))
+		self.layout().addWidget(self._from_tail)
+
+
+
+class LBSpinBoxTC(QtWidgets.QSpinBox):
+
+	def __init__(self, *args, **kwargs):
+
+		super().__init__(*args, **kwargs)
+		self.setRate(24)
+	
+	@QtCore.Slot()
+	def setRate(self, rate:int):
+		self._rate = rate
+		self.updateMaximumTC()
+
+	@QtCore.Slot()
+	def updateMaximumTC(self):
+		self.setMaximum(Timecode("99:99:99:99", rate=self.rate()).frame_number)
+
+	def rate(self) -> int:
+		return self._rate
+	
+	def textFromValue(self, val:int) -> str:
+		return str(Timecode(val, rate=self.rate()))
+	
+	def valueFromText(self, text:str) -> int:
+		return Timecode(text, rate=self.rate()).frame_number
 
 class LBTRTCalculator(LBUtilityTab):
 	"""TRT Calculator"""
@@ -177,9 +214,12 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self.btn_add_bins = QtWidgets.QPushButton("Add Bins...")
 		
-		self._model.sig_data_changed.connect(self.update_summary)
-		
+
+		self.trt_trims = TRTControlsTrims()
 		self._setupWidgets()
+
+		self._model.sig_data_changed.connect(self.update_summary)
+		self._model.sig_data_changed.connect(self.trt_trims._from_head)
 
 	def setModel(self, model:model_trt.TRTModel):
 		self._model = model
@@ -201,7 +241,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.layout().addWidget(self.list_trts)
 		
 		self.layout().addWidget(self.trt_summary)
-		self.layout().addWidget(TRTControlsTrims())
+		self.layout().addWidget(self.trt_trims)
 	
 	def set_bins(self, bin_paths: list[str]):
 
