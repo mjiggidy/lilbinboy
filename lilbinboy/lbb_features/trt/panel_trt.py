@@ -137,6 +137,9 @@ class TRTControls(QtWidgets.QGroupBox):
 
 class TRTControlsTrims(TRTControls):
 
+	sig_head_trim_changed = QtCore.Signal(Timecode)
+	sig_tail_trim_changed = QtCore.Signal(Timecode)
+
 	def __init__(self):
 
 		super().__init__()
@@ -152,6 +155,17 @@ class TRTControlsTrims(TRTControls):
 		self.layout().addWidget(QtWidgets.QLabel("From Tail"))
 		self.layout().addWidget(self._from_tail)
 
+		self._from_head.sig_timecode_changed.connect(self.sig_head_trim_changed)
+		self._from_tail.sig_timecode_changed.connect(self.sig_tail_trim_changed)
+	
+	@QtCore.Slot(Timecode)
+	def set_head_trim(self, timecode:Timecode):
+		self._from_head.setTimecode(timecode)
+
+	@QtCore.Slot(Timecode)
+	def set_tail_trim(self, timecode:Timecode):
+		self._from_tail.setTimecode(timecode)
+
 
 
 class LBSpinBoxTC(QtWidgets.QSpinBox):
@@ -159,15 +173,20 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 	PAT_VALID_TEXT = re.compile(r"^(\d+:){0,3}\d+$")
 	PAT_INTER_TEXT = re.compile(r"^(\d+:?){1,4}$")
 
+	sig_timecode_changed = QtCore.Signal(Timecode)
+
 	def __init__(self, *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
 		self.setRate(24)
+
+		self.valueChanged.connect(lambda: self.sig_timecode_changed.emit(self.timecode()))
 	
 	@QtCore.Slot()
 	def setRate(self, rate:int):
 		self._rate = rate
 		self.updateMaximumTC()
+		self.sig_timecode_changed.emit(self.timecode())
 
 	@QtCore.Slot()
 	def updateMaximumTC(self):
@@ -183,6 +202,14 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 			return QtGui.QValidator.State.Intermediate 
 		else:
 			return QtGui.QValidator.State.Invalid
+	
+	@QtCore.Slot(Timecode)
+	def setTimecode(self, timecode:Timecode):
+		self.setRate(timecode.rate)
+		self.setValue(timecode.frame_number)
+	
+	def timecode(self) -> Timecode:
+		return Timecode(self.value(), rate=self.rate())
 		
 
 	def rate(self) -> int:
@@ -235,13 +262,14 @@ class LBTRTCalculator(LBUtilityTab):
 		
 
 		self.trt_trims = TRTControlsTrims()
+		self.trt_trims.set_head_trim(self.model().trimFromHead())
+		self.trt_trims.set_tail_trim(self.model().trimFromTail())
+		self.trt_trims.sig_head_trim_changed.connect(self.model().setTrimFromHead)
+		self.trt_trims.sig_tail_trim_changed.connect(self.model().setTrimFromTail)
+
 		self._setupWidgets()
 
 		self._model.sig_data_changed.connect(self.update_summary)
-		self._model.sig_data_changed.connect(self.trt_trims._from_head.setRate(self.model().rate()))
-		self._model.sig_data_changed.connect(self.trt_trims._from_tail.setRate(self.model().rate()))
-		self._model.sig_data_changed.connect(self.trt_trims._from_head.setValue(self.model().trimFromHead().frame_number))
-		self._model.sig_data_changed.connect(self.trt_trims._from_tail.setValue(self.model().trimFromTail().frame_number))
 
 	def setModel(self, model:model_trt.TRTModel):
 		self._model = model
