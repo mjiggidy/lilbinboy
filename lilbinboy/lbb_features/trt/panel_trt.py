@@ -137,6 +137,9 @@ class TRTControls(QtWidgets.QGroupBox):
 
 class TRTControlsTrims(TRTControls):
 
+	PATH_MARK_IN = __file__+"../../../../res/icon_mark_in.svg"
+	PATH_MARK_OUT = __file__+"../../../../res/icon_mark_out.svg"
+
 	sig_head_trim_changed = QtCore.Signal(Timecode)
 	sig_tail_trim_changed = QtCore.Signal(Timecode)
 
@@ -144,16 +147,22 @@ class TRTControlsTrims(TRTControls):
 
 		super().__init__()
 
-		self.setLayout(QtWidgets.QHBoxLayout())
+		self.setLayout(QtWidgets.QGridLayout())
 
 		self._from_head = LBSpinBoxTC()
 		self._from_tail = LBSpinBoxTC()
 
-		self.layout().addWidget(QtWidgets.QLabel("From Head"))
-		self.layout().addWidget(self._from_head)
+		self._icon_mark_in  = QtWidgets.QLabel(pixmap=QtGui.QPixmap(self.PATH_MARK_IN).scaledToHeight(16, QtCore.Qt.TransformationMode.SmoothTransformation))
+		self._icon_mark_out = QtWidgets.QLabel(pixmap=QtGui.QPixmap(self.PATH_MARK_OUT).scaledToHeight(16, QtCore.Qt.TransformationMode.SmoothTransformation))
 
-		self.layout().addWidget(QtWidgets.QLabel("From Tail"))
-		self.layout().addWidget(self._from_tail)
+		self.layout().addWidget(self._icon_mark_in, 0, 0)
+		self.layout().addWidget(self._from_head, 0, 1)
+		self.layout().addWidget(QtWidgets.QLabel("From Head"), 0, 2)
+		self.layout().addItem(QtWidgets.QSpacerItem(0,2, QtWidgets.QSizePolicy.Policy.MinimumExpanding),0,3)
+
+		self.layout().addWidget(QtWidgets.QLabel("From Tail"), 0, 4)
+		self.layout().addWidget(self._from_tail, 0, 5)
+		self.layout().addWidget(self._icon_mark_out, 0, 6)
 
 		self._from_head.sig_timecode_changed.connect(self.sig_head_trim_changed)
 		self._from_tail.sig_timecode_changed.connect(self.sig_tail_trim_changed)
