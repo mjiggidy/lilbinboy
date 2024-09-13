@@ -93,17 +93,19 @@ class TRTTreeViewHeaderBinLock(TRTTreeViewHeaderItem):
 
 	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
 
+		lock = bin_dict.get("bin_lock")
+
 		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return ""
+			return str(lock).rstrip('\0') if lock is not None else ""
 		
 		elif role == QtCore.Qt.ItemDataRole.UserRole:
 			return bin_dict
 		
 		elif role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
-			return 0
+			return 0 if lock is not None else 1
 		
 		elif role == QtCore.Qt.ItemDataRole.DecorationRole:
-			return QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.SystemLockScreen)
+			return QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.SystemLockScreen) if lock is not None else None
 	
 	def header_data(self, role: QtCore.Qt.ItemDataRole = QtCore.Qt.ItemDataRole.DisplayRole):
 		if role == QtCore.Qt.ItemDataRole.DisplayRole:
