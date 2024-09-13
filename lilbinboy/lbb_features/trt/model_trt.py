@@ -214,6 +214,9 @@ class TRTModel(QtCore.QObject):
 		self._data = bin_info_list
 		self.sig_data_changed.emit()
 	
+	def data(self):
+		return iter(self._data)
+	
 	def item_to_dict(self, index:int):
 		
 		bin_info = self._data[index]
@@ -300,3 +303,8 @@ class TRTTreeView(QtWidgets.QTreeView):
 		self.setIndentation(0)
 		self.setSortingEnabled(True)
 		self.sortByColumn(1, QtCore.Qt.SortOrder.AscendingOrder)
+		self.setSelectionMode(QtWidgets.QTreeView.SelectionMode.ExtendedSelection)
+	
+	def fit_headers(self):
+		for i in range(self.model().columnCount()):
+			self.resizeColumnToContents(i)

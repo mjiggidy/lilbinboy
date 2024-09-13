@@ -271,14 +271,24 @@ class LBTRTCalculator(LBUtilityTab):
 		
 
 		self.trt_trims = TRTControlsTrims()
-		self.trt_trims.set_head_trim(self.model().trimFromHead())
-		self.trt_trims.set_tail_trim(self.model().trimFromTail())
+
 		self.trt_trims.sig_head_trim_changed.connect(self.model().setTrimFromHead)
 		self.trt_trims.sig_tail_trim_changed.connect(self.model().setTrimFromTail)
 
-		self._setupWidgets()
+		self.model().setTrimFromHead(Timecode(QtCore.QSettings().value("trt/trim_head",0), rate=QtCore.QSettings().value("trt/rate",24)))
+		self.model().setTrimFromTail(Timecode(QtCore.QSettings().value("trt/trim_tail",0), rate=QtCore.QSettings().value("trt/rate",24)))
 
+		self.trt_trims.set_head_trim(self.model().trimFromHead())
+		self.trt_trims.set_tail_trim(self.model().trimFromTail())
+
+		self._setupWidgets()
+		self.trt_trims.sig_head_trim_changed.connect(self.save_trims)
+		self.trt_trims.sig_tail_trim_changed.connect(self.save_trims)
 		self._model.sig_data_changed.connect(self.update_summary)
+		self._model.sig_data_changed.connect(self.list_trts.fit_headers)
+
+		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
+
 
 	def setModel(self, model:model_trt.TRTModel):
 		self._model = model
@@ -286,6 +296,18 @@ class LBTRTCalculator(LBUtilityTab):
 	
 	def model(self) -> model_trt.TRTModel:
 		return self._model
+	
+	def save_bins(self):
+		settings = QtCore.QSettings()
+		settings.setValue("trt/bin_paths", [str(b.path) for b in self.model().data()])
+	
+	def save_trims(self):
+		settings = QtCore.QSettings()
+		settings.setValue("trt/trim_head", str(self.model().trimFromHead()))
+		settings.setValue("trt/trim_tail", str(self.model().trimFromTail()))
+		settings.setValue("trt/rate", self.model().rate())
+
+
 
 	def get_sequence_info(self, paths):
 		self.model().set_data(logic_trt.get_latest_stats_from_bins(paths))
@@ -306,6 +328,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		#self.list_trts.clear()
 		self.get_sequence_info(pathlib.Path(x) for x in bin_paths)
+		self.save_bins()
 	
 	def choose_folder(self):
 		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", filter="Avid Bins (*.avb)")
