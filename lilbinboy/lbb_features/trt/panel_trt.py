@@ -140,7 +140,7 @@ class TRTControlsTrims(TRTControls):
 	PATH_MARK_IN = str(pathlib.Path(__file__+"../../../../res/icon_mark_in.svg").resolve())
 	PATH_MARK_OUT = str(pathlib.Path(__file__+"../../../../res/icon_mark_out.svg").resolve())
 
-	print(pathlib.Path(PATH_MARK_IN).resolve())
+	#print(pathlib.Path(PATH_MARK_IN).resolve())
 
 	sig_head_trim_changed = QtCore.Signal(Timecode)
 	sig_tail_trim_changed = QtCore.Signal(Timecode)
@@ -214,7 +214,7 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 		self.setMaximum(Timecode("99:99:99:99", rate=self.rate()).frame_number)
 
 	def validate(self, input:str, pos:int) -> bool:
-		print(self.__class__.PAT_VALID_TEXT.match(input))
+		#print(self.__class__.PAT_VALID_TEXT.match(input))
 		if self.__class__.PAT_VALID_TEXT.match(input):
 			return QtGui.QValidator.State.Acceptable 
 		elif self.__class__.PAT_INTER_TEXT.match(input):
@@ -352,6 +352,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.set_bins(files)
 
 	def update_summary(self):
+		self.trt_summary.add_summary_item(TRTSummaryItem(label="Locked", value=self.model().locked_bin_count()))
 		self.trt_summary.add_summary_item(TRTSummaryItem(label="Sequences", value=self.model().sequence_count()))
 		self.trt_summary.add_summary_item(TRTSummaryItem(label="Total F+F", value=self.model().total_lfoa()))
 		self.trt_summary.add_summary_item(TRTSummaryItem(label="Total Runtime",  value=self.model().total_runtime()))

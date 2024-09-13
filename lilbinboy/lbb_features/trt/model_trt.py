@@ -43,8 +43,13 @@ class TRTTreeViewHeaderPath(TRTTreeViewHeaderItem):
 
 	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
 
+		path_data = bin_dict.get(self.field(), pathlib.Path())
+
 		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return bin_dict.get(self.field(), pathlib.Path()).name
+			return path_data.name
+		
+		elif role == QtCore.Qt.ItemDataRole.ToolTipRole:
+			return str(path_data)
 
 class TRTTreeViewHeaderDuration(TRTTreeViewHeaderItem):
 
@@ -246,6 +251,9 @@ class TRTModel(QtCore.QObject):
 	def total_lfoa(self) -> str:
 		trt = self.total_runtime()
 		return self.tc_to_lfoa(trt)
+	
+	def locked_bin_count(self) -> int:
+		return len([x for x in self.data() if x.lock is not None])
 	
 	def tc_to_lfoa(self, tc:Timecode) -> str:
 		zpadding = len(str(self.LFOA_PERFS_PER_FOOT))
