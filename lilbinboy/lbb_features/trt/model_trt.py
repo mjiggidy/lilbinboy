@@ -1,6 +1,8 @@
+import pathlib
 from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
 from . import logic_trt
+
 
 
 class TRTTreeViewHeaderItem(QtCore.QObject):
@@ -36,6 +38,13 @@ class TRTTreeViewHeaderItem(QtCore.QObject):
 	
 	def field(self) -> str:
 		return self._key
+	
+class TRTTreeViewHeaderPath(TRTTreeViewHeaderItem):
+
+	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
+
+		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return bin_dict.get(self.field(), pathlib.Path()).name
 
 class TRTTreeViewHeaderDuration(TRTTreeViewHeaderItem):
 
@@ -65,6 +74,7 @@ class TRTTreeViewHeaderDuration(TRTTreeViewHeaderItem):
 		
 		elif role == QtCore.Qt.ItemDataRole.UserRole:
 			return self.field()
+
 		
 class TRTTreeViewHeaderIcon(TRTTreeViewHeaderItem):
 
@@ -80,7 +90,7 @@ class TRTTreeViewHeaderIcon(TRTTreeViewHeaderItem):
 			return 0
 		
 		elif role == QtCore.Qt.ItemDataRole.DecorationRole:
-			return QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.FolderOpen)
+			return self.draw_color()
 	
 	def header_data(self, role: QtCore.Qt.ItemDataRole = QtCore.Qt.ItemDataRole.DisplayRole):
 		if role == QtCore.Qt.ItemDataRole.DisplayRole:
@@ -88,6 +98,44 @@ class TRTTreeViewHeaderIcon(TRTTreeViewHeaderItem):
 		
 		elif role == QtCore.Qt.ItemDataRole.UserRole:
 			return self.field()
+		
+	def draw_color(self):
+
+		self.pixmap = QtGui.QPixmap(16,16)
+		self.pixmap.fill(QtCore.Qt.GlobalColor.transparent)
+
+		painter = QtGui.QPainter(self.pixmap)
+
+		color_box = QtCore.QRect(0,0, 12, 12)
+		color_box.moveCenter(QtCore.QPoint(7,7))
+		
+		# Set outline and fill
+		pen = QtGui.QPen(QtGui.QColorConstants.Black)
+		brush = QtGui.QBrush()
+		#painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+
+		# Use clip color if available
+		#clip_color_attr = avbutils.composition_clip_color(mob)
+
+		clip_color = QtGui.QColor(QtGui.QColor.fromRgb(0,255,0))
+		brush.setColor(clip_color)
+		brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
+		
+		painter.setBrush(brush)
+		painter.setPen(pen)
+		painter.drawRect(color_box)
+
+		# Box Shadow (TODO: 128 opactiy not working)
+		color_box.moveCenter(color_box.center()+QtCore.QPoint(1,1))
+		#color_box.setWidth(color_box.width() + 2)
+
+		pen.setColor(QtGui.QColor(0,0,0,64))
+		brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
+		painter.setPen(pen)
+		painter.setBrush(brush)
+		painter.drawRect(color_box)
+
+		return self.pixmap
 		
 class TRTTreeViewHeaderBinLock(TRTTreeViewHeaderItem):
 

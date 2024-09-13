@@ -273,6 +273,7 @@ class LBTRTCalculator(LBUtilityTab):
 			model_trt.TRTTreeViewHeaderDuration("Trimmed Duration","duration_trimmed"),
 			model_trt.TRTTreeViewHeaderDuration("LFOA", "lfoa"),
 			model_trt.TRTTreeViewHeaderDateTime("Date Modified","date_modified"),
+			model_trt.TRTTreeViewHeaderPath("From Bin","bin_path"),
 			model_trt.TRTTreeViewHeaderBinLock("Bin Lock","bin_lock"),
 
 		])
