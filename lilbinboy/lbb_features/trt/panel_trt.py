@@ -97,12 +97,12 @@ class TRTSummary(QtWidgets.QGroupBox):
 			self.layout().addItem(QtWidgets.QSpacerItem(1,1, QtWidgets.QSizePolicy.Policy.MinimumExpanding), 1, self.layout().columnCount())
 
 			self.add_summary_item(TRTSummaryItem(
-				label="Total F+F",
+				label="Total Running Length",
 				value="0+00"
 			))
 
 			self.add_summary_item(TRTSummaryItem(
-				label="Total Runtime",
+				label="Total Running Time",
 				value="00:00:00:00"
 			))
 	
@@ -255,7 +255,7 @@ class LBTRTCalculator(LBUtilityTab):
 		super().__init__(*args, **kwargs)
 
 
-		self.setLayout(QtWidgets.QGridLayout())
+		self.setLayout(QtWidgets.QVBoxLayout())
 
 		self._model = model_trt.TRTModel()
 		self.list_trts = model_trt.TRTTreeView()
@@ -280,7 +280,9 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self.list_trts.model().setSourceModel(self.list_viewmodel)
 
-		self.btn_add_bins = QtWidgets.QPushButton("Add Bins...")
+		self.btn_add_bins = QtWidgets.QPushButton("Add From Bins...")
+		self.btn_refresh_bins = QtWidgets.QPushButton()
+		self.btn_clear_bins = QtWidgets.QPushButton()
 		
 
 		self.trt_trims = TRTControlsTrims()
@@ -299,6 +301,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.trt_trims.sig_tail_trim_changed.connect(self.save_trims)
 		self._model.sig_data_changed.connect(self.update_summary)
 		self._model.sig_data_changed.connect(self.list_trts.fit_headers)
+		self._model.sig_data_changed.connect(self.update_control_buttons)
 
 		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
 
@@ -328,9 +331,24 @@ class LBTRTCalculator(LBUtilityTab):
 	def _setupWidgets(self):
 
 		self.btn_add_bins.clicked.connect(self.choose_folder)
+		self.btn_add_bins.setToolTip("Add the latest sequence(s) from one or more bins")
 		self.btn_add_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd))
+		self.btn_add_bins.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.MinimumExpanding))
 
-		self.layout().addWidget(self.btn_add_bins)
+		self.btn_refresh_bins.clicked.connect(self.refresh_bins)
+		self.btn_refresh_bins.setToolTip("Reload the existing bins for updates")
+		self.btn_refresh_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRefresh))
+
+		self.btn_clear_bins.clicked.connect(self.clear_bins)
+		self.btn_clear_bins.setToolTip("Clear the existing sequences")
+		self.btn_clear_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditClear))
+
+		ctrl_layout = QtWidgets.QHBoxLayout()
+
+		ctrl_layout.addWidget(self.btn_add_bins)
+		ctrl_layout.addWidget(self.btn_refresh_bins)
+		ctrl_layout.addWidget(self.btn_clear_bins)
+		self.layout().addLayout(ctrl_layout)
 		
 		self.layout().addWidget(self.list_trts)
 		
@@ -343,6 +361,17 @@ class LBTRTCalculator(LBUtilityTab):
 		self.get_sequence_info(pathlib.Path(x) for x in bin_paths)
 		self.save_bins()
 	
+	def refresh_bins(self):
+		pass
+
+	def clear_bins(self):
+		response = QtWidgets.QMessageBox.warning(self, "Clearing Current Sequences", "This will clear the existing sequences.  Are you sure?", QtWidgets.QMessageBox.StandardButton.Ok, QtWidgets.QMessageBox.StandardButton.Cancel)
+		
+		if response != QtWidgets.QMessageBox.StandardButton.Ok:
+			return
+		
+		self.model().clear()
+	
 	def choose_folder(self):
 		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", filter="Avid Bins (*.avb)")
 		
@@ -351,9 +380,17 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		self.set_bins(files)
 
+	@QtCore.Slot()
 	def update_summary(self):
 		self.trt_summary.add_summary_item(TRTSummaryItem(label="Locked", value=self.model().locked_bin_count()))
 		self.trt_summary.add_summary_item(TRTSummaryItem(label="Sequences", value=self.model().sequence_count()))
-		self.trt_summary.add_summary_item(TRTSummaryItem(label="Total F+F", value=self.model().total_lfoa()))
-		self.trt_summary.add_summary_item(TRTSummaryItem(label="Total Runtime",  value=self.model().total_runtime()))
-		
+		self.trt_summary.add_summary_item(TRTSummaryItem(label="Total Running Length", value=self.model().total_lfoa()))
+		self.trt_summary.add_summary_item(TRTSummaryItem(label="Total Running Time",  value=self.model().total_runtime()))
+	
+	@QtCore.Slot()
+	def update_control_buttons(self):
+		enabled = bool(list(self.model().data()))
+		self.btn_clear_bins.setEnabled(enabled)
+		self.btn_refresh_bins.setEnabled(enabled)
+
+			

@@ -271,6 +271,9 @@ class TRTModel(QtCore.QObject):
 	def set_data(self, bin_info_list:list[logic_trt.BinInfo]):
 		self._data = bin_info_list
 		self.sig_data_changed.emit()
+
+	def clear(self):
+		self.set_data([])
 	
 	def data(self):
 		return iter(self._data)
