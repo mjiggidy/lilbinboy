@@ -50,6 +50,9 @@ class TRTTreeViewHeaderPath(TRTTreeViewHeaderItem):
 		
 		elif role == QtCore.Qt.ItemDataRole.ToolTipRole:
 			return str(path_data)
+		
+		elif role == QtCore.Qt.ItemDataRole.DecorationRole:
+			return QtWidgets.QFileIconProvider().icon(QtCore.QFileInfo(str(path_data)))
 
 class TRTTreeViewHeaderDuration(TRTTreeViewHeaderItem):
 
