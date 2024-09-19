@@ -326,20 +326,24 @@ class LBTRTCalculator(LBUtilityTab):
 
 
 	def get_sequence_info(self, paths):
-		self.model().set_data(logic_trt.get_latest_stats_from_bins(paths))
+
+		for path in paths:
+			self.model().add_sequence(logic_trt.get_latest_stats_from_bins([path])[0])
 	
 	def _setupWidgets(self):
 
 		self.btn_add_bins.clicked.connect(self.choose_folder)
 		self.btn_add_bins.setToolTip("Add the latest sequence(s) from one or more bins")
 		self.btn_add_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd))
-		self.btn_add_bins.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.MinimumExpanding))
+		print(self.btn_add_bins.sizePolicy())
+		self.btn_add_bins.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Fixed))
 
 		self.btn_refresh_bins.clicked.connect(self.refresh_bins)
 		self.btn_refresh_bins.setToolTip("Reload the existing bins for updates")
 		self.btn_refresh_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRefresh))
 
-		self.btn_clear_bins.clicked.connect(self.clear_bins)
+		self.list_trts.sig_remove_selected.connect(lambda: self.remove_bins(sorted(set([idx.row() for idx in self.list_trts.selectedIndexes()]), reverse=True)))
+		self.btn_clear_bins.clicked.connect(lambda: self.remove_bins(sorted(set([idx.row() for idx in self.list_trts.selectedIndexes()]), reverse=True)))
 		self.btn_clear_bins.setToolTip("Clear the existing sequences")
 		self.btn_clear_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditClear))
 
@@ -363,6 +367,11 @@ class LBTRTCalculator(LBUtilityTab):
 	
 	def refresh_bins(self):
 		pass
+
+	def remove_bins(self, selected:list[int]):
+
+		for idx in selected:
+			self.model().remove_sequence(idx)
 
 	def clear_bins(self):
 		response = QtWidgets.QMessageBox.warning(self, "Clearing Current Sequences", "This will clear the existing sequences.  Are you sure?", QtWidgets.QMessageBox.StandardButton.Ok, QtWidgets.QMessageBox.StandardButton.Cancel)

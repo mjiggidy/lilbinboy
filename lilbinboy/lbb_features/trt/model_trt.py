@@ -274,6 +274,18 @@ class TRTModel(QtCore.QObject):
 	def set_data(self, bin_info_list:list[logic_trt.BinInfo]):
 		self._data = bin_info_list
 		self.sig_data_changed.emit()
+	
+	def add_sequence(self, bin_info:logic_trt.BinInfo):
+		self._data.append(bin_info)
+		self.sig_data_changed.emit()
+	
+	def remove_sequence(self, index:int):
+		try:
+			del self._data[index]
+		except Exception as e:
+			print(f"Didn't remove because {e}")
+		
+		self.sig_data_changed.emit()
 
 	def clear(self):
 		self.set_data([])
@@ -357,6 +369,9 @@ class TRTViewSortModel(QtCore.QSortFilterProxyModel):
 
 class TRTTreeView(QtWidgets.QTreeView):
 	"""TRT Readout"""
+
+	sig_remove_selected = QtCore.Signal()
+
 	def __init__(self, *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
@@ -372,3 +387,9 @@ class TRTTreeView(QtWidgets.QTreeView):
 	def fit_headers(self):
 		for i in range(self.model().columnCount()):
 			self.resizeColumnToContents(i)
+	
+	def keyPressEvent(self, event:QtCore.QEvent):
+		if event.key() == QtCore.Qt.Key_Delete:
+			self.sig_remove_selected.emit()
+		else:
+			super().keyPressEvent(event)
