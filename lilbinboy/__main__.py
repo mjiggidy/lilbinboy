@@ -13,11 +13,11 @@ app_settings = QtCore.QSettings()
 
 surface_format = QtGui.QSurfaceFormat()
 surface_format.setAlphaBufferSize(8)
-QtGui.QSurfaceFormat.setDefaultFormat(surface_format)
+#QtGui.QSurfaceFormat.setDefaultFormat(surface_format)
 
 wnd_main = lbb_common.LBMainWindow()
 wnd_main.setGeometry(app_settings.value("main/window_geometry", QtCore.QRect()))
-wnd_main.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+#wnd_main.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
 wnd_main.sig_resized.connect(lambda rect: app_settings.setValue("main/window_geometry", rect))
 
