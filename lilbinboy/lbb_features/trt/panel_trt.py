@@ -280,6 +280,8 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self.list_trts.model().setSourceModel(self.list_viewmodel)
 
+		self.list_trts.sig_add_bins.connect(self.set_bins)
+
 		self.btn_add_bins = QtWidgets.QPushButton("Add From Bins...")
 		self.btn_refresh_bins = QtWidgets.QPushButton()
 		self.btn_clear_bins = QtWidgets.QPushButton()
@@ -370,8 +372,19 @@ class LBTRTCalculator(LBUtilityTab):
 
 	def remove_bins(self, selected:list[int]):
 
-		for idx in selected:
-			self.model().remove_sequence(idx)
+		# Remove selection
+		if selected:
+			[self.model().remove_sequence(idx) for idx in selected]
+			self.save_bins()
+
+		# Or remove everything if nothing is selected
+		elif QtWidgets.QMessageBox.warning(self,
+			"Clearing Current Sequences",
+			"This will clear the existing sequences.  Are you sure?",
+			QtWidgets.QMessageBox.StandardButton.Ok, QtWidgets.QMessageBox.StandardButton.Cancel) == QtWidgets.QMessageBox.StandardButton.Ok:
+
+			self.model().clear()
+			self.save_bins()
 
 	def clear_bins(self):
 		response = QtWidgets.QMessageBox.warning(self, "Clearing Current Sequences", "This will clear the existing sequences.  Are you sure?", QtWidgets.QMessageBox.StandardButton.Ok, QtWidgets.QMessageBox.StandardButton.Cancel)

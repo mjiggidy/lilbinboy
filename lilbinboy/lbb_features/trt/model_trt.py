@@ -371,6 +371,7 @@ class TRTTreeView(QtWidgets.QTreeView):
 	"""TRT Readout"""
 
 	sig_remove_selected = QtCore.Signal()
+	sig_add_bins = QtCore.Signal(list)
 
 	def __init__(self, *args, **kwargs):
 
@@ -383,6 +384,9 @@ class TRTTreeView(QtWidgets.QTreeView):
 		self.setSortingEnabled(True)
 		self.sortByColumn(1, QtCore.Qt.SortOrder.AscendingOrder)
 		self.setSelectionMode(QtWidgets.QTreeView.SelectionMode.ExtendedSelection)
+		self.setAcceptDrops(True)
+		self.setDropIndicatorShown(True)
+		print(self.dragDropMode())
 	
 	def fit_headers(self):
 		for i in range(self.model().columnCount()):
@@ -393,3 +397,25 @@ class TRTTreeView(QtWidgets.QTreeView):
 			self.sig_remove_selected.emit()
 		else:
 			super().keyPressEvent(event)
+
+	def dragEnterEvent(self, event:QtGui.QDragEnterEvent):
+		if event.mimeData().hasUrls():
+			event.setDropAction(QtGui.Qt.DropAction.LinkAction)
+			event.acceptProposedAction()
+		else:
+			event.ignore()
+
+	def dragMoveEvent(self, event: QtGui.QDragMoveEvent):
+		if event.mimeData().hasUrls():
+			event.setDropAction(QtGui.Qt.DropAction.LinkAction)
+			event.acceptProposedAction()
+		else:
+			event.ignore()
+	
+	def dropEvent(self, event:QtGui.QDropEvent):
+		if event.mimeData().hasUrls():
+			event.setDropAction(QtGui.Qt.DropAction.LinkAction)
+			event.acceptProposedAction()
+			self.sig_add_bins.emit([f.toLocalFile() for f in event.mimeData().urls()])
+		else:
+			event.ignore()
