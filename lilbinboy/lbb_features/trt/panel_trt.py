@@ -4,6 +4,50 @@ from timecode import Timecode
 from ...lbb_common import LBUtilityTab
 from . import logic_trt, model_trt
 
+class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
+
+	def __init__(self):
+
+		super().__init__()
+
+		self.setRange(0,0)
+		self.setValue(0)
+		self.setFormat("Loading %v of %m bins...")
+
+		self._timer = QtCore.QTimer()
+
+		self.valueChanged.connect(self.update_timer)
+	
+	@QtCore.Slot(int)
+	def update_timer(self, value:int):
+
+		if value == self.maximum():
+			self._timer.stop()
+			self._timer = QtCore.QTimer().singleShot(1000, self.reset)
+	
+	def reset(self):
+#		self.setRange(0,0)
+		super().reset()
+
+
+class TRTThreadedSignals(QtCore.QObject):
+	sig_got_bin_info = QtCore.Signal(logic_trt.BinInfo)
+
+class TRTThreadedBinGetter(QtCore.QRunnable):
+
+	def __init__(self, bin_path:str):
+		super().__init__()
+		self._bin_path = bin_path
+		self._signals = TRTThreadedSignals()
+		print(self.autoDelete())
+
+	def signals(self) -> TRTThreadedSignals:
+		return self._signals
+
+	def run(self):
+		self.signals().sig_got_bin_info.emit(logic_trt.get_latest_stats_from_bins([self._bin_path])[0])
+	
+
 class TRTListItem(QtWidgets.QTreeWidgetItem):
 	"""A TRTListItem"""
 
@@ -270,6 +314,8 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self.setLayout(QtWidgets.QVBoxLayout())
 
+		self._pool = QtCore.QThreadPool()
+
 		self._model = model_trt.TRTModel()
 		self.list_trts = model_trt.TRTTreeView()
 		self.trt_summary = TRTSummary()
@@ -278,6 +324,8 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		self.list_trts.setModel(model_trt.TRTViewSortModel())
 		self.list_trts.model().setSortRole(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
+
+		self.prog_loading = TRTBinLoadingProgressBar()
 
 		self.list_viewmodel.set_headers([
 			model_trt.TRTTreeViewHeaderIcon("","icon"),
@@ -324,6 +372,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self._model.sig_data_changed.connect(self.update_summary)
 		self._model.sig_data_changed.connect(self.list_trts.fit_headers)
 		self._model.sig_data_changed.connect(self.update_control_buttons)
+		self._model.sig_data_changed.connect(self.save_bins)
 
 		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
 
@@ -345,20 +394,21 @@ class LBTRTCalculator(LBUtilityTab):
 		settings.setValue("trt/trim_total", str(self.model().trimTotal()))
 		settings.setValue("trt/rate", self.model().rate())
 
-
-
 	def get_sequence_info(self, paths):
 
 		for path in paths:
-			self.model().add_sequence(logic_trt.get_latest_stats_from_bins([path])[0])
+			self.prog_loading.setMaximum(self.prog_loading.maximum() + 1)
+			thread = TRTThreadedBinGetter(path)
+			thread.signals().sig_got_bin_info.connect(self.model().add_sequence)
+			thread.signals().sig_got_bin_info.connect(lambda: self.prog_loading.setValue(self.prog_loading.value() + 1))
+			self._pool.start(thread)
 	
 	def _setupWidgets(self):
 
 		self.btn_add_bins.clicked.connect(self.choose_folder)
 		self.btn_add_bins.setToolTip("Add the latest sequence(s) from one or more bins")
 		self.btn_add_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd))
-		print(self.btn_add_bins.sizePolicy())
-		self.btn_add_bins.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Fixed))
+		#self.btn_add_bins.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Fixed))
 
 		self.btn_refresh_bins.clicked.connect(self.refresh_bins)
 		self.btn_refresh_bins.setToolTip("Reload the existing bins for updates")
@@ -372,6 +422,7 @@ class LBTRTCalculator(LBUtilityTab):
 		ctrl_layout = QtWidgets.QHBoxLayout()
 
 		ctrl_layout.addWidget(self.btn_add_bins)
+		ctrl_layout.addWidget(self.prog_loading)
 		ctrl_layout.addWidget(self.btn_refresh_bins)
 		ctrl_layout.addWidget(self.btn_clear_bins)
 		self.layout().addLayout(ctrl_layout)

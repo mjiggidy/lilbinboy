@@ -29,4 +29,14 @@ for name, panel in lbb_features.features.items():
 	wnd_main.centralWidget().setTabIcon(wnd_main.centralWidget().count()-1, QtGui.QIcon(panel.PATH_ICON))
 	print(wnd_main.centralWidget().tabIcon(wnd_main.centralWidget().count()-1))
 
+wnd_main.setMenuBar(QtWidgets.QMenuBar())
+wnd_main.menuBar().addMenu("File")
+wnd_main.menuBar().addMenu("Edit")
+wnd_main.menuBar().addMenu("Tools")
+wnd_main.menuBar().addMenu("Help")
+wnd_main.centralWidget().addTab(QtWidgets.QWidget(), str("Binlocker"))
+wnd_main.centralWidget().addTab(QtWidgets.QWidget(), str("Continuity Maker"))
+wnd_main.centralWidget().addTab(QtWidgets.QWidget(), str("Bin Config"))
+
+
 app.exec()
