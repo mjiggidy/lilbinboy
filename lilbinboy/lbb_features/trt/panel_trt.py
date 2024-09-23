@@ -199,8 +199,8 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 	def __init__(self, *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
-		self.setRate(24)
-
+		self._rate = 24
+		self._allow_negative = False
 		self.valueChanged.connect(lambda: self.sig_timecode_changed.emit(self.timecode()))
 	
 	@QtCore.Slot()
@@ -211,15 +211,21 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 
 	@QtCore.Slot()
 	def updateMaximumTC(self):
-		self.setMaximum(Timecode("99:99:99:99", rate=self.rate()).frame_number)
+		self.setMaximum(Timecode("100:00:00:00", rate=self.rate()).frame_number)
+		self.setMinimum(Timecode("-100:00:00:00", rate=self.rate()).frame_number if self.allowNegative() else Timecode(0, rate=self.rate()).frame_number)
 
 	def validate(self, input:str, pos:int) -> bool:
 		#print(self.__class__.PAT_VALID_TEXT.match(input))
+
+		# Allow for one '-' if negative is allowed, by stripping it off for validation
+		if self.allowNegative() and input.startswith("-"):
+			input = input[1:]
+
 		if self.__class__.PAT_VALID_TEXT.match(input):
 			return QtGui.QValidator.State.Acceptable 
 		elif self.__class__.PAT_INTER_TEXT.match(input):
 			return QtGui.QValidator.State.Intermediate
-		elif not input and pos == 0:
+		elif input == "":
 			return QtGui.QValidator.State.Intermediate 
 		else:
 			return QtGui.QValidator.State.Invalid
@@ -229,9 +235,16 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 		self.setRate(timecode.rate)
 		self.setValue(timecode.frame_number)
 	
+	def setAllowNegative(self, allow:bool):
+		if allow != self.allowNegative():
+			self._allow_negative = allow
+			self.updateMaximumTC()
+
+	def allowNegative(self) -> bool:
+		return self._allow_negative
+	
 	def timecode(self) -> Timecode:
 		return Timecode(self.value(), rate=self.rate())
-		
 
 	def rate(self) -> int:
 		return self._rate
@@ -292,6 +305,11 @@ class LBTRTCalculator(LBUtilityTab):
 		self.trt_trims.sig_head_trim_changed.connect(self.model().setTrimFromHead)
 		self.trt_trims.sig_tail_trim_changed.connect(self.model().setTrimFromTail)
 
+		self.trim_total = LBSpinBoxTC()
+		self.trim_total.setAllowNegative(True)
+		self.trim_total.setTimecode(Timecode(QtCore.QSettings().value("trt/trim_total",0), rate=QtCore.QSettings().value("trt/rate",24)))
+		self.trim_total.sig_timecode_changed.connect(self.model().setTrimTotal)
+
 		self.model().setTrimFromHead(Timecode(QtCore.QSettings().value("trt/trim_head",0), rate=QtCore.QSettings().value("trt/rate",24)))
 		self.model().setTrimFromTail(Timecode(QtCore.QSettings().value("trt/trim_tail",0), rate=QtCore.QSettings().value("trt/rate",24)))
 
@@ -301,12 +319,13 @@ class LBTRTCalculator(LBUtilityTab):
 		self._setupWidgets()
 		self.trt_trims.sig_head_trim_changed.connect(self.save_trims)
 		self.trt_trims.sig_tail_trim_changed.connect(self.save_trims)
+		self.trim_total.sig_timecode_changed.connect(self.save_trims)
+
 		self._model.sig_data_changed.connect(self.update_summary)
 		self._model.sig_data_changed.connect(self.list_trts.fit_headers)
 		self._model.sig_data_changed.connect(self.update_control_buttons)
 
 		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
-
 
 	def setModel(self, model:model_trt.TRTModel):
 		self._model = model
@@ -323,6 +342,7 @@ class LBTRTCalculator(LBUtilityTab):
 		settings = QtCore.QSettings()
 		settings.setValue("trt/trim_head", str(self.model().trimFromHead()))
 		settings.setValue("trt/trim_tail", str(self.model().trimFromTail()))
+		settings.setValue("trt/trim_total", str(self.model().trimTotal()))
 		settings.setValue("trt/rate", self.model().rate())
 
 
@@ -360,6 +380,13 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		self.layout().addWidget(self.trt_summary)
 		self.layout().addWidget(self.trt_trims)
+
+		grp_totaltrim = QtWidgets.QGroupBox()
+		grp_totaltrim.setLayout(QtWidgets.QHBoxLayout())
+		grp_totaltrim.layout().addWidget(self.trim_total)
+
+		self.layout().addWidget(grp_totaltrim)
+
 	
 	def set_bins(self, bin_paths: list[str]):
 
@@ -385,14 +412,6 @@ class LBTRTCalculator(LBUtilityTab):
 
 			self.model().clear()
 			self.save_bins()
-
-	def clear_bins(self):
-		response = QtWidgets.QMessageBox.warning(self, "Clearing Current Sequences", "This will clear the existing sequences.  Are you sure?", QtWidgets.QMessageBox.StandardButton.Ok, QtWidgets.QMessageBox.StandardButton.Cancel)
-		
-		if response != QtWidgets.QMessageBox.StandardButton.Ok:
-			return
-		
-		self.model().clear()
 	
 	def choose_folder(self):
 		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", filter="Avid Bins (*.avb)")

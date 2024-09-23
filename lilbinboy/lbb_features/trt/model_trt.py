@@ -211,6 +211,8 @@ class TRTModel(QtCore.QObject):
 		self._fps = 24
 		self._trim_head = Timecode("8:00", rate=self._fps)
 		self._trim_tail = Timecode("4:00", rate=self._fps)
+		self._trim_total = Timecode(0, rate=self._fps)
+		self._adjust_total = Timecode(0, rate=self._fps)
 	
 	def sequence_count(self) -> int:
 		"""Number of sequences being considered"""
@@ -228,7 +230,7 @@ class TRTModel(QtCore.QObject):
 			reel_info = bin_info.reel
 			trt += reel_info.duration_total - self._trim_head_amount(reel_info) - self._trim_tail_amount(reel_info)
 		
-		return trt
+		return max(Timecode(0, rate=self.rate()), trt + self.trimTotal())
 	
 	def rate(self) -> int:
 		return self._fps
@@ -250,6 +252,13 @@ class TRTModel(QtCore.QObject):
 	def setTrimFromTail(self, timecode:Timecode):
 		self._trim_tail = timecode
 		self.sig_data_changed.emit()
+
+	def trimTotal(self) -> Timecode:
+		return self._trim_total
+
+	def setTrimTotal(self, timecode:Timecode):
+		self._trim_total = timecode
+		self.sig_data_changed.emit()
 	
 	def total_lfoa(self) -> str:
 		trt = self.total_runtime()
@@ -260,6 +269,7 @@ class TRTModel(QtCore.QObject):
 	
 	def tc_to_lfoa(self, tc:Timecode) -> str:
 		zpadding = len(str(self.LFOA_PERFS_PER_FOOT))
+		#tc = max(tc, Timecode(0, rate=self.rate()))
 		return str(tc.frame_number // 16) + "+" + str(tc.frame_number % self.LFOA_PERFS_PER_FOOT).zfill(zpadding)
 		
 	def _trim_head_amount(self, reel_info:logic_trt.ReelInfo) -> Timecode:
@@ -301,10 +311,10 @@ class TRTModel(QtCore.QObject):
 		return {
 			"sequence_name": reel_info.sequence_name,
 			"duration_total": reel_info.duration_total,
-			"duration_trimmed": reel_info.duration_total - self._trim_head - self._trim_tail,
+			"duration_trimmed": max(Timecode(0, rate=self.rate()), reel_info.duration_total - self._trim_head - self._trim_tail),
 			"head_trimmed": self._trim_head,
 			"tail_trimmed": self._trim_tail,
-			"lfoa": self.tc_to_lfoa(reel_info.duration_total - self._trim_tail - 1), # TODO: Think through the -1 but I think it makes sense being zero-based instead of 1-based for durations? Like, LFOA may be on 0+00 but that means it's 0+01 frame long
+			"lfoa": self.tc_to_lfoa(max(Timecode(0, rate=self.rate()), reel_info.duration_total - self._trim_tail - 1)), # TODO: Think through the -1 but I think it makes sense being zero-based instead of 1-based for durations? Like, LFOA may be on 0+00 but that means it's 0+01 frame long
 			"date_modified": reel_info.date_modified,
 			"bin_path": bin_info.path,
 			"bin_lock": bin_info.lock
