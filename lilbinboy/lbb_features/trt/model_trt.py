@@ -380,7 +380,7 @@ class TRTViewSortModel(QtCore.QSortFilterProxyModel):
 class TRTTreeView(QtWidgets.QTreeView):
 	"""TRT Readout"""
 
-	sig_remove_selected = QtCore.Signal()
+	sig_remove_rows = QtCore.Signal(list)
 	sig_add_bins = QtCore.Signal(list)
 
 	def __init__(self, *args, **kwargs):
@@ -404,7 +404,8 @@ class TRTTreeView(QtWidgets.QTreeView):
 	
 	def keyPressEvent(self, event:QtCore.QEvent):
 		if event.key() == QtCore.Qt.Key_Delete:
-			self.sig_remove_selected.emit()
+			rows = self.selectedRows()
+			self.sig_remove_rows.emit(rows)
 		else:
 			super().keyPressEvent(event)
 
@@ -429,3 +430,8 @@ class TRTTreeView(QtWidgets.QTreeView):
 			self.sig_add_bins.emit([f.toLocalFile() for f in event.mimeData().urls()])
 		else:
 			event.ignore()
+	
+	@QtCore.Slot()
+	def selectedRows(self) -> list[int]:
+		print("Uhhh")
+		return sorted(set([self.model().mapToSource(idx).row() for idx in self.selectedIndexes()]), reverse=True)

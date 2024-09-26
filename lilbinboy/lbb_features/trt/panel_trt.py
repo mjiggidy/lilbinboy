@@ -26,7 +26,7 @@ class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 			self._timer = QtCore.QTimer().singleShot(1000, self.reset)
 	
 	def reset(self):
-#		self.setRange(0,0)
+		self.setRange(0,0)
 		super().reset()
 
 
@@ -374,6 +374,8 @@ class LBTRTCalculator(LBUtilityTab):
 		self._model.sig_data_changed.connect(self.update_control_buttons)
 		self._model.sig_data_changed.connect(self.save_bins)
 
+		self._pool.activeThreadCount
+
 		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
 
 	def setModel(self, model:model_trt.TRTModel):
@@ -397,11 +399,20 @@ class LBTRTCalculator(LBUtilityTab):
 	def get_sequence_info(self, paths):
 
 		for path in paths:
-			self.prog_loading.setMaximum(self.prog_loading.maximum() + 1)
+			
 			thread = TRTThreadedBinGetter(path)
+			
+			self.prog_loading.setMaximum(self.prog_loading.maximum() + 1)
 			thread.signals().sig_got_bin_info.connect(self.model().add_sequence)
 			thread.signals().sig_got_bin_info.connect(lambda: self.prog_loading.setValue(self.prog_loading.value() + 1))
+			thread.signals().sig_got_bin_info.connect(self.reset_prog)
+
 			self._pool.start(thread)
+	
+	@QtCore.Slot()
+	def reset_prog(self):
+		if self._pool.activeThreadCount() == 0:
+			self.prog_loading.reset()
 	
 	def _setupWidgets(self):
 
@@ -414,7 +425,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.btn_refresh_bins.setToolTip("Reload the existing bins for updates")
 		self.btn_refresh_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRefresh))
 
-		self.list_trts.sig_remove_selected.connect(lambda: self.remove_bins(sorted(set([idx.row() for idx in self.list_trts.selectedIndexes()]), reverse=True)))
+		self.list_trts.sig_remove_rows.connect(self.remove_bins)
 		self.btn_clear_bins.clicked.connect(lambda: self.remove_bins(sorted(set([idx.row() for idx in self.list_trts.selectedIndexes()]), reverse=True)))
 		self.btn_clear_bins.setToolTip("Clear the existing sequences")
 		self.btn_clear_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditClear))
@@ -449,6 +460,8 @@ class LBTRTCalculator(LBUtilityTab):
 		pass
 
 	def remove_bins(self, selected:list[int]):
+
+		print("Selected:", selected)
 
 		# Remove selection
 		if selected:
