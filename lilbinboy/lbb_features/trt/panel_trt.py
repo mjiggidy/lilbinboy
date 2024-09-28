@@ -6,29 +6,43 @@ from . import logic_trt, model_trt
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 
-	def __init__(self):
+	TIMEOUT_BEFORE_HIDE = 1000
 
+	def __init__(self):
 		super().__init__()
 
-		self.setRange(0,0)
-		self.setValue(0)
+		# Hide timer but keep the space for it
+		p = self.sizePolicy()
+		p.setRetainSizeWhenHidden(True)
+		self.setSizePolicy(p)
+		
+		# Setup timer to hide
+		self._reset_timer = QtCore.QTimer()
+		self._reset_timer.timeout.connect(self.reset)
+		self._reset_timer.setSingleShot(True)
+		
+		self.reset()
+
 		self.setFormat("Loading %v of %m bins...")
-
-		self._timer = QtCore.QTimer()
-
-		self.valueChanged.connect(self.update_timer)
 	
-	@QtCore.Slot(int)
-	def update_timer(self, value:int):
-
-		if value == self.maximum():
-			self._timer.stop()
-			self._timer = QtCore.QTimer().singleShot(1000, self.reset)
+	@QtCore.Slot()
+	def step_added(self):
+		if self.isHidden():
+			self.setHidden(False)
+		self._reset_timer.stop()
+		self.setMaximum(self.maximum() + 1)
 	
+	@QtCore.Slot()
+	def step_complete(self):
+		self.setValue(self.value() + 1)
+		if self.value() == self.maximum():
+			self._reset_timer.start(self.TIMEOUT_BEFORE_HIDE)
+	
+	@QtCore.Slot()
 	def reset(self):
 		self.setRange(0,0)
-		super().reset()
-
+		self.setValue(0)
+		self.setHidden(True)
 
 class TRTThreadedSignals(QtCore.QObject):
 	sig_got_bin_info = QtCore.Signal(logic_trt.BinInfo)
@@ -39,7 +53,6 @@ class TRTThreadedBinGetter(QtCore.QRunnable):
 		super().__init__()
 		self._bin_path = bin_path
 		self._signals = TRTThreadedSignals()
-		print(self.autoDelete())
 
 	def signals(self) -> TRTThreadedSignals:
 		return self._signals
@@ -374,8 +387,6 @@ class LBTRTCalculator(LBUtilityTab):
 		self._model.sig_data_changed.connect(self.update_control_buttons)
 		self._model.sig_data_changed.connect(self.save_bins)
 
-		self._pool.activeThreadCount
-
 		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
 
 	def setModel(self, model:model_trt.TRTModel):
@@ -402,17 +413,11 @@ class LBTRTCalculator(LBUtilityTab):
 			
 			thread = TRTThreadedBinGetter(path)
 			
-			self.prog_loading.setMaximum(self.prog_loading.maximum() + 1)
+			self.prog_loading.step_added()
 			thread.signals().sig_got_bin_info.connect(self.model().add_sequence)
-			thread.signals().sig_got_bin_info.connect(lambda: self.prog_loading.setValue(self.prog_loading.value() + 1))
-			thread.signals().sig_got_bin_info.connect(self.reset_prog)
+			thread.signals().sig_got_bin_info.connect(self.prog_loading.step_complete)
 
 			self._pool.start(thread)
-	
-	@QtCore.Slot()
-	def reset_prog(self):
-		if self._pool.activeThreadCount() == 0:
-			self.prog_loading.reset()
 	
 	def _setupWidgets(self):
 
@@ -461,7 +466,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 	def remove_bins(self, selected:list[int]):
 
-		print("Selected:", selected)
+#		print("Selected:", selected)
 
 		# Remove selection
 		if selected:

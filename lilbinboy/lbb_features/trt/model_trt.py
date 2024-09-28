@@ -433,5 +433,4 @@ class TRTTreeView(QtWidgets.QTreeView):
 	
 	@QtCore.Slot()
 	def selectedRows(self) -> list[int]:
-		print("Uhhh")
 		return sorted(set([self.model().mapToSource(idx).row() for idx in self.selectedIndexes()]), reverse=True)
