@@ -53,6 +53,9 @@ class ReelInfo:
 	sequence_name:str = str()
 	"""The name of the sequence"""
 
+	sequence_color:tuple[int,int,int]|None = None
+	"""16-bit RGB triad chosen for the sequence color label"""
+
 	duration_total:Timecode = Timecode(0)
 	"""The total duration of the sequence"""
 
@@ -90,6 +93,7 @@ def get_reel_info(
 	
 	return ReelInfo(
 		sequence_name=sequence.name,
+		sequence_color=avbutils.composition_clip_color(sequence),
 		date_modified=sequence.last_modified,
 		reel_number=get_reel_number_from_timeline_attributes(sequence.attributes),
 		duration_total=Timecode(sequence.length, rate=round(sequence.edit_rate)),

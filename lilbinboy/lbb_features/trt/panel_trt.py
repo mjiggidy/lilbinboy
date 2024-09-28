@@ -341,7 +341,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.prog_loading = TRTBinLoadingProgressBar()
 
 		self.list_viewmodel.set_headers([
-			model_trt.TRTTreeViewHeaderIcon("","icon"),
+			model_trt.TRTTreeViewHeaderColor("","sequence_color"),
 			model_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
 			model_trt.TRTTreeViewHeaderDuration("Full Duration","duration_total"),
 			model_trt.TRTTreeViewHeaderDuration("Trimmed Duration","duration_trimmed"),
@@ -386,6 +386,8 @@ class LBTRTCalculator(LBUtilityTab):
 		self._model.sig_data_changed.connect(self.list_trts.fit_headers)
 		self._model.sig_data_changed.connect(self.update_control_buttons)
 		self._model.sig_data_changed.connect(self.save_bins)
+
+		self.list_trts.fit_headers()
 
 		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
 

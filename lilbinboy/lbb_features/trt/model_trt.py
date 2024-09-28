@@ -84,7 +84,7 @@ class TRTTreeViewHeaderDuration(TRTTreeViewHeaderItem):
 			return self.field()
 
 		
-class TRTTreeViewHeaderIcon(TRTTreeViewHeaderItem):
+class TRTTreeViewHeaderColor(TRTTreeViewHeaderItem):
 
 	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
 
@@ -98,7 +98,7 @@ class TRTTreeViewHeaderIcon(TRTTreeViewHeaderItem):
 			return 0
 		
 		elif role == QtCore.Qt.ItemDataRole.DecorationRole:
-			return self.draw_color()
+			return self.draw_color(bin_dict.get(self.field(),None))
 	
 	def header_data(self, role: QtCore.Qt.ItemDataRole = QtCore.Qt.ItemDataRole.DisplayRole):
 		if role == QtCore.Qt.ItemDataRole.DisplayRole:
@@ -107,7 +107,7 @@ class TRTTreeViewHeaderIcon(TRTTreeViewHeaderItem):
 		elif role == QtCore.Qt.ItemDataRole.UserRole:
 			return self.field()
 		
-	def draw_color(self):
+	def draw_color(self, color):
 
 		self.pixmap = QtGui.QPixmap(16,16)
 		self.pixmap.fill(QtCore.Qt.GlobalColor.transparent)
@@ -115,7 +115,7 @@ class TRTTreeViewHeaderIcon(TRTTreeViewHeaderItem):
 		painter = QtGui.QPainter(self.pixmap)
 
 		color_box = QtCore.QRect(0,0, 12, 12)
-		color_box.moveCenter(QtCore.QPoint(7,7))
+		color_box.moveCenter(QtCore.QPoint(7,6))
 		
 		# Set outline and fill
 		pen = QtGui.QPen(QtGui.QColorConstants.Black)
@@ -125,9 +125,12 @@ class TRTTreeViewHeaderIcon(TRTTreeViewHeaderItem):
 		# Use clip color if available
 		#clip_color_attr = avbutils.composition_clip_color(mob)
 
-		clip_color = QtGui.QColor(QtGui.QColor.fromRgb(0,255,0))
-		brush.setColor(clip_color)
-		brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
+		if color is not None:
+			clip_color = QtGui.QColor(color)
+			brush.setColor(clip_color)
+			brush.setStyle(QtGui.Qt.BrushStyle.SolidPattern)
+		else:
+			brush.setStyle(QtGui.Qt.BrushStyle.NoBrush)
 		
 		painter.setBrush(brush)
 		painter.setPen(pen)
@@ -201,6 +204,12 @@ class TRTModel(QtCore.QObject):
 	sig_data_changed = QtCore.Signal()
 
 	LFOA_PERFS_PER_FOOT = 16
+
+	# TODO: Not a great place for these probably
+	MAX_8b = (1 << 8) - 1
+	"""Maximum 8-bit value"""
+	MAX_16b = (1 << 16) - 1
+	"""Maximum 16-bit value"""
 
 	def __init__(self, bin_info_list:list[logic_trt.BinInfo]=None):
 		super().__init__()
@@ -310,6 +319,7 @@ class TRTModel(QtCore.QObject):
 
 		return {
 			"sequence_name": reel_info.sequence_name,
+			"sequence_color": QtGui.QColor(*(c/self.MAX_16b * self.MAX_8b for c in reel_info.sequence_color)) if reel_info.sequence_color else None,
 			"duration_total": reel_info.duration_total,
 			"duration_trimmed": max(Timecode(0, rate=self.rate()), reel_info.duration_total - self._trim_head - self._trim_tail),
 			"head_trimmed": self._trim_head,
@@ -396,7 +406,7 @@ class TRTTreeView(QtWidgets.QTreeView):
 		self.setSelectionMode(QtWidgets.QTreeView.SelectionMode.ExtendedSelection)
 		self.setAcceptDrops(True)
 		self.setDropIndicatorShown(True)
-		print(self.dragDropMode())
+#		print(self.dragDropMode())
 	
 	def fit_headers(self):
 		for i in range(self.model().columnCount()):
