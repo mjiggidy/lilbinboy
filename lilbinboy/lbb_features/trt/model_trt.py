@@ -203,7 +203,18 @@ class TRTModel(QtCore.QObject):
 
 	sig_data_changed = QtCore.Signal()
 
-	LFOA_PERFS_PER_FOOT = 16
+	#LFOA_PERFS_PER_FOOT = 8 # 35.8
+	LFOA_PERFS_PER_FOOT = 16 # 35.4
+	#LFOA_PERFS_PER_FOOT = 21 # 35.3
+	#LFOA_PERFS_PER_FOOT = 32 # 35.2
+	#LFOA_PERFS_PER_FOOT = 40 # 16.40
+	#LFOA_PERFS_PER_FOOT = 20 # 16.20
+	#LFOA_PERFS_PER_FOOT = 8 # 65.15
+	#LFOA_PERFS_PER_FOOT = 12 # 65.10
+	#LFOA_PERFS_PER_FOOT = 15 # 65.8
+	#LFOA_PERFS_PER_FOOT = 24 # 65.5
+	#LFOA_PERFS_PER_FOOT = 8 # Vista - 8 perfs but 2 perfs per frame - goes 0, 2, 4, 6
+
 
 	# TODO: Not a great place for these probably
 	MAX_8b = (1 << 8) - 1
