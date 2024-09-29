@@ -197,8 +197,6 @@ class TRTControlsTrims(TRTControls):
 	PATH_MARK_IN = str(pathlib.Path(__file__+"../../../../res/icon_mark_in.svg").resolve())
 	PATH_MARK_OUT = str(pathlib.Path(__file__+"../../../../res/icon_mark_out.svg").resolve())
 
-	#print(pathlib.Path(PATH_MARK_IN).resolve())
-
 	sig_head_trim_changed = QtCore.Signal(Timecode)
 	sig_tail_trim_changed = QtCore.Signal(Timecode)
 
@@ -272,7 +270,6 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 		self.setMinimum(Timecode("-100:00:00:00", rate=self.rate()).frame_number if self.allowNegative() else Timecode(0, rate=self.rate()).frame_number)
 
 	def validate(self, input:str, pos:int) -> bool:
-		#print(self.__class__.PAT_VALID_TEXT.match(input))
 
 		# Allow for one '-' if negative is allowed, by stripping it off for validation
 		if self.allowNegative() and input.startswith("-"):
@@ -316,8 +313,6 @@ class LBTRTCalculator(LBUtilityTab):
 	"""TRT Calculator"""
 
 	PATH_ICON = __file__+"../../../../res/icon_trt.png"
-	#print(pathlib.Path(PATH_ICON).resolve())
-	#print(QtCore.QFile(PATH_ICON).exists())
 
 	sig_modelchanged = QtCore.Signal()
 
@@ -467,8 +462,6 @@ class LBTRTCalculator(LBUtilityTab):
 		pass
 
 	def remove_bins(self, selected:list[int]):
-
-#		print("Selected:", selected)
 
 		# Remove selection
 		if selected:

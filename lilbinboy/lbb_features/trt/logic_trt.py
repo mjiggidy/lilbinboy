@@ -3,18 +3,6 @@ import pathlib, concurrent.futures, datetime, dataclasses
 from collections import namedtuple
 from timecode import Timecode
 
-# START CONFIG
-
-# Durations of head/tail slates, will be factored out of TRT per reel
-SLATE_HEAD_DURATION = Timecode("8:00")
-"""The specified duration will be removed from reel durations and TRT calculations"""
-
-SLATE_TAIL_DURATION = Timecode("3:23")
-"""The specified duration will be removed from reel durations and TRT calculations"""
-
-TRT_ADJUST_DURATION = Timecode("0:00")
-"""Add or subtract a final duration from the total runtime (useful for adjusting for end credits, etc)"""
-
 # How to sort sequences to find the "most current"
 BIN_SORTING_METHOD = avbutils.BinSorting.DATE_MODIFIED
 """How to sort sequences in a bin to determine the most current one"""
@@ -22,19 +10,7 @@ BIN_SORTING_METHOD = avbutils.BinSorting.DATE_MODIFIED
 REEL_NUMBER_BIN_COLUMN_NAME = "Reel #"
 """The name of the Avid bin column from which to extract the Reel Number"""
 
-# Results list setup
-COLUMN_SPACING = "     "
-HEADERS = {
-	"Reel Name"     : 0,
-	"Reel TRT"      : 11,
-	"LFOA"          : 7,
-	"Date Modified" : 19,
-	"Bin Locked"    : 10
-}
-
 # END CONFIG
-
-USAGE = f"Usage: {__file__} path/to/avbs [--head {SLATE_HEAD_DURATION}] [--tail {SLATE_TAIL_DURATION}] [--trt-adjust {TRT_ADJUST_DURATION}]"
 
 BinInfo = namedtuple("BinInfo","reel path lock")
 
@@ -86,9 +62,7 @@ def get_locators_from_sequence(sequence=avb.trackgroups.Composition):
 	return list()
 
 def get_reel_info(
-	sequence:avb.trackgroups.Composition,
-	head_duration:Timecode=SLATE_HEAD_DURATION,
-	tail_duration:Timecode=SLATE_TAIL_DURATION) -> ReelInfo:
+	sequence:avb.trackgroups.Composition) -> ReelInfo:
 	"""Get the properties of a given sequence"""
 	
 	return ReelInfo(
@@ -102,8 +76,6 @@ def get_reel_info(
 
 def get_reel_info_from_path(
 	bin_path:pathlib.Path,
-	head_duration:Timecode=SLATE_HEAD_DURATION,
-	tail_duration:Timecode=SLATE_TAIL_DURATION,
 	sort_by:avbutils.BinSorting=avbutils.BinSorting.NAME)-> ReelInfo:
 	"""Given a Avid bin's file path, parse the bin and get the latest sequence info"""
 
@@ -125,12 +97,11 @@ def get_reel_info_from_path(
 		
 		# Get info from latest reel
 		try:
-			sequence_info = get_reel_info(latest_sequence, head_duration=head_duration, tail_duration=tail_duration)
+			sequence_info = get_reel_info(latest_sequence)
 		except Exception as e:
 			raise Exception(f"Error parsing sequence: {e}")
 	
 	return sequence_info
-
 
 
 def get_latest_stats_from_bins(bin_paths:list[pathlib.Path]) -> list[BinInfo]:
@@ -145,8 +116,6 @@ def get_latest_stats_from_bins(bin_paths:list[pathlib.Path]) -> list[BinInfo]:
 		future_info = {
 			ex.submit(get_reel_info_from_path,
 				bin_path=bin_path,
-				head_duration=SLATE_HEAD_DURATION,
-				tail_duration=SLATE_TAIL_DURATION,
 				sort_by = BIN_SORTING_METHOD): bin_path for bin_path in bin_paths
 		}
 
@@ -168,36 +137,5 @@ def get_latest_stats_from_bins(bin_paths:list[pathlib.Path]) -> list[BinInfo]:
 				path = bin_path,
 				lock = lock
 			))
-			
-			# While we're here: Figure out the padding for the Reel Name column
-			HEADERS["Reel Name"] = max(HEADERS.get("Reel Name",0), len(info.sequence_name))
 	
 	return parsed_info
-	
-
-def print_trts(parsed_info:list[BinInfo]):
-	"""Print the results"""
-
-	# List the results
-	# This is terrible code but you get the idea
-	print("")
-
-	print(COLUMN_SPACING.join(colname.ljust(pad) for colname, pad in HEADERS.items()))
-	print(COLUMN_SPACING.join('=' * pad for _, pad in HEADERS.items()))
-
-	for info in sorted(parsed_info, key=lambda x: avbutils.human_sort(x.reel.sequence_name)):
-		print(COLUMN_SPACING.join(x for x in [
-			info.reel.sequence_name.ljust(HEADERS.get("Reel Name")),
-			str(info.reel.duration_adjusted).rjust(HEADERS.get("Reel TRT")),
-			info.reel.lfoa.rjust(HEADERS.get("LFOA")),
-			str(info.reel.date_modified).rjust(HEADERS.get("Date Modified")),
-			info.lock.ljust(HEADERS.get("Bin Locked")) if info.lock else '-',
-		]))
-	
-	if TRT_ADJUST_DURATION.frame_number != 0:
-		print("")
-		print(f"+ Additional adjustment: {TRT_ADJUST_DURATION}")
-	
-	print("")
-	print(f"* Total Runtime: {max(sum(info.reel.duration_adjusted for info in parsed_info) + TRT_ADJUST_DURATION, 0)}")
-	print("")
