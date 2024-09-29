@@ -56,11 +56,6 @@ def get_reel_number_from_timeline_attributes(attrs:avb.components.core.AVBProper
 	except KeyError:
 		return None
 
-def get_locators_from_sequence(sequence=avb.trackgroups.Composition):
-	"""TODO: Return a list of `AVBLocator`s"""
-
-	return list()
-
 def get_reel_info(
 	sequence:avb.trackgroups.Composition) -> ReelInfo:
 	"""Get the properties of a given sequence"""
@@ -71,7 +66,7 @@ def get_reel_info(
 		date_modified=sequence.last_modified,
 		reel_number=get_reel_number_from_timeline_attributes(sequence.attributes),
 		duration_total=Timecode(sequence.length, rate=round(sequence.edit_rate)),
-		locators=get_locators_from_sequence(sequence)
+		locators=avbutils.get_markers_from_timeline(sequence)
 	)
 
 def get_reel_info_from_path(
