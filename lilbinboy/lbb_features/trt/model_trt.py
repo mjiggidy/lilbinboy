@@ -24,6 +24,8 @@ class LBMarkerIcon(QtGui.QIcon):
 
 		self._name = color
 		self._color = QtGui.QColor().fromString(color)
+
+		self.addPixmap(self._create_pixmap())
 	
 	def color(self) -> QtGui.QColor:
 		return self._color
@@ -31,22 +33,23 @@ class LBMarkerIcon(QtGui.QIcon):
 	def name(self) -> str:
 		return self._name
 	
-	def paint(self, painter:QtGui.QPainter, rect:QtCore.QRect, alignment=QtGui.Qt.AlignmentFlag.AlignCenter, mode=QtGui.QIcon.Mode.Normal, state=QtGui.QIcon.State.Off):
-		brush = QtGui.QBrush(self.color())
-		
-		painter.setBrush(brush)
-		painter.drawRoundedRect(rect, 25, 25, QtGui.Qt.SizeMode.RelativeSize)
+	def _create_pixmap(self):
+		pixmap = QtGui.QPixmap(32, 32)
+		pixmap.fill(QtGui.QColor(0,0,0,0))
 
-	def pixmap(self, size:QtCore.QSize, mode:QtGui.QIcon.Mode =QtGui.QIcon.Mode.Normal, state: QtGui.QIcon.State=QtGui.QIcon.State.Off) -> QtGui.QPixmap:
-		# Create a pixmap of the requested size
-		pixmap = QtGui.QPixmap(size)
-		pixmap.fill(QtCore.Qt.GlobalColor.transparent)  # Start with a transparent pixmap
-
-		# Create a QPainter to draw on the pixmap
 		painter = QtGui.QPainter(pixmap)
-		self.paint(painter, pixmap.rect(), mode=mode, state=state)
-		painter.end()
+		painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+
+		pen = QtGui.QPen()
+		pen.setWidth(2)
+		painter.setPen(pen)
 		
+		brush = QtGui.QBrush(self.color())
+		painter.setBrush(brush)
+
+		painter.drawRoundedRect(QtCore.QRect(5, 2, pixmap.rect().height()/2, pixmap.rect().height()-4), 75, 50, QtGui.Qt.SizeMode.RelativeSize)
+		painter.end()
+
 		return pixmap
 
 
