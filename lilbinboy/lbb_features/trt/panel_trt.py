@@ -2,7 +2,7 @@ import dataclasses, pathlib, re
 from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
 from ...lbb_common import LBUtilityTab
-from . import logic_trt, model_trt
+from . import dlg_marker, logic_trt, model_trt
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 
@@ -385,6 +385,14 @@ class LBTRTCalculator(LBUtilityTab):
 		self.list_trts.fit_headers()
 
 		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
+
+		self._marker_icons = model_trt.LBMarkerIcons()
+		print([c._color for c in self._marker_icons.ICONS.values()])
+
+		wnd_marker = dlg_marker.TRTMarkerMaker(self)
+		for marker in self._marker_icons:
+			wnd_marker.addMarker(marker)
+		wnd_marker.exec()
 
 	def setModel(self, model:model_trt.TRTModel):
 		self._model = model

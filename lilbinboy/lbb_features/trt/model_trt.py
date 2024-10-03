@@ -1,8 +1,53 @@
 import pathlib
+import avbutils
 from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
 from . import logic_trt
 
+class LBMarkerIcons:
+
+	ICONS:dict[str, "LBMarkerIcon"] = {}
+
+	def __init__(self):
+
+		for color in avbutils.MarkerColors:
+			self.ICONS.update({color.value: LBMarkerIcon(color.value)})
+	
+	def __iter__(self):
+		return iter(self.ICONS.values())
+
+class LBMarkerIcon(QtGui.QIcon):
+	
+	def __init__(self, color:str|None):
+
+		super().__init__()
+
+		self._name = color
+		self._color = QtGui.QColor().fromString(color)
+	
+	def color(self) -> QtGui.QColor:
+		return self._color
+	
+	def name(self) -> str:
+		return self._name
+	
+	def paint(self, painter:QtGui.QPainter, rect:QtCore.QRect, alignment=QtGui.Qt.AlignmentFlag.AlignCenter, mode=QtGui.QIcon.Mode.Normal, state=QtGui.QIcon.State.Off):
+		brush = QtGui.QBrush(self.color())
+		
+		painter.setBrush(brush)
+		painter.drawRoundedRect(rect, 25, 25, QtGui.Qt.SizeMode.RelativeSize)
+
+	def pixmap(self, size:QtCore.QSize, mode:QtGui.QIcon.Mode =QtGui.QIcon.Mode.Normal, state: QtGui.QIcon.State=QtGui.QIcon.State.Off) -> QtGui.QPixmap:
+		# Create a pixmap of the requested size
+		pixmap = QtGui.QPixmap(size)
+		pixmap.fill(QtCore.Qt.GlobalColor.transparent)  # Start with a transparent pixmap
+
+		# Create a QPainter to draw on the pixmap
+		painter = QtGui.QPainter(pixmap)
+		self.paint(painter, pixmap.rect(), mode=mode, state=state)
+		painter.end()
+		
+		return pixmap
 
 
 class TRTTreeViewHeaderItem(QtCore.QObject):
@@ -46,6 +91,9 @@ class TRTTreeViewHeaderPath(TRTTreeViewHeaderItem):
 		path_data = bin_dict.get(self.field(), pathlib.Path())
 
 		if role == QtCore.Qt.ItemDataRole.DisplayRole:
+			return path_data.name
+		
+		if role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
 			return path_data.name
 		
 		elif role == QtCore.Qt.ItemDataRole.ToolTipRole:
