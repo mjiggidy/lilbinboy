@@ -41,7 +41,8 @@ class LBMarkerIcon(QtGui.QIcon):
 		painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
 
 		pen = QtGui.QPen()
-		pen.setWidth(2)
+		pen.setWidth(3)
+		pen.setColor(self.color().darker(300))
 		painter.setPen(pen)
 		
 		brush = QtGui.QBrush(self.color())
