@@ -387,12 +387,11 @@ class LBTRTCalculator(LBUtilityTab):
 		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
 
 		self._marker_icons = model_trt.LBMarkerIcons()
-		print([c._color for c in self._marker_icons.ICONS.values()])
-
-		wnd_marker = dlg_marker.TRTMarkerMaker(self)
-		for marker in self._marker_icons:
-			wnd_marker.addMarker(marker)
-		wnd_marker.exec()
+		
+		#wnd_marker = dlg_marker.TRTMarkerMaker(self)
+		#for marker in self._marker_icons:
+		#	wnd_marker.addMarker(marker)
+		#wnd_marker.exec()
 
 	def setModel(self, model:model_trt.TRTModel):
 		self._model = model
