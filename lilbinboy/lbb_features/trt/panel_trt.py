@@ -450,7 +450,7 @@ class LBTRTCalculator(LBUtilityTab):
 			self.wnd_marker.addMarker(marker)
 		
 		self.wnd_marker.sig_save_preset.connect(self.save_marker_preset)
-		self.wnd_marker.exec()
+		#self.wnd_marker.exec()
 
 		self.update_marker_presets()
 		self.trt_trims.sig_marker_preset_editor_requested.connect(self.wnd_marker.exec)
