@@ -199,6 +199,10 @@ class TRTControlsTrims(TRTControls):
 
 	sig_head_trim_changed = QtCore.Signal(Timecode)
 	sig_tail_trim_changed = QtCore.Signal(Timecode)
+
+	sig_head_trim_marker_preset_changed = QtCore.Signal(str)
+	sig_tail_trim_marker_preset_changed = QtCore.Signal(str)
+
 	sig_marker_preset_editor_requested = QtCore.Signal()
 
 	def __init__(self):
@@ -212,6 +216,12 @@ class TRTControlsTrims(TRTControls):
 		self._from_head = LBSpinBoxTC()
 		self._from_tail = LBSpinBoxTC()
 
+		self._use_head_marker = QtWidgets.QCheckBox()
+		self._use_tail_marker = QtWidgets.QCheckBox()
+
+		self._from_head_marker = LBMarkerPresetComboBox()
+		self._from_tail_marker = LBMarkerPresetComboBox()
+
 		self._icon_mark_in  = QtWidgets.QLabel(pixmap=QtGui.QPixmap(self.PATH_MARK_IN).scaledToHeight(16, QtCore.Qt.TransformationMode.SmoothTransformation))
 		self._icon_mark_out = QtWidgets.QLabel(pixmap=QtGui.QPixmap(self.PATH_MARK_OUT).scaledToHeight(16, QtCore.Qt.TransformationMode.SmoothTransformation))
 
@@ -222,8 +232,7 @@ class TRTControlsTrims(TRTControls):
 		self.layout().addItem(QtWidgets.QSpacerItem(0,2, QtWidgets.QSizePolicy.Policy.MinimumExpanding),0,3)
 		
 		# Trim from Head / Marker
-		self._from_head_marker = LBMarkerPresetComboBox()
-		self.layout().addWidget(QtWidgets.QCheckBox(), 1, 0)
+		self.layout().addWidget(self._use_head_marker, 1, 0)
 		self.layout().addWidget(self._from_head_marker, 1, 1)
 		self.layout().addWidget(QtWidgets.QLabel("Or FFOA Locator", buddy=self._from_head), 1, 2)
 
@@ -233,16 +242,21 @@ class TRTControlsTrims(TRTControls):
 		self.layout().addWidget(self._icon_mark_out, 0, 6)
 
 		# Trim from Tail / Marker
-		self._from_tail_marker = LBMarkerPresetComboBox()
 		self.layout().addWidget(QtWidgets.QLabel("Or LFOA Locator", alignment=QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter), 1, 4)
 		self.layout().addWidget(self._from_tail_marker, 1, 5)
-		self.layout().addWidget(QtWidgets.QCheckBox(), 1, 6)
+		self.layout().addWidget(self._use_tail_marker, 1, 6)
 
 		self._from_head.sig_timecode_changed.connect(self.sig_head_trim_changed)
 		self._from_tail.sig_timecode_changed.connect(self.sig_tail_trim_changed)
 
-		self._from_head_marker.sig_edit_marker_presets.connect(self.sig_marker_preset_editor_requested)
-		self._from_tail_marker.sig_edit_marker_presets.connect(self.sig_marker_preset_editor_requested)
+		self._use_head_marker.checkStateChanged.connect(lambda: self._from_head_marker.setEnabled(self._use_head_marker.isChecked()))
+		self._use_tail_marker.checkStateChanged.connect(lambda: self._from_tail_marker.setEnabled(self._use_tail_marker.isChecked()))
+
+		self._from_head_marker.sig_marker_preset_editor_requested.connect(self.sig_marker_preset_editor_requested)
+		self._from_head_marker.sig_marker_preset_changed.connect(self.sig_head_trim_marker_preset_changed)
+		
+		self._from_tail_marker.sig_marker_preset_editor_requested.connect(self.sig_marker_preset_editor_requested)
+		self._from_tail_marker.sig_marker_preset_changed.connect(self.sig_tail_trim_marker_preset_changed)
 	
 	@QtCore.Slot(Timecode)
 	def set_head_trim(self, timecode:Timecode):
@@ -261,44 +275,70 @@ class TRTControlsTrims(TRTControls):
 
 class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 
-	sig_edit_marker_presets = QtCore.Signal()
+	sig_marker_preset_editor_requested = QtCore.Signal()
 	"""Request the editor"""
+
+	sig_marker_preset_changed = QtCore.Signal(str)
 	
 	def __init__(self, *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
-		self.currentIndexChanged.connect(self.updateToolTip)
-		self.currentIndexChanged.connect(self.checkIfEditorRequested)
+
+		self._last_selected_preset_name = None
+		self._allow_edit_option = True
+
+		self.currentIndexChanged.connect(self.processSelection)
+
+	def setAllowEditOption(self, allow_editing:bool):
+		self._allow_edit_option = bool(allow_editing)
+	
+	def allowEditOption(self) -> bool:
+		return self._allow_edit_option
 	
 	def setMarkerPresets(self, marker_presets:dict[str, model_trt.LBMarkerPreset]):
 
-		current_selection = self.currentText()
 		self.clear()
 
 		for preset_name, preset_data in marker_presets.items():
 			self.addItem(model_trt.LBMarkerIcon(preset_data.color), preset_name, preset_data)
 
-		self.insertSeparator(len(marker_presets))
-		self.addItem("Add/Edit...")
+		# Add edit option if it's there
+		if self.allowEditOption():
+			self.insertSeparator(len(marker_presets))
+			self.addItem("Add/Edit...")
 
-		self.setCurrentText(current_selection)
+		self.setCurrentIndex(self.findData(self._last_selected_preset_name))
 	
 	@QtCore.Slot(int)
-	def checkIfEditorRequested(self, index:int):
-		if self.currentData() is None:
-			self.sig_edit_marker_presets.emit()
+	def processSelection(self, index:int):
+		"""Validate and process the pickins"""
 
-	@QtCore.Slot(int)
-	def updateToolTip(self, index:int):
-		self.setToolTip(self.formatForToolTip(self.currentData()) if self.currentData() else "No Preset Chosen")
-	
-	def formatForToolTip(self, marker_preset:model_trt.LBMarkerPreset) -> str:
+		if self.currentData() is not None:
+			self._last_selected_preset_name = self.currentData()
+			self.updateToolTip()
+			self.sig_marker_preset_changed.emit(self._last_selected_preset_name)
 
-		return "Color: {color}; Comment: {comment}; Author: {author}".format(
-			color = marker_preset.color or "(Any)",
-			comment = ("\"" + marker_preset.comment + "\"") if marker_preset.comment else "(Any)",
-			author = ("\"" + marker_preset.author + "\"") if marker_preset.author else "(Any)",
-		)
+		# If None (Edit selected), and it wasn't before, put the selection back to the previously-selected marker and request the editor
+		# I think this'll solve some recursive dialog boxes that do be happenin
+		elif self._last_selected_preset_name is not None and self.allowEditOption():
+			self.setCurrentIndex(self.findData(self._last_selected_preset_name))
+			self.sig_marker_preset_editor_requested.emit()
+
+	@QtCore.Slot()
+	def updateToolTip(self):
+
+		marker_preset = self.currentData()
+		
+		if marker_preset is None:
+			return "No Marker Preset Chosen"
+		
+		else:
+			return "Color: {color}; Comment: {comment}; Author: {author}".format(
+				color = marker_preset.color or "(Any)",
+				comment = ("\"" + marker_preset.comment + "\"") if marker_preset.comment else "(Any)",
+				author = ("\"" + marker_preset.author + "\"") if marker_preset.author else "(Any)",
+			)
+
 
 class LBSpinBoxTC(QtWidgets.QSpinBox):
 
@@ -388,8 +428,6 @@ class LBTRTCalculator(LBUtilityTab):
 		self.list_trts.setModel(model_trt.TRTViewSortModel())
 		self.list_trts.model().setSortRole(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
 
-		self._marker_presets = QtCore.QSettings().value("lbb/marker_presets", dict())
-
 		self.prog_loading = TRTBinLoadingProgressBar()
 
 		self.list_viewmodel.set_headers([
@@ -430,8 +468,13 @@ class LBTRTCalculator(LBUtilityTab):
 		self.trt_trims.set_tail_trim(self.model().trimFromTail())
 
 		self._setupWidgets()
+
 		self.trt_trims.sig_head_trim_changed.connect(self.save_trims)
 		self.trt_trims.sig_tail_trim_changed.connect(self.save_trims)
+		
+		self.trt_trims.sig_head_trim_marker_preset_changed.connect(self.set_head_trim_marker_preset)
+		self.trt_trims.sig_tail_trim_marker_preset_changed.connect(self.set_tail_trim_marker_preset)
+		
 		self.trim_total.sig_timecode_changed.connect(self.save_trims)
 
 		self._model.sig_data_changed.connect(self.update_summary)
@@ -442,28 +485,42 @@ class LBTRTCalculator(LBUtilityTab):
 		self.list_trts.fit_headers()
 
 		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
-
-		self._marker_icons = model_trt.LBMarkerIcons()
-		
-		self.wnd_marker = dlg_marker.TRTMarkerMaker(self)
-		for marker in self._marker_icons:
-			self.wnd_marker.addMarker(marker)
-		
-		self.wnd_marker.sig_save_preset.connect(self.save_marker_preset)
-		#self.wnd_marker.exec()
+		self._model.set_marker_presets(QtCore.QSettings().value("lbb/marker_presets", dict()))
 
 		self.update_marker_presets()
-		self.trt_trims.sig_marker_preset_editor_requested.connect(self.wnd_marker.exec)
+		self.trt_trims.sig_marker_preset_editor_requested.connect(self.show_marker_maker_dialog)
 	
 	@QtCore.Slot(str, model_trt.LBMarkerPreset)
 	def save_marker_preset(self, preset_name:str, marker_preset:model_trt.LBMarkerPreset):
-		self._marker_presets.update({preset_name: marker_preset})
-		QtCore.QSettings().setValue("lbb/marker_presets", self._marker_presets)
+		presets = self.model().marker_presets()
+		presets.update({preset_name: marker_preset})
+		self.model().set_marker_presets(presets)
+		
+		QtCore.QSettings().setValue("lbb/marker_presets", self.model().marker_presets())
 		self.update_marker_presets()
 	
+	@QtCore.Slot()
+	def show_marker_maker_dialog(self):
+		wnd_marker = dlg_marker.TRTMarkerMaker(self)
+		
+		for marker in model_trt.LBMarkerIcons():
+			wnd_marker.addMarker(marker)
+		wnd_marker.set_marker_presets(self.model().marker_presets())
+		
+		wnd_marker.sig_save_preset.connect(self.save_marker_preset)
+
+		wnd_marker.exec()
+	
 	def update_marker_presets(self):
-		self.trt_trims.set_marker_presets(self._marker_presets)
-		self.wnd_marker.set_marker_presets(self._marker_presets)
+		self.trt_trims.set_marker_presets(self.model().marker_presets())
+
+	@QtCore.Slot(str)
+	def set_head_trim_marker_preset(self, preset_name:str):
+		print("Head", preset_name)
+
+	@QtCore.Slot(str)
+	def set_tail_trim_marker_preset(self, preset_name:str):
+		print("Tail", preset_name)
 
 	def setModel(self, model:model_trt.TRTModel):
 		self._model = model

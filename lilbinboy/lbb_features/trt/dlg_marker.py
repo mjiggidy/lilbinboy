@@ -78,8 +78,14 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.update_completers()
 	
 	def update_completers(self):
-		authors_list = [m.author for m in self._marker_presets.values() if m.author is not None]
-		comments_list = [m.comment for m in self._marker_presets.values() if m.comment is not None]
 
-		self.txt_marker_comment.setCompleter(QtWidgets.QCompleter(comments_list))
-		self.txt_marker_author.setCompleter(QtWidgets.QCompleter(authors_list))
+		completer_comments = QtWidgets.QCompleter(sorted(set([m.comment for m in self._marker_presets.values() if m.comment is not None])))
+		completer_comments.setCaseSensitivity(QtCore.Qt.CaseSensitivity.CaseInsensitive)
+		completer_comments.setCompletionMode(QtWidgets.QCompleter.CompletionMode.UnfilteredPopupCompletion)
+
+		completer_authors = QtWidgets.QCompleter(sorted(set([m.author for m in self._marker_presets.values() if m.author is not None])))
+		completer_authors.setCaseSensitivity(QtCore.Qt.CaseSensitivity.CaseInsensitive)
+		completer_authors.setCompletionMode(QtWidgets.QCompleter.CompletionMode.UnfilteredPopupCompletion)
+
+		self.txt_marker_comment.setCompleter(completer_comments)
+		self.txt_marker_author.setCompleter(completer_authors)

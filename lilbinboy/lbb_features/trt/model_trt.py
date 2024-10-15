@@ -262,6 +262,7 @@ class TRTTreeViewHeaderDateTime(TRTTreeViewHeaderItem):
 class TRTModel(QtCore.QObject):
 
 	sig_data_changed = QtCore.Signal()
+	sig_marker_presets_changed = QtCore.Signal()
 
 	#LFOA_PERFS_PER_FOOT = 8 # 35.8
 	LFOA_PERFS_PER_FOOT = 16 # 35.4
@@ -286,6 +287,7 @@ class TRTModel(QtCore.QObject):
 		super().__init__()
 
 		self._data = bin_info_list or []
+		self._marker_presets = dict()
 
 		# TODO: Deal with
 		self._fps = 24
@@ -364,6 +366,13 @@ class TRTModel(QtCore.QObject):
 	def set_data(self, bin_info_list:list[logic_trt.BinInfo]):
 		self._data = bin_info_list
 		self.sig_data_changed.emit()
+	
+	def set_marker_presets(self, marker_presets:dict[str, LBMarkerPreset]):
+		self._marker_presets = marker_presets
+		self.sig_marker_presets_changed.emit()
+	
+	def marker_presets(self) -> dict[str, LBMarkerPreset]:
+		return self._marker_presets
 	
 	def add_sequence(self, bin_info:logic_trt.BinInfo):
 		self._data.append(bin_info)
