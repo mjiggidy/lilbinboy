@@ -199,6 +199,7 @@ class TRTControlsTrims(TRTControls):
 
 	sig_head_trim_changed = QtCore.Signal(Timecode)
 	sig_tail_trim_changed = QtCore.Signal(Timecode)
+	sig_marker_preset_editor_requested = QtCore.Signal()
 
 	def __init__(self):
 
@@ -239,6 +240,9 @@ class TRTControlsTrims(TRTControls):
 
 		self._from_head.sig_timecode_changed.connect(self.sig_head_trim_changed)
 		self._from_tail.sig_timecode_changed.connect(self.sig_tail_trim_changed)
+
+		self._from_head_marker.sig_edit_marker_presets.connect(self.sig_marker_preset_editor_requested)
+		self._from_tail_marker.sig_edit_marker_presets.connect(self.sig_marker_preset_editor_requested)
 	
 	@QtCore.Slot(Timecode)
 	def set_head_trim(self, timecode:Timecode):
@@ -257,17 +261,18 @@ class TRTControlsTrims(TRTControls):
 
 class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 
+	sig_edit_marker_presets = QtCore.Signal()
+	"""Request the editor"""
 	
 	def __init__(self, *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
-
 		self.currentIndexChanged.connect(self.updateToolTip)
+		self.currentIndexChanged.connect(self.checkIfEditorRequested)
 	
 	def setMarkerPresets(self, marker_presets:dict[str, model_trt.LBMarkerPreset]):
 
 		current_selection = self.currentText()
-
 		self.clear()
 
 		for preset_name, preset_data in marker_presets.items():
@@ -279,8 +284,12 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 		self.setCurrentText(current_selection)
 	
 	@QtCore.Slot(int)
-	def updateToolTip(self, index:int):
+	def checkIfEditorRequested(self, index:int):
+		if self.currentData() is None:
+			self.sig_edit_marker_presets.emit()
 
+	@QtCore.Slot(int)
+	def updateToolTip(self, index:int):
 		self.setToolTip(self.formatForToolTip(self.currentData()) if self.currentData() else "No Preset Chosen")
 	
 	def formatForToolTip(self, marker_preset:model_trt.LBMarkerPreset) -> str:
@@ -419,7 +428,6 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self.trt_trims.set_head_trim(self.model().trimFromHead())
 		self.trt_trims.set_tail_trim(self.model().trimFromTail())
-		self.trt_trims.set_marker_presets(self._marker_presets)
 
 		self._setupWidgets()
 		self.trt_trims.sig_head_trim_changed.connect(self.save_trims)
@@ -443,15 +451,19 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		self.wnd_marker.sig_save_preset.connect(self.save_marker_preset)
 		self.wnd_marker.exec()
+
+		self.update_marker_presets()
+		self.trt_trims.sig_marker_preset_editor_requested.connect(self.wnd_marker.exec)
 	
-	@QtCore.Slot(model_trt.LBMarkerPreset)
-	def save_marker_preset(self, marker_preset:model_trt.LBMarkerPreset):
-		self._marker_presets.update({"temp2": marker_preset})
+	@QtCore.Slot(str, model_trt.LBMarkerPreset)
+	def save_marker_preset(self, preset_name:str, marker_preset:model_trt.LBMarkerPreset):
+		self._marker_presets.update({preset_name: marker_preset})
 		QtCore.QSettings().setValue("lbb/marker_presets", self._marker_presets)
 		self.update_marker_presets()
 	
 	def update_marker_presets(self):
 		self.trt_trims.set_marker_presets(self._marker_presets)
+		self.wnd_marker.set_marker_presets(self._marker_presets)
 
 	def setModel(self, model:model_trt.TRTModel):
 		self._model = model

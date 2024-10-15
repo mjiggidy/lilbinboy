@@ -4,7 +4,7 @@ from . import model_trt
 
 class TRTMarkerMaker(QtWidgets.QDialog):
 
-	sig_save_preset = QtCore.Signal(model_trt.LBMarkerPreset)
+	sig_save_preset = QtCore.Signal(str, model_trt.LBMarkerPreset)
 
 	def __init__(self, *args, **kwargs):
 
@@ -13,9 +13,12 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.setWindowTitle("Match Marker Criteria")
 		self.setLayout(QtWidgets.QVBoxLayout())
 
+		self._marker_presets = dict()
+
 		self.cmb_marker_color = QtWidgets.QComboBox()
 		self.txt_marker_comment = QtWidgets.QLineEdit()
 		self.txt_marker_author  = QtWidgets.QLineEdit()
+		self.txt_preset_name = QtWidgets.QLineEdit()
 		self.btn_box = QtWidgets.QDialogButtonBox()
 
 		self._setupWidgets()
@@ -37,6 +40,10 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.txt_marker_author.setPlaceholderText("(Any)")
 		grp_edit.layout().addWidget(self.txt_marker_author, 1, 2)
 
+		grp_edit.layout().addWidget(QtWidgets.QLabel("Preset Name"), 0, 3)
+		self.txt_preset_name.setPlaceholderText("Required")
+		grp_edit.layout().addWidget(self.txt_preset_name, 1, 3)
+
 		self.layout().addWidget(grp_edit)
 
 
@@ -46,6 +53,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	def _setupSignals(self):
 
 		self.btn_box.accepted.connect(self.makeMarkerPreset)
+		self.btn_box.accepted.connect(self.accept)
 		self.btn_box.rejected.connect(self.reject)
 
 		self.cmb_marker_color.currentIndexChanged.connect(lambda x: print(self.cmb_marker_color.currentIndex()))
@@ -57,9 +65,21 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	@QtCore.Slot()
 	def makeMarkerPreset(self) -> model_trt.LBMarkerPreset:
 		"""Create a marker preset from the current settings"""
-		
-		self.sig_save_preset.emit(model_trt.LBMarkerPreset(
+
+		self.sig_save_preset.emit(self.txt_preset_name.text() or "temp", model_trt.LBMarkerPreset(
 			color   = self.cmb_marker_color.currentText(),	# TODO: Use data in preparation for (Any) and such
 			comment = self.txt_marker_comment.text() or None,
 			author  = self.txt_marker_author.text() or None
 		))
+	
+	def set_marker_presets(self, marker_presets:dict[str, model_trt.LBMarkerPreset]):
+		self._marker_presets = marker_presets
+
+		self.update_completers()
+	
+	def update_completers(self):
+		authors_list = [m.author for m in self._marker_presets.values() if m.author is not None]
+		comments_list = [m.comment for m in self._marker_presets.values() if m.comment is not None]
+
+		self.txt_marker_comment.setCompleter(QtWidgets.QCompleter(comments_list))
+		self.txt_marker_author.setCompleter(QtWidgets.QCompleter(authors_list))
