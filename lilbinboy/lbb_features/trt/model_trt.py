@@ -1,4 +1,4 @@
-import pathlib
+import pathlib, dataclasses
 import avbutils
 from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
@@ -15,6 +15,14 @@ class LBMarkerIcons:
 	
 	def __iter__(self):
 		return iter(self.ICONS.values())
+
+@dataclasses.dataclass()
+class LBMarkerPreset:
+	"""Marker criteria presets"""
+
+	color: "LBMarkerIcon | None"
+	comment: str | None
+	author:  str | None
 
 class LBMarkerIcon(QtGui.QIcon):
 	

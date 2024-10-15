@@ -214,21 +214,27 @@ class TRTControlsTrims(TRTControls):
 		self._icon_mark_in  = QtWidgets.QLabel(pixmap=QtGui.QPixmap(self.PATH_MARK_IN).scaledToHeight(16, QtCore.Qt.TransformationMode.SmoothTransformation))
 		self._icon_mark_out = QtWidgets.QLabel(pixmap=QtGui.QPixmap(self.PATH_MARK_OUT).scaledToHeight(16, QtCore.Qt.TransformationMode.SmoothTransformation))
 
+		# Trim from Head / Duration
 		self.layout().addWidget(self._icon_mark_in, 0, 0)
 		self.layout().addWidget(self._from_head, 0, 1)
 		self.layout().addWidget(QtWidgets.QLabel("From Head"), 0, 2)
 		self.layout().addItem(QtWidgets.QSpacerItem(0,2, QtWidgets.QSizePolicy.Policy.MinimumExpanding),0,3)
 		
+		# Trim from Head / Marker
+		self._from_head_marker = LBMarkerPresetComboBox()
 		self.layout().addWidget(QtWidgets.QCheckBox(), 1, 0)
-		self.layout().addWidget(QtWidgets.QComboBox(), 1, 1)
+		self.layout().addWidget(self._from_head_marker, 1, 1)
 		self.layout().addWidget(QtWidgets.QLabel("Or FFOA Locator", buddy=self._from_head), 1, 2)
 
+		# Trim from Tail / Duration
 		self.layout().addWidget(QtWidgets.QLabel("From Tail", alignment=QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter, buddy=self._from_tail), 0, 4)
 		self.layout().addWidget(self._from_tail, 0, 5)
 		self.layout().addWidget(self._icon_mark_out, 0, 6)
 
+		# Trim from Tail / Marker
+		self._from_tail_marker = LBMarkerPresetComboBox()
 		self.layout().addWidget(QtWidgets.QLabel("Or LFOA Locator", alignment=QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter), 1, 4)
-		self.layout().addWidget(QtWidgets.QComboBox(), 1, 5)
+		self.layout().addWidget(self._from_tail_marker, 1, 5)
 		self.layout().addWidget(QtWidgets.QCheckBox(), 1, 6)
 
 		self._from_head.sig_timecode_changed.connect(self.sig_head_trim_changed)
@@ -241,8 +247,49 @@ class TRTControlsTrims(TRTControls):
 	@QtCore.Slot(Timecode)
 	def set_tail_trim(self, timecode:Timecode):
 		self._from_tail.setTimecode(timecode)
+	
+	@QtCore.Slot(dict)
+	def set_marker_presets(self, marker_presets:dict[str, model_trt.LBMarkerPreset]):
+		"""Update FFOA and LFOA marker combo boxes"""
+		self._from_head_marker.setMarkerPresets(marker_presets)
+		self._from_tail_marker.setMarkerPresets(marker_presets)
 
 
+class LBMarkerPresetComboBox(QtWidgets.QComboBox):
+
+	
+	def __init__(self, *args, **kwargs):
+
+		super().__init__(*args, **kwargs)
+
+		self.currentIndexChanged.connect(self.updateToolTip)
+	
+	def setMarkerPresets(self, marker_presets:dict[str, model_trt.LBMarkerPreset]):
+
+		current_selection = self.currentText()
+
+		self.clear()
+
+		for preset_name, preset_data in marker_presets.items():
+			self.addItem(model_trt.LBMarkerIcon(preset_data.color), preset_name, preset_data)
+
+		self.insertSeparator(len(marker_presets))
+		self.addItem("Add/Edit...")
+
+		self.setCurrentText(current_selection)
+	
+	@QtCore.Slot(int)
+	def updateToolTip(self, index:int):
+
+		self.setToolTip(self.formatForToolTip(self.currentData()) if self.currentData() else "No Preset Chosen")
+	
+	def formatForToolTip(self, marker_preset:model_trt.LBMarkerPreset) -> str:
+
+		return "Color: {color}; Comment: {comment}; Author: {author}".format(
+			color = marker_preset.color or "(Any)",
+			comment = ("\"" + marker_preset.comment + "\"") if marker_preset.comment else "(Any)",
+			author = ("\"" + marker_preset.author + "\"") if marker_preset.author else "(Any)",
+		)
 
 class LBSpinBoxTC(QtWidgets.QSpinBox):
 
@@ -327,11 +374,12 @@ class LBTRTCalculator(LBUtilityTab):
 		self._model = model_trt.TRTModel()
 		self.list_trts = model_trt.TRTTreeView()
 		self.trt_summary = TRTSummary()
-		
 		self.list_viewmodel = model_trt.TRTViewModel(self.model())
 		
 		self.list_trts.setModel(model_trt.TRTViewSortModel())
 		self.list_trts.model().setSortRole(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
+
+		self._marker_presets = QtCore.QSettings().value("lbb/marker_presets", dict())
 
 		self.prog_loading = TRTBinLoadingProgressBar()
 
@@ -371,6 +419,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self.trt_trims.set_head_trim(self.model().trimFromHead())
 		self.trt_trims.set_tail_trim(self.model().trimFromTail())
+		self.trt_trims.set_marker_presets(self._marker_presets)
 
 		self._setupWidgets()
 		self.trt_trims.sig_head_trim_changed.connect(self.save_trims)
@@ -388,10 +437,21 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self._marker_icons = model_trt.LBMarkerIcons()
 		
-		#wnd_marker = dlg_marker.TRTMarkerMaker(self)
-		#for marker in self._marker_icons:
-		#	wnd_marker.addMarker(marker)
-		#wnd_marker.exec()
+		self.wnd_marker = dlg_marker.TRTMarkerMaker(self)
+		for marker in self._marker_icons:
+			self.wnd_marker.addMarker(marker)
+		
+		self.wnd_marker.sig_save_preset.connect(self.save_marker_preset)
+		self.wnd_marker.exec()
+	
+	@QtCore.Slot(model_trt.LBMarkerPreset)
+	def save_marker_preset(self, marker_preset:model_trt.LBMarkerPreset):
+		self._marker_presets.update({"temp2": marker_preset})
+		QtCore.QSettings().setValue("lbb/marker_presets", self._marker_presets)
+		self.update_marker_presets()
+	
+	def update_marker_presets(self):
+		self.trt_trims.set_marker_presets(self._marker_presets)
 
 	def setModel(self, model:model_trt.TRTModel):
 		self._model = model
