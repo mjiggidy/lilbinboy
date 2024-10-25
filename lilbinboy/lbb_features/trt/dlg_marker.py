@@ -1,10 +1,9 @@
-import dataclasses
 from PySide6 import QtWidgets, QtCore
-from . import model_trt
+from . import markers_trt
 
 class TRTMarkerMaker(QtWidgets.QDialog):
 
-	sig_save_preset = QtCore.Signal(str, model_trt.LBMarkerPreset)
+	sig_save_preset = QtCore.Signal(str, markers_trt.LBMarkerPreset)
 
 	def __init__(self, *args, **kwargs):
 
@@ -58,21 +57,21 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 
 		self.cmb_marker_color.currentIndexChanged.connect(lambda x: print(self.cmb_marker_color.currentIndex()))
 	
-	def addMarker(self, marker:model_trt.LBMarkerIcon):
+	def addMarker(self, marker:markers_trt.LBMarkerIcon):
 		self.cmb_marker_color.addItem(marker, marker.name())
 		self.cmb_marker_color.update()
 	
 	@QtCore.Slot()
-	def makeMarkerPreset(self) -> model_trt.LBMarkerPreset:
+	def makeMarkerPreset(self) -> markers_trt.LBMarkerPreset:
 		"""Create a marker preset from the current settings"""
 
-		self.sig_save_preset.emit(self.txt_preset_name.text() or "temp", model_trt.LBMarkerPreset(
+		self.sig_save_preset.emit(self.txt_preset_name.text() or "temp", markers_trt.LBMarkerPreset(
 			color   = self.cmb_marker_color.currentText(),	# TODO: Use data in preparation for (Any) and such
 			comment = self.txt_marker_comment.text() or None,
 			author  = self.txt_marker_author.text() or None
 		))
 	
-	def set_marker_presets(self, marker_presets:dict[str, model_trt.LBMarkerPreset]):
+	def set_marker_presets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
 		self._marker_presets = marker_presets
 
 		self.update_completers()

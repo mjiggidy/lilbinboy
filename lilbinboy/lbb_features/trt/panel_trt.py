@@ -1,8 +1,8 @@
 import dataclasses, pathlib, re
 from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
-from ...lbb_common import LBUtilityTab
-from . import dlg_marker, logic_trt, model_trt
+from ...lbb_common import LBUtilityTab, LBSpinBoxTC
+from . import dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 
@@ -59,49 +59,6 @@ class TRTThreadedBinGetter(QtCore.QRunnable):
 
 	def run(self):
 		self.signals().sig_got_bin_info.emit(logic_trt.get_latest_stats_from_bins([self._bin_path])[0])
-	
-
-class TRTListItem(QtWidgets.QTreeWidgetItem):
-	"""A TRTListItem"""
-
-	HEAD_TRIM = Timecode("8:00")
-	TAIL_TRIM = Timecode("4:00")
-	
-	def __init__(self, reel_info:logic_trt.ReelInfo):
-
-
-		super().__init__(QtWidgets.QTreeWidgetItem.ItemType.UserType)
-
-		# Icon
-		#self.setData(0, QtCore.Qt.ItemDataRole.DisplayRole, )
-
-		self.setData(1, QtCore.Qt.ItemDataRole.DisplayRole, str(reel_info.sequence_name))
-
-		# Full duration
-		self.setTextAlignment(2, QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
-		self.setData(2, QtCore.Qt.ItemDataRole.DisplayRole, str(reel_info.duration_total).lstrip("0:"))
-		self.setData(2, QtCore.Qt.ItemDataRole.FontRole, QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont))
-		self.setData(2, QtCore.Qt.ItemDataRole.InitialSortOrderRole, reel_info.duration_total.frame_number)
-
-
-		# LFOA F+F
-		tc_lfoa = reel_info.duration_total - self.TAIL_TRIM - 1 # -1?  Hmmmm....
-		ff = str(tc_lfoa.frame_number//16) + "+" + str(tc_lfoa.frame_number%16).zfill(2)
-		self.setTextAlignment(3, QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
-		self.setData(3, QtCore.Qt.ItemDataRole.DisplayRole, ff)
-		self.setData(3, QtCore.Qt.ItemDataRole.FontRole, QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont))
-
-		# Date modified
-		self.setData(4, QtCore.Qt.ItemDataRole.TextAlignmentRole, QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
-		self.setData(4, QtCore.Qt.ItemDataRole.FontRole, QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont))
-		self.setData(4, QtCore.Qt.ItemDataRole.DisplayRole, str(reel_info.date_modified))
-
-		# Trimmed duration
-		tc_trimmed = reel_info.duration_total - self.HEAD_TRIM - self.TAIL_TRIM
-		self.setTextAlignment(5, QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
-		self.setData(5, QtCore.Qt.ItemDataRole.DisplayRole, str(tc_trimmed).lstrip("0:"))
-		self.setData(5, QtCore.Qt.ItemDataRole.FontRole, QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont))
-		self.setData(5, QtCore.Qt.ItemDataRole.InitialSortOrderRole, tc_trimmed.frame_number)
 
 @dataclasses.dataclass(frozen=True)
 class TRTSummaryItem():
@@ -267,7 +224,7 @@ class TRTControlsTrims(TRTControls):
 		self._from_tail.setTimecode(timecode)
 	
 	@QtCore.Slot(dict)
-	def set_marker_presets(self, marker_presets:dict[str, model_trt.LBMarkerPreset]):
+	def set_marker_presets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
 		"""Update FFOA and LFOA marker combo boxes"""
 		self._from_head_marker.setMarkerPresets(marker_presets)
 		self._from_tail_marker.setMarkerPresets(marker_presets)
@@ -295,12 +252,12 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 	def allowEditOption(self) -> bool:
 		return self._allow_edit_option
 	
-	def setMarkerPresets(self, marker_presets:dict[str, model_trt.LBMarkerPreset]):
+	def setMarkerPresets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
 
 		self.clear()
 
 		for preset_name, preset_data in marker_presets.items():
-			self.addItem(model_trt.LBMarkerIcon(preset_data.color), preset_name, preset_data)
+			self.addItem(markers_trt.LBMarkerIcon(preset_data.color), preset_name, preset_data)
 
 		# Add edit option if it's there
 		if self.allowEditOption():
@@ -339,72 +296,6 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 				author = ("\"" + marker_preset.author + "\"") if marker_preset.author else "(Any)",
 			)
 
-
-class LBSpinBoxTC(QtWidgets.QSpinBox):
-
-	PAT_VALID_TEXT = re.compile(r"^(\d+:){0,3}\d+$")
-	PAT_INTER_TEXT = re.compile(r"^(\d+:?){1,4}$")
-
-	sig_timecode_changed = QtCore.Signal(Timecode)
-
-	def __init__(self, *args, **kwargs):
-
-		super().__init__(*args, **kwargs)
-		self._rate = 24
-		self._allow_negative = False
-		self.valueChanged.connect(lambda: self.sig_timecode_changed.emit(self.timecode()))
-	
-	@QtCore.Slot()
-	def setRate(self, rate:int):
-		self._rate = rate
-		self.updateMaximumTC()
-		self.sig_timecode_changed.emit(self.timecode())
-
-	@QtCore.Slot()
-	def updateMaximumTC(self):
-		self.setMaximum(Timecode("100:00:00:00", rate=self.rate()).frame_number)
-		self.setMinimum(Timecode("-100:00:00:00", rate=self.rate()).frame_number if self.allowNegative() else Timecode(0, rate=self.rate()).frame_number)
-
-	def validate(self, input:str, pos:int) -> bool:
-
-		# Allow for one '-' if negative is allowed, by stripping it off for validation
-		if self.allowNegative() and input.startswith("-"):
-			input = input[1:]
-
-		if self.__class__.PAT_VALID_TEXT.match(input):
-			return QtGui.QValidator.State.Acceptable 
-		elif self.__class__.PAT_INTER_TEXT.match(input):
-			return QtGui.QValidator.State.Intermediate
-		elif input == "":
-			return QtGui.QValidator.State.Intermediate 
-		else:
-			return QtGui.QValidator.State.Invalid
-	
-	@QtCore.Slot(Timecode)
-	def setTimecode(self, timecode:Timecode):
-		self.setRate(timecode.rate)
-		self.setValue(timecode.frame_number)
-	
-	def setAllowNegative(self, allow:bool):
-		if allow != self.allowNegative():
-			self._allow_negative = allow
-			self.updateMaximumTC()
-
-	def allowNegative(self) -> bool:
-		return self._allow_negative
-	
-	def timecode(self) -> Timecode:
-		return Timecode(self.value(), rate=self.rate())
-
-	def rate(self) -> int:
-		return self._rate
-	
-	def textFromValue(self, val:int) -> str:
-		return str(Timecode(val, rate=self.rate()))
-	
-	def valueFromText(self, text:str) -> int:
-		return Timecode(text, rate=self.rate()).frame_number
-
 class LBTRTCalculator(LBUtilityTab):
 	"""TRT Calculator"""
 
@@ -421,7 +312,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self._pool = QtCore.QThreadPool()
 
 		self._model = model_trt.TRTModel()
-		self.list_trts = model_trt.TRTTreeView()
+		self.list_trts = treeview_trt.TRTTreeView()
 		self.trt_summary = TRTSummary()
 		self.list_viewmodel = model_trt.TRTViewModel(self.model())
 		
@@ -431,14 +322,14 @@ class LBTRTCalculator(LBUtilityTab):
 		self.prog_loading = TRTBinLoadingProgressBar()
 
 		self.list_viewmodel.set_headers([
-			model_trt.TRTTreeViewHeaderColor("","sequence_color"),
-			model_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
-			model_trt.TRTTreeViewHeaderDuration("Full Duration","duration_total"),
-			model_trt.TRTTreeViewHeaderDuration("Trimmed Duration","duration_trimmed"),
-			model_trt.TRTTreeViewHeaderDuration("LFOA", "lfoa"),
-			model_trt.TRTTreeViewHeaderDateTime("Date Modified","date_modified"),
-			model_trt.TRTTreeViewHeaderPath("From Bin","bin_path"),
-			model_trt.TRTTreeViewHeaderBinLock("Bin Lock","bin_lock"),
+			treeview_trt.TRTTreeViewHeaderColor("","sequence_color"),
+			treeview_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
+			treeview_trt.TRTTreeViewHeaderDuration("Full Duration","duration_total"),
+			treeview_trt.TRTTreeViewHeaderDuration("Trimmed Duration","duration_trimmed"),
+			treeview_trt.TRTTreeViewHeaderDuration("LFOA", "lfoa"),
+			treeview_trt.TRTTreeViewHeaderDateTime("Date Modified","date_modified"),
+			treeview_trt.TRTTreeViewHeaderPath("From Bin","bin_path"),
+			treeview_trt.TRTTreeViewHeaderBinLock("Bin Lock","bin_lock"),
 
 		])
 
@@ -490,8 +381,8 @@ class LBTRTCalculator(LBUtilityTab):
 		self.update_marker_presets()
 		self.trt_trims.sig_marker_preset_editor_requested.connect(self.show_marker_maker_dialog)
 	
-	@QtCore.Slot(str, model_trt.LBMarkerPreset)
-	def save_marker_preset(self, preset_name:str, marker_preset:model_trt.LBMarkerPreset):
+	@QtCore.Slot(str, markers_trt.LBMarkerPreset)
+	def save_marker_preset(self, preset_name:str, marker_preset:markers_trt.LBMarkerPreset):
 		presets = self.model().marker_presets()
 		presets.update({preset_name: marker_preset})
 		self.model().set_marker_presets(presets)
@@ -503,7 +394,7 @@ class LBTRTCalculator(LBUtilityTab):
 	def show_marker_maker_dialog(self):
 		wnd_marker = dlg_marker.TRTMarkerMaker(self)
 		
-		for marker in model_trt.LBMarkerIcons():
+		for marker in markers_trt.LBMarkerIcons():
 			wnd_marker.addMarker(marker)
 		wnd_marker.set_marker_presets(self.model().marker_presets())
 		
