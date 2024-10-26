@@ -44,15 +44,16 @@ class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 		self.setValue(0)
 		self.setHidden(True)
 
-class TRTThreadedSignals(QtCore.QObject):
-	sig_got_bin_info = QtCore.Signal(logic_trt.BinInfo)
 
 class TRTThreadedBinGetter(QtCore.QRunnable):
+
+	class TRTThreadedSignals(QtCore.QObject):
+		sig_got_bin_info = QtCore.Signal(logic_trt.BinInfo)
 
 	def __init__(self, bin_path:str):
 		super().__init__()
 		self._bin_path = bin_path
-		self._signals = TRTThreadedSignals()
+		self._signals = self.TRTThreadedSignals()
 
 	def signals(self) -> TRTThreadedSignals:
 		return self._signals
