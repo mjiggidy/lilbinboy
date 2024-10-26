@@ -1,3 +1,7 @@
 from . import lbb_common, lbb_features 
 
-APP_NAME = "Lil' Bin Boy"
+class Config:
+	APP_NAME   = "Lil' Bin Boy"
+	APP_STYLE  = "Fusion"
+	ORG_NAME   = "GlowingPixel"
+	ORG_DOMAIN = "glowingpixel.com"
