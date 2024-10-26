@@ -504,7 +504,7 @@ class LBTRTCalculator(LBUtilityTab):
 			self.save_bins()
 	
 	def choose_folder(self):
-		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", filter="Avid Bins (*.avb)")
+		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", dir=QtCore.QSettings().value("trt/bin_paths", [])[-1], filter="Avid Bins (*.avb)")
 		
 		if not files:
 			return
