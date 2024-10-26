@@ -380,7 +380,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self.update_marker_presets()
 		self.trt_trims.sig_marker_preset_editor_requested.connect(self.show_marker_maker_dialog)
-	
+		
 	@QtCore.Slot(str, markers_trt.LBMarkerPreset)
 	def save_marker_preset(self, preset_name:str, marker_preset:markers_trt.LBMarkerPreset):
 		presets = self.model().marker_presets()
@@ -448,14 +448,13 @@ class LBTRTCalculator(LBUtilityTab):
 		self.btn_add_bins.clicked.connect(self.choose_folder)
 		self.btn_add_bins.setToolTip("Add the latest sequence(s) from one or more bins")
 		self.btn_add_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd))
-		#self.btn_add_bins.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Fixed))
 
 		self.btn_refresh_bins.clicked.connect(self.refresh_bins)
 		self.btn_refresh_bins.setToolTip("Reload the existing bins for updates")
 		self.btn_refresh_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRefresh))
 
 		self.list_trts.sig_remove_rows.connect(self.remove_bins)
-		self.btn_clear_bins.clicked.connect(lambda: self.remove_bins(sorted(set([idx.row() for idx in self.list_trts.selectedIndexes()]), reverse=True)))
+		self.btn_clear_bins.clicked.connect(lambda: self.remove_bins(self.list_trts.selectedRows()))
 		self.btn_clear_bins.setToolTip("Clear the existing sequences")
 		self.btn_clear_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditClear))
 
@@ -524,5 +523,3 @@ class LBTRTCalculator(LBUtilityTab):
 		enabled = bool(list(self.model().data()))
 		self.btn_clear_bins.setEnabled(enabled)
 		self.btn_refresh_bins.setEnabled(enabled)
-
-			
