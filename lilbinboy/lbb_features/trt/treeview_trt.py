@@ -208,6 +208,9 @@ class TRTTreeView(QtWidgets.QTreeView):
 
 		super().__init__(*args, **kwargs)
 
+		super().setModel(QtCore.QSortFilterProxyModel())
+		self.model().setSortRole(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
+
 		self.setColumnWidth(0, 24)
 		self.setColumnWidth(1, 128)
 		self.setAlternatingRowColors(True)
@@ -218,6 +221,10 @@ class TRTTreeView(QtWidgets.QTreeView):
 		self.setAcceptDrops(True)
 		self.setDropIndicatorShown(True)
 #		print(self.dragDropMode())
+
+	def setModel(self, model:QtCore.QAbstractItemModel):
+		# Overriding to always set to the proxy model
+		self.model().setSourceModel(model)
 	
 	def fit_headers(self):
 		for i in range(self.model().columnCount()):
