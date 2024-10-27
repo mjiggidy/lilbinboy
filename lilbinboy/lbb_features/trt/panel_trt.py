@@ -90,9 +90,9 @@ class TRTSummary(QtWidgets.QGroupBox):
 		self.setLayout(QtWidgets.QGridLayout())
 		self.layout().setHorizontalSpacing(24)
 
-		self._add_demo_summary_items()
+		self._add_initial_summary_items()
 
-	def _add_demo_summary_items(self):
+	def _add_initial_summary_items(self):
 			"""Demo info for now"""
 			self.add_summary_item(TRTSummaryItem(
 				label="Sequences",
@@ -245,17 +245,44 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self._pool = QtCore.QThreadPool()
 
-		self._model = model_trt.TRTModel()
+		# Declare models
+		self._data_model = model_trt.TRTDataModel()
+		self._treeview_model = model_trt.TRTViewModel(self.model())
+		
+		# Declare top controls
+		self.btn_add_bins = QtWidgets.QPushButton("Add From Bins...")
+		self.btn_refresh_bins = QtWidgets.QPushButton()
+		self.btn_clear_bins = QtWidgets.QPushButton()
+		self.prog_loading = TRTBinLoadingProgressBar()
+		
+		# Declare main treeview
 		self.list_trts = treeview_trt.TRTTreeView()
 		self.trt_summary = TRTSummary()
-		self.list_viewmodel = model_trt.TRTViewModel(self.model())
-		
-		self.list_trts.setModel(model_trt.TRTViewSortModel())
-		self.list_trts.model().setSortRole(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
 
-		self.prog_loading = TRTBinLoadingProgressBar()
+		# Declare trims
+		self.trt_trims = TRTControlsTrims()
+		self.trim_total = LBSpinBoxTC()
 
-		self.list_viewmodel.set_headers([
+
+
+		self._setupModels()
+		self._setupWidgets()
+		self._setupSignals()
+
+
+		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
+
+		self.update_marker_presets()
+
+	def _setupModels(self):
+		"""Configure the important data"""
+
+		self.model().setTrimFromHead(Timecode(QtCore.QSettings().value("trt/trim_head",0), rate=QtCore.QSettings().value("trt/rate",24)))
+		self.model().setTrimFromTail(Timecode(QtCore.QSettings().value("trt/trim_tail",0), rate=QtCore.QSettings().value("trt/rate",24)))
+		self.model().set_marker_presets(QtCore.QSettings().value("lbb/marker_presets", dict()))
+
+		# TODO: Load in from user settings
+		self._treeview_model.set_headers([
 			treeview_trt.TRTTreeViewHeaderColor("","sequence_color"),
 			treeview_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
 			treeview_trt.TRTTreeViewHeaderDuration("Full Duration","duration_total"),
@@ -267,53 +294,84 @@ class LBTRTCalculator(LBUtilityTab):
 
 		])
 
-		self.list_trts.model().setSourceModel(self.list_viewmodel)
 
-		self.list_trts.sig_add_bins.connect(self.set_bins)
+	def _setupWidgets(self):
+		"""Setup the widgets and add them to the layout"""
 
-		self.btn_add_bins = QtWidgets.QPushButton("Add From Bins...")
-		self.btn_refresh_bins = QtWidgets.QPushButton()
-		self.btn_clear_bins = QtWidgets.QPushButton()
+		# Setup top controls
+		ctrl_layout = QtWidgets.QHBoxLayout()
 		
+		self.btn_add_bins.setToolTip("Add the latest sequence(s) from one or more bins")
+		self.btn_add_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd))
+		ctrl_layout.addWidget(self.btn_add_bins)
 
-		self.trt_trims = TRTControlsTrims()
+		ctrl_layout.addWidget(self.prog_loading)
 
-		self.trt_trims.sig_head_trim_changed.connect(self.model().setTrimFromHead)
-		self.trt_trims.sig_tail_trim_changed.connect(self.model().setTrimFromTail)
+		self.btn_refresh_bins.setToolTip("Reload the existing bins for updates")
+		self.btn_refresh_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRefresh))
+		ctrl_layout.addWidget(self.btn_refresh_bins)
 
-		self.trim_total = LBSpinBoxTC()
-		self.trim_total.setAllowNegative(True)
-		self.trim_total.setTimecode(Timecode(QtCore.QSettings().value("trt/trim_total",0), rate=QtCore.QSettings().value("trt/rate",24)))
-		self.trim_total.sig_timecode_changed.connect(self.model().setTrimTotal)
+		self.btn_clear_bins.setToolTip("Clear the existing sequences")
+		self.btn_clear_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditClear))
+		ctrl_layout.addWidget(self.btn_clear_bins)
 
-		self.model().setTrimFromHead(Timecode(QtCore.QSettings().value("trt/trim_head",0), rate=QtCore.QSettings().value("trt/rate",24)))
-		self.model().setTrimFromTail(Timecode(QtCore.QSettings().value("trt/trim_tail",0), rate=QtCore.QSettings().value("trt/rate",24)))
+		self.layout().addLayout(ctrl_layout)
 
+		# Set up main treeview
+		self.list_trts.setModel(self._treeview_model)
+
+
+		#self.list_trts.model().setSourceModel(self._treeview_model)
+		#self.list_trts.model().setSortRole(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
+
+		self.layout().addWidget(self.list_trts)
+		self.layout().addWidget(self.trt_summary)
+
+		
+		# Set up sequence trim controls
 		self.trt_trims.set_head_trim(self.model().trimFromHead())
 		self.trt_trims.set_tail_trim(self.model().trimFromTail())
+		self.layout().addWidget(self.trt_trims)
 
-		self._setupWidgets()
+		
+		# Set up total trim controls
+		# TODO: Better
+		grp_totaltrim = QtWidgets.QGroupBox()
+		grp_totaltrim.setLayout(QtWidgets.QHBoxLayout())
+		self.trim_total.setAllowNegative(True)
+		self.trim_total.setTimecode(Timecode(QtCore.QSettings().value("trt/trim_total",0), rate=QtCore.QSettings().value("trt/rate",24)))
+		grp_totaltrim.layout().addWidget(self.trim_total)
+		self.layout().addWidget(grp_totaltrim)
+	
+	def _setupSignals(self):
+		"""Connect signals and slots"""
+
+		self._data_model.sig_data_changed.connect(self.update_summary)
+		self._data_model.sig_data_changed.connect(self.list_trts.fit_headers)
+		self._data_model.sig_data_changed.connect(self.update_control_buttons)
+		self._data_model.sig_data_changed.connect(self.save_bins)
+
+		self.list_trts.sig_add_bins.connect(self.set_bins)
+		self.list_trts.sig_remove_rows.connect(self.remove_bins)
+		
+		self.btn_add_bins.clicked.connect(self.choose_folder)
+		self.btn_refresh_bins.clicked.connect(self.refresh_bins)
+		self.btn_clear_bins.clicked.connect(lambda: self.remove_bins(self.list_trts.selectedRows()))
 
 		self.trt_trims.sig_head_trim_changed.connect(self.save_trims)
-		self.trt_trims.sig_tail_trim_changed.connect(self.save_trims)
-		
+		self.trt_trims.sig_head_trim_changed.connect(self.model().setTrimFromHead)
 		self.trt_trims.sig_head_trim_marker_preset_changed.connect(self.set_head_trim_marker_preset)
+		self.trt_trims.sig_tail_trim_changed.connect(self.save_trims)
+		self.trt_trims.sig_tail_trim_changed.connect(self.model().setTrimFromTail)
 		self.trt_trims.sig_tail_trim_marker_preset_changed.connect(self.set_tail_trim_marker_preset)
 		
 		self.trim_total.sig_timecode_changed.connect(self.save_trims)
+		self.trim_total.sig_timecode_changed.connect(self.model().setTrimTotal)
 
-		self._model.sig_data_changed.connect(self.update_summary)
-		self._model.sig_data_changed.connect(self.list_trts.fit_headers)
-		self._model.sig_data_changed.connect(self.update_control_buttons)
-		self._model.sig_data_changed.connect(self.save_bins)
-
-		self.list_trts.fit_headers()
-
-		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
-		self._model.set_marker_presets(QtCore.QSettings().value("lbb/marker_presets", dict()))
-
-		self.update_marker_presets()
 		self.trt_trims.sig_marker_preset_editor_requested.connect(self.show_marker_maker_dialog)
+
+
+
 		
 	@QtCore.Slot(str, markers_trt.LBMarkerPreset)
 	def save_marker_preset(self, preset_name:str, marker_preset:markers_trt.LBMarkerPreset):
@@ -347,12 +405,12 @@ class LBTRTCalculator(LBUtilityTab):
 	def set_tail_trim_marker_preset(self, preset_name:str):
 		print("Tail", preset_name)
 
-	def setModel(self, model:model_trt.TRTModel):
-		self._model = model
-		self.list_viewmodel.set_model(model)
+	def setModel(self, model:model_trt.TRTDataModel):
+		self._data_model = model
+		self._treeview_model.setDataModel(model)
 	
-	def model(self) -> model_trt.TRTModel:
-		return self._model
+	def model(self) -> model_trt.TRTDataModel:
+		return self._data_model
 	
 	def save_bins(self):
 		settings = QtCore.QSettings()
@@ -377,39 +435,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 			self._pool.start(thread)
 	
-	def _setupWidgets(self):
 
-		self.btn_add_bins.clicked.connect(self.choose_folder)
-		self.btn_add_bins.setToolTip("Add the latest sequence(s) from one or more bins")
-		self.btn_add_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd))
-
-		self.btn_refresh_bins.clicked.connect(self.refresh_bins)
-		self.btn_refresh_bins.setToolTip("Reload the existing bins for updates")
-		self.btn_refresh_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRefresh))
-
-		self.list_trts.sig_remove_rows.connect(self.remove_bins)
-		self.btn_clear_bins.clicked.connect(lambda: self.remove_bins(self.list_trts.selectedRows()))
-		self.btn_clear_bins.setToolTip("Clear the existing sequences")
-		self.btn_clear_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditClear))
-
-		ctrl_layout = QtWidgets.QHBoxLayout()
-
-		ctrl_layout.addWidget(self.btn_add_bins)
-		ctrl_layout.addWidget(self.prog_loading)
-		ctrl_layout.addWidget(self.btn_refresh_bins)
-		ctrl_layout.addWidget(self.btn_clear_bins)
-		self.layout().addLayout(ctrl_layout)
-		
-		self.layout().addWidget(self.list_trts)
-		
-		self.layout().addWidget(self.trt_summary)
-		self.layout().addWidget(self.trt_trims)
-
-		grp_totaltrim = QtWidgets.QGroupBox()
-		grp_totaltrim.setLayout(QtWidgets.QHBoxLayout())
-		grp_totaltrim.layout().addWidget(self.trim_total)
-
-		self.layout().addWidget(grp_totaltrim)
 
 	
 	def set_bins(self, bin_paths: list[str]):

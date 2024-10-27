@@ -3,7 +3,7 @@ from timecode import Timecode
 from . import logic_trt, treeview_trt, markers_trt
 
 
-class TRTModel(QtCore.QObject):
+class TRTDataModel(QtCore.QObject):
 
 	sig_data_changed = QtCore.Signal()
 	sig_marker_presets_changed = QtCore.Signal()
@@ -157,11 +157,11 @@ class TRTModel(QtCore.QObject):
 
 class TRTViewModel(QtCore.QAbstractItemModel):
 	
-	def __init__(self, trt_model:TRTModel, headers_list:list[treeview_trt.TRTTreeViewHeaderItem]=None):
+	def __init__(self, trt_model:TRTDataModel, headers_list:list[treeview_trt.TRTTreeViewHeaderItem]=None):
 		"""Create and setup a new model"""
 		super().__init__()
 
-		self.set_model(trt_model)
+		self.setDataModel(trt_model)
 		self._headers = headers_list or []
 
 		self.model().sig_data_changed.connect(self.modelReset)
@@ -169,12 +169,12 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		# Typically a list of data here
 		# Typically a dict of header keys and values here
 	
-	def set_model(self, trt_model:TRTModel):
-		self._model = trt_model
+	def setDataModel(self, trt_model:TRTDataModel):
+		self._dat_model = trt_model
 		self.modelReset.emit()
 	
-	def model(self) -> TRTModel:
-		return self._model
+	def model(self) -> TRTDataModel:
+		return self._dat_model
 	
 	def set_headers(self, headers:list[treeview_trt.TRTTreeViewHeaderItem]):
 		self._headers = headers
@@ -208,5 +208,5 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		"""Returns the data for the given role and section in the header with the specified orientation."""
 		return self._headers[section].header_data(role)
 	
-class TRTViewSortModel(QtCore.QSortFilterProxyModel):
-	pass
+#class TRTViewSortModel(QtCore.QSortFilterProxyModel):
+#	pass
