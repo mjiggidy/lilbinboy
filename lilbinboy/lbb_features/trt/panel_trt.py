@@ -350,6 +350,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self._data_model.sig_data_changed.connect(self.list_trts.fit_headers)
 		self._data_model.sig_data_changed.connect(self.update_control_buttons)
 		self._data_model.sig_data_changed.connect(self.save_bins)
+		self._data_model.sig_trims_changed.connect(self.save_trims)
 
 		self.list_trts.sig_add_bins.connect(self.set_bins)
 		self.list_trts.sig_remove_rows.connect(self.remove_bins)
@@ -358,10 +359,8 @@ class LBTRTCalculator(LBUtilityTab):
 		self.btn_refresh_bins.clicked.connect(self.refresh_bins)
 		self.btn_clear_bins.clicked.connect(lambda: self.remove_bins(self.list_trts.selectedRows()))
 
-		self.trt_trims.sig_head_trim_changed.connect(self.save_trims)
 		self.trt_trims.sig_head_trim_changed.connect(self.model().setTrimFromHead)
 		self.trt_trims.sig_head_trim_marker_preset_changed.connect(self.set_head_trim_marker_preset)
-		self.trt_trims.sig_tail_trim_changed.connect(self.save_trims)
 		self.trt_trims.sig_tail_trim_changed.connect(self.model().setTrimFromTail)
 		self.trt_trims.sig_tail_trim_marker_preset_changed.connect(self.set_tail_trim_marker_preset)
 		
@@ -369,9 +368,6 @@ class LBTRTCalculator(LBUtilityTab):
 		self.trim_total.sig_timecode_changed.connect(self.model().setTrimTotal)
 
 		self.trt_trims.sig_marker_preset_editor_requested.connect(self.show_marker_maker_dialog)
-
-
-
 		
 	@QtCore.Slot(str, markers_trt.LBMarkerPreset)
 	def save_marker_preset(self, preset_name:str, marker_preset:markers_trt.LBMarkerPreset):
@@ -425,6 +421,8 @@ class LBTRTCalculator(LBUtilityTab):
 
 	def get_sequence_info(self, paths):
 
+		last_bin = ""
+
 		for path in paths:
 			
 			thread = TRTThreadedBinGetter(path)
@@ -434,9 +432,12 @@ class LBTRTCalculator(LBUtilityTab):
 			thread.signals().sig_got_bin_info.connect(self.prog_loading.step_complete)
 
 			self._pool.start(thread)
-	
 
-
+			last_bin = str(path)
+		
+		# Save last bin path if it's a good 'un
+		if last_bin:
+			QtCore.QSettings().setValue("trt/last_bin", last_bin)
 	
 	def set_bins(self, bin_paths: list[str]):
 
@@ -464,7 +465,9 @@ class LBTRTCalculator(LBUtilityTab):
 			self.save_bins()
 	
 	def choose_folder(self):
-		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", dir=QtCore.QSettings().value("trt/bin_paths", [])[-1], filter="Avid Bins (*.avb)")
+		last_bin_path = QtCore.QSettings().value("trt/last_bin")
+		print(last_bin_path)
+		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", dir=last_bin_path, filter="Avid Bins (*.avb)")
 		
 		if not files:
 			return
