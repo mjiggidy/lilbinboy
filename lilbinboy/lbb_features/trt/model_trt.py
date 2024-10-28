@@ -1,11 +1,13 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
+import avbutils
 from . import logic_trt, treeview_trt, markers_trt
 
 
 class TRTDataModel(QtCore.QObject):
 
 	sig_data_changed = QtCore.Signal()
+	sig_trims_changed = QtCore.Signal()
 	sig_marker_presets_changed = QtCore.Signal()
 
 	#LFOA_PERFS_PER_FOOT = 8 # 35.8
@@ -71,6 +73,7 @@ class TRTDataModel(QtCore.QObject):
 	def setTrimFromHead(self, timecode:Timecode):
 		self._trim_head = timecode
 		self.sig_data_changed.emit()
+		self.sig_trims_changed.emit()
 	
 	def trimFromTail(self) -> Timecode:
 		return self._trim_tail
@@ -78,6 +81,7 @@ class TRTDataModel(QtCore.QObject):
 	def setTrimFromTail(self, timecode:Timecode):
 		self._trim_tail = timecode
 		self.sig_data_changed.emit()
+		self.sig_trims_changed.emit()
 
 	def trimTotal(self) -> Timecode:
 		return self._trim_total
@@ -85,6 +89,7 @@ class TRTDataModel(QtCore.QObject):
 	def setTrimTotal(self, timecode:Timecode):
 		self._trim_total = timecode
 		self.sig_data_changed.emit()
+		self.sig_trims_changed.emit()
 	
 	def total_lfoa(self) -> str:
 		trt = self.total_runtime()
@@ -170,11 +175,11 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		# Typically a dict of header keys and values here
 	
 	def setDataModel(self, trt_model:TRTDataModel):
-		self._dat_model = trt_model
+		self._data_model = trt_model
 		self.modelReset.emit()
 	
 	def model(self) -> TRTDataModel:
-		return self._dat_model
+		return self._data_model
 	
 	def set_headers(self, headers:list[treeview_trt.TRTTreeViewHeaderItem]):
 		self._headers = headers
@@ -208,5 +213,16 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		"""Returns the data for the given role and section in the header with the specified orientation."""
 		return self._headers[section].header_data(role)
 	
-#class TRTViewSortModel(QtCore.QSortFilterProxyModel):
-#	pass
+class TRTViewSortModel(QtCore.QSortFilterProxyModel):
+	
+	def lessThan(self, left_idx:QtCore.QModelIndex, right_idx:QtCore.QModelIndex) -> bool:
+		"""Reimplemented sort function"""
+
+		left_data  = left_idx.data(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
+		right_data = right_idx.data(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
+		
+		# Mimic human sorting (1-10; not 1,10,2-9) if strings.  Otherwise use data type's native sorting.
+		if isinstance(left_data, str):
+			return avbutils.human_sort(left_data) < avbutils.human_sort(right_data)
+		
+		return left_data < right_data

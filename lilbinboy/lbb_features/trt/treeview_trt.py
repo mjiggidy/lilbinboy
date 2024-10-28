@@ -1,5 +1,6 @@
 import pathlib
 from PySide6 import QtCore, QtGui, QtWidgets
+from . import model_trt
 
 class TRTTreeViewHeaderItem(QtCore.QObject):
 
@@ -208,7 +209,7 @@ class TRTTreeView(QtWidgets.QTreeView):
 
 		super().__init__(*args, **kwargs)
 
-		super().setModel(QtCore.QSortFilterProxyModel())
+		super().setModel(model_trt.TRTViewSortModel())
 		self.model().setSortRole(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
 
 		self.setColumnWidth(0, 24)
