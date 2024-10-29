@@ -161,6 +161,9 @@ class TRTControlsTrims(TRTControls):
 	sig_head_trim_marker_preset_changed = QtCore.Signal(str)
 	sig_tail_trim_marker_preset_changed = QtCore.Signal(str)
 
+	sig_use_head_marker_changed = QtCore.Signal(bool)
+	sig_use_tail_marker_changed = QtCore.Signal(bool)
+
 	sig_marker_preset_editor_requested = QtCore.Signal()
 
 	def __init__(self):
@@ -192,6 +195,7 @@ class TRTControlsTrims(TRTControls):
 		# Trim from Head / Marker
 		self.layout().addWidget(self._use_head_marker, 1, 0)
 		self.layout().addWidget(self._from_head_marker, 1, 1)
+		self._from_head_marker.setEnabled(False)
 		self.layout().addWidget(QtWidgets.QLabel("Or FFOA Locator", buddy=self._from_head), 1, 2)
 
 		# Trim from Tail / Duration
@@ -202,13 +206,16 @@ class TRTControlsTrims(TRTControls):
 		# Trim from Tail / Marker
 		self.layout().addWidget(QtWidgets.QLabel("Or LFOA Locator", alignment=QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter), 1, 4)
 		self.layout().addWidget(self._from_tail_marker, 1, 5)
+		self._from_tail_marker.setEnabled(False)
 		self.layout().addWidget(self._use_tail_marker, 1, 6)
 
 		self._from_head.sig_timecode_changed.connect(self.sig_head_trim_changed)
 		self._from_tail.sig_timecode_changed.connect(self.sig_tail_trim_changed)
 
 		self._use_head_marker.checkStateChanged.connect(lambda: self._from_head_marker.setEnabled(self._use_head_marker.isChecked()))
+		self._use_head_marker.checkStateChanged.connect(lambda: self.sig_use_head_marker_changed.emit(self._use_head_marker.isChecked()))
 		self._use_tail_marker.checkStateChanged.connect(lambda: self._from_tail_marker.setEnabled(self._use_tail_marker.isChecked()))
+		self._use_tail_marker.checkStateChanged.connect(lambda: self.sig_use_tail_marker_changed.emit(self._use_tail_marker.isChecked()))
 
 		self._from_head_marker.sig_marker_preset_editor_requested.connect(self.sig_marker_preset_editor_requested)
 		self._from_head_marker.sig_marker_preset_changed.connect(self.sig_head_trim_marker_preset_changed)
@@ -229,6 +236,16 @@ class TRTControlsTrims(TRTControls):
 		"""Update FFOA and LFOA marker combo boxes"""
 		self._from_head_marker.setMarkerPresets(marker_presets)
 		self._from_tail_marker.setMarkerPresets(marker_presets)
+	
+	@QtCore.Slot(markers_trt.LBMarkerPreset)
+	def set_head_marker_preset(self, head_marker_preset:markers_trt.LBMarkerPreset|None):
+
+		if not head_marker_preset:
+			self._use_head_marker.setEnabled(False)
+		
+		else:
+			self._use_head_marker.setEnabled(True)
+			self._from_head_marker.
 
 class LBTRTCalculator(LBUtilityTab):
 	"""TRT Calculator"""
@@ -359,6 +376,8 @@ class LBTRTCalculator(LBUtilityTab):
 		self.btn_refresh_bins.clicked.connect(self.refresh_bins)
 		self.btn_clear_bins.clicked.connect(lambda: self.remove_bins(self.list_trts.selectedRows()))
 
+		self.trt_trims.sig_use_head_marker_changed.connect(self.toggled_head_trim_marker)
+		self.trt_trims.sig_use_tail_marker_changed.connect(self.toggled_tail_trim_marker)
 		self.trt_trims.sig_head_trim_changed.connect(self.model().setTrimFromHead)
 		self.trt_trims.sig_head_trim_marker_preset_changed.connect(self.set_head_trim_marker_preset)
 		self.trt_trims.sig_tail_trim_changed.connect(self.model().setTrimFromTail)
@@ -393,6 +412,23 @@ class LBTRTCalculator(LBUtilityTab):
 	def update_marker_presets(self):
 		self.trt_trims.set_marker_presets(self.model().marker_presets())
 
+	@QtCore.Slot(bool)
+	def toggled_head_trim_marker(self, is_enabled:bool):
+		"""Opted to use a head marker... or not!!"""
+
+		# Make sure at least one marker is defined
+		if is_enabled and not self.model().marker_presets():
+			self.show_marker_maker_dialog()
+		
+
+	@QtCore.Slot(bool)
+	def toggled_tail_trim_marker(self, is_enabled:bool):
+		"""Opted to use a tail marker... or not!!"""
+
+		# Make sure at least one marker is defined
+		if is_enabled and not self.model().marker_presets():
+			self.show_marker_maker_dialog()
+	
 	@QtCore.Slot(str)
 	def set_head_trim_marker_preset(self, preset_name:str):
 		print("Head", preset_name)

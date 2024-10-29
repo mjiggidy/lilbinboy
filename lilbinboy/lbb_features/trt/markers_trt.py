@@ -109,6 +109,18 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 		elif self._last_selected_preset_name is not None and self.allowEditOption():
 			self.setCurrentIndex(self.findData(self._last_selected_preset_name))
 			self.sig_marker_preset_editor_requested.emit()
+	
+	@QtCore.Slot(str)
+	def setCurrentMarkerPreset(self, marker_preset:LBMarkerPreset):
+		"""Set the selected marker preset from a given LBMarkerPreset"""
+
+		idx = self.findData(marker_preset)
+		if idx != -1:
+			self.setCurrentIndex(idx)
+		
+		else:
+			print("Setting data we don't have...?")
+
 
 	@QtCore.Slot()
 	def updateToolTip(self):
