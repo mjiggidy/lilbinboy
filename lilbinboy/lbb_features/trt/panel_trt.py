@@ -245,7 +245,7 @@ class TRTControlsTrims(TRTControls):
 		
 		else:
 			self._use_head_marker.setEnabled(True)
-			self._from_head_marker.
+			self._from_head_marker.setCurrentMarkerPreset(head_marker_preset)
 
 class LBTRTCalculator(LBUtilityTab):
 	"""TRT Calculator"""
