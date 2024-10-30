@@ -234,18 +234,13 @@ class TRTControlsTrims(TRTControls):
 	@QtCore.Slot(dict)
 	def set_marker_presets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
 		"""Update FFOA and LFOA marker combo boxes"""
+
+		if not marker_presets:
+			self._use_head_marker.setCheckState(QtCore.Qt.CheckState.Unchecked)
+			self._use_tail_marker.setCheckState(QtCore.Qt.CheckState.Unchecked)
+
 		self._from_head_marker.setMarkerPresets(marker_presets)
 		self._from_tail_marker.setMarkerPresets(marker_presets)
-	
-	@QtCore.Slot(markers_trt.LBMarkerPreset)
-	def set_head_marker_preset(self, head_marker_preset:markers_trt.LBMarkerPreset|None):
-
-		if not head_marker_preset:
-			self._use_head_marker.setEnabled(False)
-		
-		else:
-			self._use_head_marker.setEnabled(True)
-			self._from_head_marker.setCurrentMarkerPreset(head_marker_preset)
 
 class LBTRTCalculator(LBUtilityTab):
 	"""TRT Calculator"""
@@ -397,8 +392,14 @@ class LBTRTCalculator(LBUtilityTab):
 		QtCore.QSettings().setValue("lbb/marker_presets", self.model().marker_presets())
 		self.update_marker_presets()
 	
+	@QtCore.Slot(str)
+	def remove_marker_preset(self, preset_name:str):
+		print("Removed", self.model().marker_presets().pop(preset_name, None))
+		QtCore.QSettings().setValue("lbb/marker_presets", self.model().marker_presets())
+		self.update_marker_presets()
+	
 	@QtCore.Slot()
-	def show_marker_maker_dialog(self):
+	def show_marker_maker_dialog(self) -> bool:
 		wnd_marker = dlg_marker.TRTMarkerMaker(self)
 		
 		for marker in markers_trt.LBMarkerIcons():
@@ -406,8 +407,11 @@ class LBTRTCalculator(LBUtilityTab):
 		wnd_marker.set_marker_presets(self.model().marker_presets())
 		
 		wnd_marker.sig_save_preset.connect(self.save_marker_preset)
+		wnd_marker.sig_delete_preset.connect(self.remove_marker_preset)
+		
+		wnd_marker.finished.connect(self.update_marker_presets)
 
-		wnd_marker.exec()
+		return bool(wnd_marker.exec())
 	
 	def update_marker_presets(self):
 		self.trt_trims.set_marker_presets(self.model().marker_presets())

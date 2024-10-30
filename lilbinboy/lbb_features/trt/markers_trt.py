@@ -83,6 +83,8 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 	
 	def setMarkerPresets(self, marker_presets:dict[str, LBMarkerPreset]):
 
+		self.blockSignals(True)
+		
 		self.clear()
 
 		for preset_name, preset_data in marker_presets.items():
@@ -93,21 +95,23 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 			self.insertSeparator(len(marker_presets))
 			self.addItem("Add/Edit...")
 
-		self.setCurrentIndex(self.findData(self._last_selected_preset_name))
+		self.setCurrentIndex(self.findText(self._last_selected_preset_name))
+
+		self.blockSignals(False)
 	
 	@QtCore.Slot(int)
 	def processSelection(self, index:int):
 		"""Validate and process the pickins"""
 
+		# If new selection contains a marker preset, store its preset name and notify the peoples
 		if self.currentData() is not None:
-			self._last_selected_preset_name = self.currentData()
+			self._last_selected_preset_name = self.currentText()
 			self.updateToolTip()
 			self.sig_marker_preset_changed.emit(self._last_selected_preset_name)
 
-		# If None (Edit selected), and it wasn't before, put the selection back to the previously-selected marker and request the editor
-		# I think this'll solve some recursive dialog boxes that do be happenin
-		elif self._last_selected_preset_name is not None and self.allowEditOption():
-			self.setCurrentIndex(self.findData(self._last_selected_preset_name))
+		# If new selection does not contain a preset (Add/Edit Option), and it wasn't previously selected, request the editor
+		elif self.allowEditOption():
+			self.setCurrentIndex(self.findText(self._last_selected_preset_name))
 			self.sig_marker_preset_editor_requested.emit()
 	
 	@QtCore.Slot(str)

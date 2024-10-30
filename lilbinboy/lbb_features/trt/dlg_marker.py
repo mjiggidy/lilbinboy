@@ -1,9 +1,10 @@
-from PySide6 import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore, QtGui
 from . import markers_trt
 
 class TRTMarkerMaker(QtWidgets.QDialog):
 
 	sig_save_preset = QtCore.Signal(str, markers_trt.LBMarkerPreset)
+	sig_delete_preset = QtCore.Signal(str)
 
 	def __init__(self, *args, **kwargs):
 
@@ -14,10 +15,15 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 
 		self._marker_presets = dict()
 
+		self.cmb_marker_presets = markers_trt.LBMarkerPresetComboBox()
+		self.txt_preset_name = QtWidgets.QLineEdit()
+		self.btn_save_preset = QtWidgets.QPushButton()
+		self.btn_duplicate_preset = QtWidgets.QPushButton()
+		self.btn_delete_preset = QtWidgets.QPushButton()
+
 		self.cmb_marker_color = QtWidgets.QComboBox()
 		self.txt_marker_comment = QtWidgets.QLineEdit()
 		self.txt_marker_author  = QtWidgets.QLineEdit()
-		self.txt_preset_name = QtWidgets.QLineEdit()
 		self.btn_box = QtWidgets.QDialogButtonBox()
 
 		self._setupWidgets()
@@ -25,7 +31,26 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	
 	def _setupWidgets(self):
 
-		grp_edit = QtWidgets.QGroupBox("Edit Marker Criteria")
+		lay_presets = QtWidgets.QHBoxLayout()
+		lay_presets.addWidget(self.cmb_marker_presets)
+		lay_presets.addWidget(self.txt_preset_name)
+		
+		self.btn_save_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave))
+		self.btn_save_preset.setToolTip("Save Preset")
+		lay_presets.addWidget(self.btn_save_preset)
+		
+		self.btn_duplicate_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditCopy))
+		self.btn_duplicate_preset.setToolTip("Duplicate Preset")
+		lay_presets.addWidget(self.btn_duplicate_preset)
+		
+		self.btn_delete_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListRemove))
+		self.btn_delete_preset.setToolTip("Delete Preset")
+		lay_presets.addWidget(self.btn_delete_preset)
+
+		self.layout().addLayout(lay_presets)
+
+
+		grp_edit = QtWidgets.QGroupBox()
 		grp_edit.setLayout(QtWidgets.QGridLayout())
 
 		grp_edit.layout().addWidget(QtWidgets.QLabel("Color"), 0, 0)
@@ -39,18 +64,17 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.txt_marker_author.setPlaceholderText("(Any)")
 		grp_edit.layout().addWidget(self.txt_marker_author, 1, 2)
 
-		grp_edit.layout().addWidget(QtWidgets.QLabel("Preset Name"), 0, 3)
-		self.txt_preset_name.setPlaceholderText("Required")
-		grp_edit.layout().addWidget(self.txt_preset_name, 1, 3)
-
 		self.layout().addWidget(grp_edit)
-
 
 		self.btn_box.setStandardButtons(QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel)
 		self.layout().addWidget(self.btn_box)
 
 	def _setupSignals(self):
 
+		self.cmb_marker_presets.currentTextChanged.connect(self.set_current_marker_preset)
+
+		self.btn_delete_preset.clicked.connect(lambda: self.sig_delete_preset.emit(self.cmb_marker_presets.currentText()))
+		
 		self.btn_box.accepted.connect(self.makeMarkerPreset)
 		self.btn_box.accepted.connect(self.accept)
 		self.btn_box.rejected.connect(self.reject)
@@ -73,8 +97,21 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	
 	def set_marker_presets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
 		self._marker_presets = marker_presets
-
+		self.cmb_marker_presets.setMarkerPresets(self._marker_presets)
 		self.update_completers()
+	
+	def set_current_marker_preset(self, marker_preset_name:str):
+
+		if marker_preset_name not in self._marker_presets:
+			print("Not in there")
+			return
+		
+		marker_preset:markers_trt.LBMarkerPreset = self._marker_presets[marker_preset_name]
+		self.txt_preset_name.setText(marker_preset_name)
+
+		self.cmb_marker_color.setCurrentIndex(self.cmb_marker_color.findText(marker_preset.color))
+		self.txt_marker_comment.setText(marker_preset.comment)
+		self.txt_marker_author.setText(marker_preset.author)
 	
 	def update_completers(self):
 
