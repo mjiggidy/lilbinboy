@@ -158,8 +158,8 @@ class TRTControlsTrims(TRTControls):
 	sig_head_trim_changed = QtCore.Signal(Timecode)
 	sig_tail_trim_changed = QtCore.Signal(Timecode)
 
-	sig_head_trim_marker_preset_changed = QtCore.Signal(str)
-	sig_tail_trim_marker_preset_changed = QtCore.Signal(str)
+	sig_head_trim_marker_preset_chosen = QtCore.Signal(str)
+	sig_tail_trim_marker_preset_chosen = QtCore.Signal(str)
 
 	sig_use_head_marker_changed = QtCore.Signal(bool)
 	sig_use_tail_marker_changed = QtCore.Signal(bool)
@@ -218,10 +218,10 @@ class TRTControlsTrims(TRTControls):
 		self._use_tail_marker.checkStateChanged.connect(lambda: self.sig_use_tail_marker_changed.emit(self._use_tail_marker.isChecked()))
 
 		self._from_head_marker.sig_marker_preset_editor_requested.connect(self.sig_marker_preset_editor_requested)
-		self._from_head_marker.sig_marker_preset_changed.connect(self.sig_head_trim_marker_preset_changed)
+		self._from_head_marker.sig_marker_preset_changed.connect(self.sig_head_trim_marker_preset_chosen)
 		
 		self._from_tail_marker.sig_marker_preset_editor_requested.connect(self.sig_marker_preset_editor_requested)
-		self._from_tail_marker.sig_marker_preset_changed.connect(self.sig_tail_trim_marker_preset_changed)
+		self._from_tail_marker.sig_marker_preset_changed.connect(self.sig_tail_trim_marker_preset_chosen)
 	
 	@QtCore.Slot(Timecode)
 	def set_head_trim(self, timecode:Timecode):
@@ -241,6 +241,25 @@ class TRTControlsTrims(TRTControls):
 
 		self._from_head_marker.setMarkerPresets(marker_presets)
 		self._from_tail_marker.setMarkerPresets(marker_presets)
+	
+	@QtCore.Slot(str)
+	def set_head_marker_preset_name(self, marker_preset_name:str|None):
+
+		if not marker_preset_name:
+			self._use_head_marker.setCheckState(QtCore.Qt.CheckState.Unchecked)
+		else:
+			self._use_head_marker.setCheckState(QtCore.Qt.CheckState.Checked)
+			self._from_head_marker.setCurrentMarkerPresetName(marker_preset_name)
+
+	@QtCore.Slot(str)
+	def set_tail_marker_preset_name(self, marker_preset_name:str|None):
+
+		if not marker_preset_name:
+			self._use_tail_marker.setCheckState(QtCore.Qt.CheckState.Unchecked)
+		else:
+			self._use_tail_marker.setCheckState(QtCore.Qt.CheckState.Checked)
+			self._from_tail_marker.setCurrentMarkerPresetName(marker_preset_name)
+
 
 class LBTRTCalculator(LBUtilityTab):
 	"""TRT Calculator"""
@@ -278,20 +297,23 @@ class LBTRTCalculator(LBUtilityTab):
 
 
 		self._setupModels()
+		self.update_marker_presets()
 		self._setupWidgets()
 		self._setupSignals()
 
 
 		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
 
-		self.update_marker_presets()
 
 	def _setupModels(self):
 		"""Configure the important data"""
 
 		self.model().setTrimFromHead(Timecode(QtCore.QSettings().value("trt/trim_head",0), rate=QtCore.QSettings().value("trt/rate",24)))
 		self.model().setTrimFromTail(Timecode(QtCore.QSettings().value("trt/trim_tail",0), rate=QtCore.QSettings().value("trt/rate",24)))
+		
 		self.model().set_marker_presets(QtCore.QSettings().value("lbb/marker_presets", dict()))
+		self.model().set_active_head_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_head"))
+		self.model().set_active_tail_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_tail"))
 
 		# TODO: Load in from user settings
 		self._treeview_model.set_headers([
@@ -332,10 +354,6 @@ class LBTRTCalculator(LBUtilityTab):
 		# Set up main treeview
 		self.list_trts.setModel(self._treeview_model)
 
-
-		#self.list_trts.model().setSourceModel(self._treeview_model)
-		#self.list_trts.model().setSortRole(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
-
 		self.layout().addWidget(self.list_trts)
 		self.layout().addWidget(self.trt_summary)
 
@@ -343,6 +361,8 @@ class LBTRTCalculator(LBUtilityTab):
 		# Set up sequence trim controls
 		self.trt_trims.set_head_trim(self.model().trimFromHead())
 		self.trt_trims.set_tail_trim(self.model().trimFromTail())
+		self.trt_trims.set_head_marker_preset_name(self.model().activeHeadMarkerPresetName())
+		self.trt_trims.set_tail_marker_preset_name(self.model().activeTailMarkerPresetName())
 		self.layout().addWidget(self.trt_trims)
 
 		
@@ -358,11 +378,13 @@ class LBTRTCalculator(LBUtilityTab):
 	def _setupSignals(self):
 		"""Connect signals and slots"""
 
-		self._data_model.sig_data_changed.connect(self.update_summary)
-		self._data_model.sig_data_changed.connect(self.list_trts.fit_headers)
-		self._data_model.sig_data_changed.connect(self.update_control_buttons)
-		self._data_model.sig_data_changed.connect(self.save_bins)
-		self._data_model.sig_trims_changed.connect(self.save_trims)
+		self.model().sig_data_changed.connect(self.update_summary)
+		self.model().sig_data_changed.connect(self.list_trts.fit_headers)
+		self.model().sig_data_changed.connect(self.update_control_buttons)
+		self.model().sig_data_changed.connect(self.save_bins)
+		self.model().sig_trims_changed.connect(self.save_trims)
+		self.model().sig_head_marker_preset_changed.connect(self.set_head_trim_marker_preset)
+		self.model().sig_tail_marker_preset_changed.connect(self.set_tail_trim_marker_preset)
 
 		self.list_trts.sig_add_bins.connect(self.set_bins)
 		self.list_trts.sig_remove_rows.connect(self.remove_bins)
@@ -374,12 +396,13 @@ class LBTRTCalculator(LBUtilityTab):
 		self.trt_trims.sig_use_head_marker_changed.connect(self.toggled_head_trim_marker)
 		self.trt_trims.sig_use_tail_marker_changed.connect(self.toggled_tail_trim_marker)
 		self.trt_trims.sig_head_trim_changed.connect(self.model().setTrimFromHead)
-		self.trt_trims.sig_head_trim_marker_preset_changed.connect(self.set_head_trim_marker_preset)
 		self.trt_trims.sig_tail_trim_changed.connect(self.model().setTrimFromTail)
-		self.trt_trims.sig_tail_trim_marker_preset_changed.connect(self.set_tail_trim_marker_preset)
 		
 		self.trim_total.sig_timecode_changed.connect(self.save_trims)
 		self.trim_total.sig_timecode_changed.connect(self.model().setTrimTotal)
+
+		self.trt_trims.sig_head_trim_marker_preset_chosen.connect(self.model().set_active_head_marker_preset_name)
+		self.trt_trims.sig_tail_trim_marker_preset_chosen.connect(self.model().set_active_tail_marker_preset_name)
 
 		self.trt_trims.sig_marker_preset_editor_requested.connect(self.show_marker_maker_dialog)
 		
@@ -421,8 +444,12 @@ class LBTRTCalculator(LBUtilityTab):
 		"""Opted to use a head marker... or not!!"""
 
 		# Make sure at least one marker is defined
-		if is_enabled and not self.model().marker_presets():
-			self.show_marker_maker_dialog()
+		if is_enabled:
+			if not self.model().marker_presets():
+				self.show_marker_maker_dialog()
+		
+		if not is_enabled:
+			self.model().set_active_head_marker_preset_name(None)
 		
 
 	@QtCore.Slot(bool)
@@ -435,10 +462,12 @@ class LBTRTCalculator(LBUtilityTab):
 	
 	@QtCore.Slot(str)
 	def set_head_trim_marker_preset(self, preset_name:str):
+		QtCore.QSettings().setValue("trt/trim_marker_preset_head", preset_name)
 		print("Head", preset_name)
 
 	@QtCore.Slot(str)
 	def set_tail_trim_marker_preset(self, preset_name:str):
+		QtCore.QSettings().setValue("trt/trim_marker_preset_tail", preset_name)		
 		print("Tail", preset_name)
 
 	def setModel(self, model:model_trt.TRTDataModel):

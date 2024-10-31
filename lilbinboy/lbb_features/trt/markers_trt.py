@@ -95,9 +95,9 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 			self.insertSeparator(len(marker_presets))
 			self.addItem("Add/Edit...")
 
-		self.setCurrentIndex(self.findText(self._last_selected_preset_name))
-
+		self.setCurrentIndex(self.findText(self._last_selected_preset_name) if self._last_selected_preset_name else 0)
 		self.blockSignals(False)
+
 	
 	@QtCore.Slot(int)
 	def processSelection(self, index:int):
@@ -115,7 +115,7 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 			self.sig_marker_preset_editor_requested.emit()
 	
 	@QtCore.Slot(str)
-	def setCurrentMarkerPreset(self, marker_preset:LBMarkerPreset):
+	def setCurrentMarkerPreset(self, marker_preset:LBMarkerPreset):	#TODO: Not this way, take er off
 		"""Set the selected marker preset from a given LBMarkerPreset"""
 
 		idx = self.findData(marker_preset)
@@ -124,7 +124,15 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 		
 		else:
 			print("Setting data we don't have...?")
-
+		
+	@QtCore.Slot(str)
+	def setCurrentMarkerPresetName(self, marker_preset:str):
+		
+		idx = self.findText(marker_preset)
+		if idx < 0:
+			print("Not found for", marker_preset)
+		else:
+			self.setCurrentIndex(idx)
 
 	@QtCore.Slot()
 	def updateToolTip(self):

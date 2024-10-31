@@ -6,9 +6,12 @@ from . import logic_trt, treeview_trt, markers_trt
 
 class TRTDataModel(QtCore.QObject):
 
-	sig_data_changed = QtCore.Signal()
+	sig_data_changed  = QtCore.Signal()
 	sig_trims_changed = QtCore.Signal()
-	sig_marker_presets_changed = QtCore.Signal()
+
+	sig_marker_presets_model_changed = QtCore.Signal()
+	sig_head_marker_preset_changed   = QtCore.Signal(str)
+	sig_tail_marker_preset_changed   = QtCore.Signal(str)
 
 	#LFOA_PERFS_PER_FOOT = 8 # 35.8
 	LFOA_PERFS_PER_FOOT = 16 # 35.4
@@ -41,6 +44,10 @@ class TRTDataModel(QtCore.QObject):
 		self._trim_tail = Timecode("4:00", rate=self._fps)
 		self._trim_total = Timecode(0, rate=self._fps)
 		self._adjust_total = Timecode(0, rate=self._fps)
+
+		# Marker presets
+		self._head_marker_preset_name = None
+		self._tail_marker_preset_name = None
 	
 	def sequence_count(self) -> int:
 		"""Number of sequences being considered"""
@@ -118,7 +125,36 @@ class TRTDataModel(QtCore.QObject):
 	
 	def set_marker_presets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
 		self._marker_presets = marker_presets
-		self.sig_marker_presets_changed.emit()
+		self.sig_marker_presets_model_changed.emit()
+
+	def activeHeadMarkerPresetName(self) -> str|None:
+		"""Active head marker preset name"""
+		return self._head_marker_preset_name
+	
+	def activeTailMarkerPresetName(self) -> str|None:
+		"""Active tail marker preset name"""
+		return self._tail_marker_preset_name
+	
+	@QtCore.Slot(str)
+	def set_active_head_marker_preset_name(self, marker_preset_name:str|None):
+		"""User has set a head marker preset"""
+		
+		if marker_preset_name is None or marker_preset_name in self.marker_presets():
+			self._head_marker_preset_name = marker_preset_name
+			self.sig_head_marker_preset_changed.emit(marker_preset_name)
+		else:
+			print("Nuh uh", marker_preset_name)
+
+	@QtCore.Slot(str)
+	def set_active_tail_marker_preset_name(self, marker_preset_name:str|None):
+		"""User has set a tail marker preset"""
+		
+		if marker_preset_name is None or marker_preset_name in self.marker_presets():
+			self._tail_marker_preset_name = marker_preset_name
+			self.sig_tail_marker_preset_changed.emit(marker_preset_name)
+		else:
+			print("Nuh uh", marker_preset_name)
+
 	
 	def marker_presets(self) -> dict[str, markers_trt.LBMarkerPreset]:
 		return self._marker_presets
