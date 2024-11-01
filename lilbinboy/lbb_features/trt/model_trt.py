@@ -1,13 +1,26 @@
-from PySide6 import QtCore, QtGui, QtWidgets
-from timecode import Timecode
+
+import enum
 import avbutils
+from PySide6 import QtCore, QtGui
+from timecode import Timecode
 from . import logic_trt, treeview_trt, markers_trt
+
+class SequenceSelectionMode(enum.Enum):
+	"""Modes for choosing sequences from a bin"""
+
+	ONE_SEQUENCE_PER_BIN  = 0,
+	"""Select only one sequence from a given bin"""
+
+	ALL_SEQUENCES_PER_BIN = 1
+	"""Select all sequences from a given bin"""
 
 
 class TRTDataModel(QtCore.QObject):
 
 	sig_data_changed  = QtCore.Signal()
 	sig_trims_changed = QtCore.Signal()
+
+	sig_sequence_selection_mode_changed = QtCore.Signal(SequenceSelectionMode)
 
 	sig_marker_presets_model_changed = QtCore.Signal()
 	sig_head_marker_preset_changed   = QtCore.Signal(str)
@@ -45,6 +58,9 @@ class TRTDataModel(QtCore.QObject):
 		self._trim_total = Timecode(0, rate=self._fps)
 		self._adjust_total = Timecode(0, rate=self._fps)
 
+		# Settings
+		self._sequence_selection_mode = SequenceSelectionMode.ONE_SEQUENCE_PER_BIN
+
 		# Marker presets
 		self._head_marker_preset_name = None
 		self._tail_marker_preset_name = None
@@ -52,6 +68,11 @@ class TRTDataModel(QtCore.QObject):
 	def sequence_count(self) -> int:
 		"""Number of sequences being considered"""
 		return len(self._data)
+	
+	def setSequenceSelectionMode(self, mode:SequenceSelectionMode):
+		self._sequence_selection_mode = mode
+		print(mode)
+		self.sig_sequence_selection_mode_changed.emit(mode)
 	
 	def bin_count(self) -> int:
 		"""Number of individual bins involved in this"""
@@ -159,7 +180,7 @@ class TRTDataModel(QtCore.QObject):
 	def marker_presets(self) -> dict[str, markers_trt.LBMarkerPreset]:
 		return self._marker_presets
 	
-	def add_sequence(self, bin_info:logic_trt.BinInfo):
+	def add_bin(self, bin_info:logic_trt.BinInfo):
 		self._data.append(bin_info)
 		self.sig_data_changed.emit()
 	

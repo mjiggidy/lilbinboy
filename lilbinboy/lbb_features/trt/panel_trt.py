@@ -2,9 +2,12 @@ import dataclasses, pathlib, re
 from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
 from ...lbb_common import LBUtilityTab, LBSpinBoxTC
-from . import dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt
+from . import dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
+
+	sig_progress_started = QtCore.Signal()
+	sig_progress_completed = QtCore.Signal()
 
 	TIMEOUT_BEFORE_HIDE = 1000
 
@@ -29,6 +32,8 @@ class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 	def step_added(self):
 		if self.isHidden():
 			self.setHidden(False)
+			self.sig_progress_started.emit()
+
 		self._reset_timer.stop()
 		self.setMaximum(self.maximum() + 1)
 	
@@ -43,6 +48,7 @@ class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 		self.setRange(0,0)
 		self.setValue(0)
 		self.setHidden(True)
+		self.sig_progress_completed.emit()
 
 
 class TRTThreadedBinGetter(QtCore.QRunnable):
@@ -70,6 +76,63 @@ class TRTSummaryItem():
 
 	value:str
 	"""The value of this item"""
+
+class TRTModeSelection(QtWidgets.QGroupBox):
+	"""Select how sequences are chosen from bins"""
+
+	sig_sequence_selection_mode_changed = QtCore.Signal(model_trt.SequenceSelectionMode)
+
+	def __init__(self):
+
+		super().__init__()
+
+		self.setContentsMargins(0,0,0,0)
+		self.setLayout(QtWidgets.QHBoxLayout())
+
+		self._rdo_one_sequence = QtWidgets.QRadioButton()
+		self._btn_one_sequence_config = QtWidgets.QPushButton()
+		self._rdo_all_sequence = QtWidgets.QRadioButton()
+
+		self._btn_group = QtWidgets.QButtonGroup()
+		self._btn_group.addButton(self._rdo_one_sequence)
+		self._btn_group.addButton(self._rdo_all_sequence)
+		
+		self.layout().addStretch()
+
+		self._rdo_one_sequence.setText("One Sequence Per Bin")
+		self.layout().addWidget(self._rdo_one_sequence)
+
+		self._btn_one_sequence_config.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentProperties))
+		self.layout().addWidget(self._btn_one_sequence_config)
+
+		self.layout().addStretch()
+
+		self._rdo_all_sequence.setText("All Sequences In Bin")
+		self.layout().addWidget(self._rdo_all_sequence)
+
+		self.layout().addStretch()
+
+		self._btn_group.buttonClicked.connect(self.selectionChanged)
+	
+	@QtCore.Slot(QtWidgets.QAbstractButton)
+	def selectionChanged(self, button:QtWidgets.QAbstractButton):
+
+		if button == self._rdo_one_sequence:
+			self.sig_sequence_selection_mode_changed.emit(model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN)
+		elif button == self._rdo_all_sequence:
+			self.sig_sequence_selection_mode_changed.emit(model_trt.SequenceSelectionMode.ALL_SEQUENCES_PER_BIN)
+		else:
+			print("Weird selection mode")
+	
+	@QtCore.Slot(model_trt.SequenceSelectionMode)
+	def setSequenceSelectionMode(self, mode:model_trt.SequenceSelectionMode):
+
+		print("Setting to ", mode)
+		
+		if mode is model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN:
+			self._rdo_one_sequence.setChecked(True)
+		elif mode is model_trt.SequenceSelectionMode.ALL_SEQUENCES_PER_BIN:
+			self._rdo_all_sequence.setChecked(True)
 
 class TRTSummary(QtWidgets.QGroupBox):
 
@@ -145,120 +208,6 @@ class TRTSummary(QtWidgets.QGroupBox):
 			
 			self.layout().addWidget(lbl_value, 0, self.layout().columnCount())
 			self.layout().addWidget(lbl_label, 1, self.layout().columnCount()-1)
-	
-
-class TRTControls(QtWidgets.QGroupBox):
-	"""TRT Control Abstract"""
-
-class TRTControlsTrims(TRTControls):
-
-	PATH_MARK_IN = str(pathlib.Path(__file__+"../../../../res/icon_mark_in.svg").resolve())
-	PATH_MARK_OUT = str(pathlib.Path(__file__+"../../../../res/icon_mark_out.svg").resolve())
-
-	sig_head_trim_changed = QtCore.Signal(Timecode)
-	sig_tail_trim_changed = QtCore.Signal(Timecode)
-
-	sig_head_trim_marker_preset_chosen = QtCore.Signal(str)
-	sig_tail_trim_marker_preset_chosen = QtCore.Signal(str)
-
-	sig_use_head_marker_changed = QtCore.Signal(bool)
-	sig_use_tail_marker_changed = QtCore.Signal(bool)
-
-	sig_marker_preset_editor_requested = QtCore.Signal()
-
-	def __init__(self):
-
-		super().__init__()
-
-		self.setTitle("Sequence Trimming")
-
-		self.setLayout(QtWidgets.QGridLayout())
-
-		self._from_head = LBSpinBoxTC()
-		self._from_tail = LBSpinBoxTC()
-
-		self._use_head_marker = QtWidgets.QCheckBox()
-		self._use_tail_marker = QtWidgets.QCheckBox()
-
-		self._from_head_marker = markers_trt.LBMarkerPresetComboBox()
-		self._from_tail_marker = markers_trt.LBMarkerPresetComboBox()
-
-		self._icon_mark_in  = QtWidgets.QLabel(pixmap=QtGui.QPixmap(self.PATH_MARK_IN).scaledToHeight(16, QtCore.Qt.TransformationMode.SmoothTransformation))
-		self._icon_mark_out = QtWidgets.QLabel(pixmap=QtGui.QPixmap(self.PATH_MARK_OUT).scaledToHeight(16, QtCore.Qt.TransformationMode.SmoothTransformation))
-
-		# Trim from Head / Duration
-		self.layout().addWidget(self._icon_mark_in, 0, 0)
-		self.layout().addWidget(self._from_head, 0, 1)
-		self.layout().addWidget(QtWidgets.QLabel("From Head"), 0, 2)
-		self.layout().addItem(QtWidgets.QSpacerItem(0,2, QtWidgets.QSizePolicy.Policy.MinimumExpanding),0,3)
-		
-		# Trim from Head / Marker
-		self.layout().addWidget(self._use_head_marker, 1, 0)
-		self.layout().addWidget(self._from_head_marker, 1, 1)
-		self._from_head_marker.setEnabled(False)
-		self.layout().addWidget(QtWidgets.QLabel("Or FFOA Locator", buddy=self._from_head), 1, 2)
-
-		# Trim from Tail / Duration
-		self.layout().addWidget(QtWidgets.QLabel("From Tail", alignment=QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter, buddy=self._from_tail), 0, 4)
-		self.layout().addWidget(self._from_tail, 0, 5)
-		self.layout().addWidget(self._icon_mark_out, 0, 6)
-
-		# Trim from Tail / Marker
-		self.layout().addWidget(QtWidgets.QLabel("Or LFOA Locator", alignment=QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter), 1, 4)
-		self.layout().addWidget(self._from_tail_marker, 1, 5)
-		self._from_tail_marker.setEnabled(False)
-		self.layout().addWidget(self._use_tail_marker, 1, 6)
-
-		self._from_head.sig_timecode_changed.connect(self.sig_head_trim_changed)
-		self._from_tail.sig_timecode_changed.connect(self.sig_tail_trim_changed)
-
-		self._use_head_marker.checkStateChanged.connect(lambda: self._from_head_marker.setEnabled(self._use_head_marker.isChecked()))
-		self._use_head_marker.checkStateChanged.connect(lambda: self.sig_use_head_marker_changed.emit(self._use_head_marker.isChecked()))
-		self._use_tail_marker.checkStateChanged.connect(lambda: self._from_tail_marker.setEnabled(self._use_tail_marker.isChecked()))
-		self._use_tail_marker.checkStateChanged.connect(lambda: self.sig_use_tail_marker_changed.emit(self._use_tail_marker.isChecked()))
-
-		self._from_head_marker.sig_marker_preset_editor_requested.connect(self.sig_marker_preset_editor_requested)
-		self._from_head_marker.sig_marker_preset_changed.connect(self.sig_head_trim_marker_preset_chosen)
-		
-		self._from_tail_marker.sig_marker_preset_editor_requested.connect(self.sig_marker_preset_editor_requested)
-		self._from_tail_marker.sig_marker_preset_changed.connect(self.sig_tail_trim_marker_preset_chosen)
-	
-	@QtCore.Slot(Timecode)
-	def set_head_trim(self, timecode:Timecode):
-		self._from_head.setTimecode(timecode)
-
-	@QtCore.Slot(Timecode)
-	def set_tail_trim(self, timecode:Timecode):
-		self._from_tail.setTimecode(timecode)
-	
-	@QtCore.Slot(dict)
-	def set_marker_presets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
-		"""Update FFOA and LFOA marker combo boxes"""
-
-		if not marker_presets:
-			self._use_head_marker.setCheckState(QtCore.Qt.CheckState.Unchecked)
-			self._use_tail_marker.setCheckState(QtCore.Qt.CheckState.Unchecked)
-
-		self._from_head_marker.setMarkerPresets(marker_presets)
-		self._from_tail_marker.setMarkerPresets(marker_presets)
-	
-	@QtCore.Slot(str)
-	def set_head_marker_preset_name(self, marker_preset_name:str|None):
-
-		if not marker_preset_name:
-			self._use_head_marker.setCheckState(QtCore.Qt.CheckState.Unchecked)
-		else:
-			self._use_head_marker.setCheckState(QtCore.Qt.CheckState.Checked)
-			self._from_head_marker.setCurrentMarkerPresetName(marker_preset_name)
-
-	@QtCore.Slot(str)
-	def set_tail_marker_preset_name(self, marker_preset_name:str|None):
-
-		if not marker_preset_name:
-			self._use_tail_marker.setCheckState(QtCore.Qt.CheckState.Unchecked)
-		else:
-			self._use_tail_marker.setCheckState(QtCore.Qt.CheckState.Checked)
-			self._from_tail_marker.setCurrentMarkerPresetName(marker_preset_name)
 
 
 class LBTRTCalculator(LBUtilityTab):
@@ -284,14 +233,18 @@ class LBTRTCalculator(LBUtilityTab):
 		self.btn_add_bins = QtWidgets.QPushButton("Add From Bins...")
 		self.btn_refresh_bins = QtWidgets.QPushButton()
 		self.btn_clear_bins = QtWidgets.QPushButton()
+		
+		self.lay_top_stack = QtWidgets.QStackedLayout()
 		self.prog_loading = TRTBinLoadingProgressBar()
+		self.bin_mode = TRTModeSelection()
+
 		
 		# Declare main treeview
 		self.list_trts = treeview_trt.TRTTreeView()
 		self.trt_summary = TRTSummary()
 
 		# Declare trims
-		self.trt_trims = TRTControlsTrims()
+		self.trt_trims = trims_trt.TRTControlsTrims()
 		self.trim_total = LBSpinBoxTC()
 
 
@@ -301,6 +254,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self._setupWidgets()
 		self._setupSignals()
 
+		self.model().setSequenceSelectionMode(QtCore.QSettings().value("trt/sequence_selection_mode", model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN))
 
 		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
 
@@ -339,7 +293,13 @@ class LBTRTCalculator(LBUtilityTab):
 		self.btn_add_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd))
 		ctrl_layout.addWidget(self.btn_add_bins)
 
-		ctrl_layout.addWidget(self.prog_loading)
+		
+		#ctrl_layout.addWidget(self.prog_loading)
+		self.lay_top_stack.addWidget(self.prog_loading)
+		self.lay_top_stack.addWidget(self.bin_mode)
+
+		
+		ctrl_layout.addLayout(self.lay_top_stack)
 
 		self.btn_refresh_bins.setToolTip("Reload the existing bins for updates")
 		self.btn_refresh_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRefresh))
@@ -378,6 +338,9 @@ class LBTRTCalculator(LBUtilityTab):
 	def _setupSignals(self):
 		"""Connect signals and slots"""
 
+		self.model().sig_sequence_selection_mode_changed.connect(self.bin_mode.setSequenceSelectionMode)
+		self.model().sig_sequence_selection_mode_changed.connect(lambda mode: QtCore.QSettings().setValue("trt/sequence_selection_mode", mode))
+
 		self.model().sig_data_changed.connect(self.update_summary)
 		self.model().sig_data_changed.connect(self.list_trts.fit_headers)
 		self.model().sig_data_changed.connect(self.update_control_buttons)
@@ -386,6 +349,11 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().sig_head_marker_preset_changed.connect(self.set_head_trim_marker_preset)
 		self.model().sig_tail_marker_preset_changed.connect(self.set_tail_trim_marker_preset)
 
+		# Swap between progress bar and bin mode selection depending on if the progress bar is active
+		self.prog_loading.sig_progress_started.connect(lambda: self.lay_top_stack.setCurrentWidget(self.prog_loading))
+		self.prog_loading.sig_progress_completed.connect(lambda: self.lay_top_stack.setCurrentWidget(self.bin_mode))
+		self.bin_mode.sig_sequence_selection_mode_changed.connect(self.model().setSequenceSelectionMode)
+		
 		self.list_trts.sig_add_bins.connect(self.set_bins)
 		self.list_trts.sig_remove_rows.connect(self.remove_bins)
 		
@@ -497,7 +465,7 @@ class LBTRTCalculator(LBUtilityTab):
 			thread = TRTThreadedBinGetter(path)
 			
 			self.prog_loading.step_added()
-			thread.signals().sig_got_bin_info.connect(self.model().add_sequence)
+			thread.signals().sig_got_bin_info.connect(self.model().add_bin)
 			thread.signals().sig_got_bin_info.connect(self.prog_loading.step_complete)
 
 			self._pool.start(thread)
