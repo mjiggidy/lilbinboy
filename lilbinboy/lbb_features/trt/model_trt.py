@@ -22,7 +22,7 @@ class TRTDataModel(QtCore.QObject):
 
 	sig_sequence_selection_mode_changed = QtCore.Signal(SequenceSelectionMode)
 
-	sig_marker_presets_model_changed = QtCore.Signal()
+	sig_marker_presets_model_changed = QtCore.Signal(dict)
 	sig_head_marker_preset_changed   = QtCore.Signal(str)
 	sig_tail_marker_preset_changed   = QtCore.Signal(str)
 
@@ -146,7 +146,7 @@ class TRTDataModel(QtCore.QObject):
 	
 	def set_marker_presets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
 		self._marker_presets = marker_presets
-		self.sig_marker_presets_model_changed.emit()
+		self.sig_marker_presets_model_changed.emit(self.marker_presets())
 
 	def activeHeadMarkerPresetName(self) -> str|None:
 		"""Active head marker preset name"""
@@ -160,21 +160,21 @@ class TRTDataModel(QtCore.QObject):
 	def set_active_head_marker_preset_name(self, marker_preset_name:str|None):
 		"""User has set a head marker preset"""
 		
-		if marker_preset_name is None or marker_preset_name in self.marker_presets():
-			self._head_marker_preset_name = marker_preset_name
-			self.sig_head_marker_preset_changed.emit(marker_preset_name)
+		if not marker_preset_name or marker_preset_name in self.marker_presets():
+			self._head_marker_preset_name = marker_preset_name or None
+			self.sig_head_marker_preset_changed.emit(self._head_marker_preset_name)
 		else:
-			print("Nuh uh", marker_preset_name)
+			print("Got weird one:", marker_preset_name, str(type(marker_preset_name)))
 
 	@QtCore.Slot(str)
 	def set_active_tail_marker_preset_name(self, marker_preset_name:str|None):
 		"""User has set a tail marker preset"""
 		
-		if marker_preset_name is None or marker_preset_name in self.marker_presets():
-			self._tail_marker_preset_name = marker_preset_name
-			self.sig_tail_marker_preset_changed.emit(marker_preset_name)
+		if not marker_preset_name or marker_preset_name in self.marker_presets():
+			self._tail_marker_preset_name = marker_preset_name or None
+			self.sig_tail_marker_preset_changed.emit(self._tail_marker_preset_name)
 		else:
-			print("Nuh uh", marker_preset_name)
+			print("Noo", marker_preset_name)
 
 	
 	def marker_presets(self) -> dict[str, markers_trt.LBMarkerPreset]:

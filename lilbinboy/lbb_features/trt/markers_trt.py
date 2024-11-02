@@ -81,6 +81,7 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 	def allowEditOption(self) -> bool:
 		return self._allow_edit_option
 	
+	@QtCore.Slot(dict)
 	def setMarkerPresets(self, marker_presets:dict[str, LBMarkerPreset]):
 
 		self.blockSignals(True)
@@ -92,10 +93,21 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 
 		# Add edit option if it's there
 		if self.allowEditOption():
-			self.insertSeparator(len(marker_presets))
-			self.addItem("Add/Edit...")
+			if marker_presets:
+				self.insertSeparator(len(marker_presets))
+			self.addItem("Add/Edit...",None)
+
+		# Once presets are updated, we need to figure out what to select.
+		# If nothing was selected previously (marker presets were empty initially), select the top of the list if now there are markers
+		# If there still are no markers, select... nothing? TODO
+		if not self._last_selected_preset_name:
+			if marker_presets:
+				self._last_selected_preset_name = self.itemText(0)
+			else:
+				self._last_selected_preset_name = None
 
 		self.setCurrentIndex(self.findText(self._last_selected_preset_name) if self._last_selected_preset_name else 0)
+
 		self.blockSignals(False)
 
 	
@@ -133,6 +145,10 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 			print("Not found for", marker_preset)
 		else:
 			self.setCurrentIndex(idx)
+
+	def currentMarkerPresetName(self) -> str:
+
+		return self.currentText() or None
 
 	@QtCore.Slot()
 	def updateToolTip(self):
