@@ -397,8 +397,9 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		for marker in markers_trt.LBMarkerIcons():
 			wnd_marker.addMarker(marker)
-		wnd_marker.set_marker_presets(self.model().marker_presets())
-		
+		wnd_marker.setMarkerPresets(self.model().marker_presets())
+
+		self.model().sig_marker_presets_model_changed.connect(wnd_marker.setMarkerPresets)
 		wnd_marker.sig_save_preset.connect(self.save_marker_preset)
 		wnd_marker.sig_delete_preset.connect(self.remove_marker_preset)
 

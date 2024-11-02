@@ -83,11 +83,13 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 	
 	@QtCore.Slot(dict)
 	def setMarkerPresets(self, marker_presets:dict[str, LBMarkerPreset]):
+		"""Set marker presets list from marker model (external signals blocked)"""
 
 		self.blockSignals(True)
 		
 		self.clear()
 
+		# Add presets; storing actual preset as userdata basically only for tooltip creation I guess
 		for preset_name, preset_data in marker_presets.items():
 			self.addItem(LBMarkerIcon(preset_data.color), preset_name, preset_data)
 
@@ -95,7 +97,7 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 		if self.allowEditOption():
 			if marker_presets:
 				self.insertSeparator(len(marker_presets))
-			self.addItem("Add/Edit...",None)
+			self.addItem(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd), "Add/Edit...", None)
 
 		# Once presets are updated, we need to figure out what to select.
 		# If nothing was selected previously (marker presets were empty initially), select the top of the list if now there are markers
@@ -123,7 +125,7 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 
 		# If new selection does not contain a preset (Add/Edit Option), and it wasn't previously selected, request the editor
 		elif self.allowEditOption():
-			self.setCurrentIndex(self.findText(self._last_selected_preset_name))
+# TEMP		self.setCurrentIndex(self.findText(self._last_selected_preset_name))
 			self.sig_marker_preset_editor_requested.emit()
 	
 	@QtCore.Slot(str)
@@ -148,7 +150,7 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 
 	def currentMarkerPresetName(self) -> str:
 
-		return self.currentText() or None
+		return self.currentText() if self.currentData() else None
 
 	@QtCore.Slot()
 	def updateToolTip(self):
