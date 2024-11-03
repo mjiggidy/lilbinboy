@@ -1,4 +1,4 @@
-import dataclasses
+import dataclasses, re
 import avbutils
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -21,6 +21,23 @@ class LBMarkerPreset:
 	color: "LBMarkerIcon | None"
 	comment: str | None
 	author:  str | None
+
+class LBMarkerPresetNameValidator(QtGui.QValidator):
+	"""Validate marker preset names"""
+
+	pat_valid_preset_name = re.compile("^[a-z0-9\-_](?:[a-z0-9\-_ ]*[a-z0-9\-_])?$", re.I)
+
+	@QtCore.Slot(str, int)
+	def validate(self, preset_name:str, pos:int) -> QtGui.QValidator.State:
+
+		if self.pat_valid_preset_name.match(preset_name):
+			return QtGui.QValidator.State.Acceptable
+		
+		elif self.pat_valid_preset_name.match(preset_name.strip()) or not preset_name:
+			return QtGui.QValidator.State.Intermediate
+		
+		else:
+			return QtGui.QValidator.State.Invalid
 
 class LBMarkerIcon(QtGui.QIcon):
 	

@@ -27,6 +27,8 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 
 		self.cmb_marker_presets = markers_trt.LBMarkerPresetComboBox()
 		self.txt_preset_name = QtWidgets.QLineEdit()
+		self.val_preset_name = markers_trt.LBMarkerPresetNameValidator() # NOTE: Used for save button
+
 		self.btn_save_preset = QtWidgets.QPushButton()
 		self.btn_duplicate_preset = QtWidgets.QPushButton()
 		self.btn_delete_preset = QtWidgets.QPushButton()
@@ -48,6 +50,8 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		p = self.txt_preset_name.sizePolicy()
 		p.setRetainSizeWhenHidden(True)
 		self.txt_preset_name.setSizePolicy(p)
+		self.txt_preset_name.setMaxLength(16)
+		self.txt_preset_name.setValidator(self.val_preset_name)
 		lay_presets.addWidget(self.txt_preset_name)
 		
 		self.btn_save_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave))
@@ -81,7 +85,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 
 		self.layout().addWidget(self.grp_edit)
 
-		self.btn_box.setStandardButtons(QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+		self.btn_box.setStandardButtons(QtWidgets.QDialogButtonBox.StandardButton.Close)
 		self.layout().addWidget(self.btn_box)
 
 	def _setupSignals(self):
@@ -94,7 +98,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.btn_delete_preset.clicked.connect(lambda: self.sig_delete_preset.emit(self.cmb_marker_presets.currentText()))
 		
 		#self.btn_box.accepted.connect(self.makeMarkerPreset)
-		self.btn_box.accepted.connect(self.accept)
+		#self.btn_box.accepted.connect(self.accept)
 		self.btn_box.rejected.connect(self.reject)
 
 		self.txt_preset_name.textChanged.connect(self.presetNameChanged)
@@ -167,7 +171,8 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		"""Update the little groupbox title to include the preset name"""
 
 		self.grp_edit.setTitle(f"Marker Match Criteria for \"{preset_name or '(Untited)'}\"")
-		self.btn_save_preset.setEnabled(bool(preset_name))
+		
+		self.btn_save_preset.setEnabled(self.val_preset_name.validate(preset_name, len(preset_name)) is self.val_preset_name.State.Acceptable)
 	
 	def update_completers(self):
 
