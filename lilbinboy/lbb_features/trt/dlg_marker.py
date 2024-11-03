@@ -25,11 +25,18 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self._marker_presets = dict()
 		self._editing_mode = self.EditingMode.CREATE_NEW	# Default to creating new with empty markers list at first
 
+		# Stack for toggling between "new preset" name editor & controls, vs "update existing" controls
+		self.stack_name_editor = QtWidgets.QStackedWidget()
+		self.stack_page_addnew = QtWidgets.QWidget()
+		self.stack_page_update = QtWidgets.QWidget()
+		
 		self.cmb_marker_presets = markers_trt.LBMarkerPresetComboBox()
 		self.txt_preset_name = QtWidgets.QLineEdit()
-		self.val_preset_name = markers_trt.LBMarkerPresetNameValidator() # NOTE: Used for save button
+		self.vld_preset_name = markers_trt.LBMarkerPresetNameValidator() # NOTE: Used for save button
 
-		self.btn_save_preset = QtWidgets.QPushButton()
+		self.btn_save_new_preset = QtWidgets.QPushButton()		# Save new preset
+
+		self.btn_update_preset = QtWidgets.QPushButton()	# Update existing preset
 		self.btn_duplicate_preset = QtWidgets.QPushButton()
 		self.btn_delete_preset = QtWidgets.QPushButton()
 
@@ -41,33 +48,60 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self._setupWidgets()
 		self._setupSignals()
 	
+		self.setMinimumWidth(500)
+		self.setFixedHeight(self.sizeHint().height())
 
 	def _setupWidgets(self):
 
 		lay_presets = QtWidgets.QHBoxLayout()
 		lay_presets.addWidget(self.cmb_marker_presets)
-		
-		p = self.txt_preset_name.sizePolicy()
-		p.setRetainSizeWhenHidden(True)
-		self.txt_preset_name.setSizePolicy(p)
-		self.txt_preset_name.setMaxLength(16)
-		self.txt_preset_name.setValidator(self.val_preset_name)
-		lay_presets.addWidget(self.txt_preset_name)
-		
-		self.btn_save_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave))
-		self.btn_save_preset.setToolTip("Save Preset")
-		lay_presets.addWidget(self.btn_save_preset)
-		
-		self.btn_duplicate_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditCopy))
-		self.btn_duplicate_preset.setToolTip("Duplicate Preset")
-		lay_presets.addWidget(self.btn_duplicate_preset)
-		
-		self.btn_delete_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListRemove))
-		self.btn_delete_preset.setToolTip("Delete Preset")
-		lay_presets.addWidget(self.btn_delete_preset)
 
+		# New Preset Name Editor & Controls
+		self.stack_page_addnew.setLayout(QtWidgets.QHBoxLayout())
+		self.stack_page_addnew.layout().setContentsMargins(0,0,0,0)
+		
+		self.txt_preset_name.setMaxLength(16)
+		self.txt_preset_name.setValidator(self.vld_preset_name)
+		self.txt_preset_name.setPlaceholderText("Marker Preset Name")
+		
+		self.btn_save_new_preset.setText("Save New Preset")
+		self.btn_save_new_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentNew))
+		self.btn_save_new_preset.setToolTip("Save New Preset")
+
+		self.stack_page_addnew.layout().addWidget(self.txt_preset_name)
+		self.stack_page_addnew.layout().addWidget(self.btn_save_new_preset)
+
+		self.stack_name_editor.addWidget(self.stack_page_addnew)
+
+		# Update Existing Preset Controls
+		self.stack_page_update.setLayout(QtWidgets.QHBoxLayout())
+		self.stack_page_update.layout().setContentsMargins(0,0,0,0)
+
+		self.btn_update_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave))
+		self.btn_update_preset.setText("Update")
+		self.btn_update_preset.setToolTip("Update Preset")
+
+		self.btn_duplicate_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditCopy))
+		self.btn_duplicate_preset.setText("Duplicate")
+		self.btn_duplicate_preset.setToolTip("Duplicate Preset")
+
+		self.btn_delete_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListRemove))
+		self.btn_delete_preset.setText("Delete")
+		self.btn_delete_preset.setToolTip("Delete Preset")
+
+		self.stack_page_update.layout().addStretch()
+		self.stack_page_update.layout().addWidget(self.btn_update_preset)
+		self.stack_page_update.layout().addWidget(self.btn_duplicate_preset)
+		self.stack_page_update.layout().addWidget(self.btn_delete_preset)
+
+		self.stack_name_editor.addWidget(self.stack_page_update)
+
+		# Foof!  Add stacked widget and the rest to the master layout
+		lay_presets.addWidget(self.stack_name_editor)
 		self.layout().addLayout(lay_presets)
 
+
+		# Match criteria editor
 
 		self.grp_edit = QtWidgets.QGroupBox()
 		self.grp_edit.setLayout(QtWidgets.QGridLayout())
@@ -90,18 +124,20 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 
 	def _setupSignals(self):
 
+		# Combo box things
 		self.cmb_marker_presets.sig_marker_preset_changed.connect(self.setCurrentMarkerPresetName)
 		self.cmb_marker_presets.sig_marker_preset_editor_requested.connect(self.createNewPreset)
 
 		# Preset buttons
-		self.btn_save_preset.clicked.connect(self.makeMarkerPreset)
+		self.btn_save_new_preset.clicked.connect(self.makeMarkerPreset)
+		self.btn_update_preset.clicked.connect(self.makeMarkerPreset)
 		self.btn_delete_preset.clicked.connect(lambda: self.sig_delete_preset.emit(self.cmb_marker_presets.currentText()))
 		
-		#self.btn_box.accepted.connect(self.makeMarkerPreset)
-		#self.btn_box.accepted.connect(self.accept)
+		self.txt_preset_name.textChanged.connect(self.presetNameChanged)
+
+		# Dialog close button signals `reject``, I guess
 		self.btn_box.rejected.connect(self.reject)
 
-		self.txt_preset_name.textChanged.connect(self.presetNameChanged)
 	
 	def addMarker(self, marker:markers_trt.LBMarkerIcon):
 		self.cmb_marker_color.addItem(marker, marker.name())
@@ -132,6 +168,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	def setCurrentMarkerPresetName(self, marker_preset_name:str|None):
 
 		self.setEditingMode(self.EditingMode.EDIT_EXISTING)
+		self.stack_name_editor.setCurrentWidget(self.stack_page_update)
 		
 		if marker_preset_name not in self._marker_presets:
 			print("Not in there", marker_preset_name)
@@ -150,6 +187,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		"""We makin a newy"""
 
 		self.setEditingMode(self.EditingMode.CREATE_NEW)
+		self.stack_name_editor.setCurrentWidget(self.stack_page_addnew)
 
 		self.txt_preset_name.setText("New Preset")
 		self.txt_preset_name.setVisible(True)
@@ -170,9 +208,9 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	def presetNameChanged(self, preset_name:str):
 		"""Update the little groupbox title to include the preset name"""
 
-		self.grp_edit.setTitle(f"Marker Match Criteria for \"{preset_name or '(Untited)'}\"")
+		#self.grp_edit.setTitle(f"Marker Match Criteria for \"{preset_name or '(Untited)'}\"")
 		
-		self.btn_save_preset.setEnabled(self.val_preset_name.validate(preset_name, len(preset_name)) is self.val_preset_name.State.Acceptable)
+		self.btn_save_new_preset.setEnabled(self.vld_preset_name.validate(preset_name, len(preset_name)) is self.vld_preset_name.State.Acceptable)
 	
 	def update_completers(self):
 
