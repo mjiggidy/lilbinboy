@@ -93,12 +93,16 @@ class TRTControlsTrims(QtWidgets.QGroupBox):
 	@QtCore.Slot(Timecode)
 	def set_head_trim(self, timecode:Timecode):
 		"""Set head trim TC"""
+		self._from_head.blockSignals(True)
 		self._from_head.setTimecode(timecode)
+		self._from_head.blockSignals(False)
 
 	@QtCore.Slot(Timecode)
 	def set_tail_trim(self, timecode:Timecode):
 		"""Set tail trim TC"""
+		self._from_tail.blockSignals(True)
 		self._from_tail.setTimecode(timecode)
+		self._from_tail.blockSignals(False)
 	
 	@QtCore.Slot(dict)
 	def set_marker_presets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):

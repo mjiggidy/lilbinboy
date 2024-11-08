@@ -323,20 +323,24 @@ class LBTRTCalculator(LBUtilityTab):
 	def _setupSignals(self):
 		"""Connect signals and slots"""
 
+		# Bin/sequence loading mode
 		self.model().sig_sequence_selection_mode_changed.connect(self.bin_mode.setSequenceSelectionMode)
 		self.model().sig_sequence_selection_mode_changed.connect(lambda mode: QtCore.QSettings().setValue("trt/sequence_selection_mode", mode))
 
+		# Data model has changed
 		self.model().sig_data_changed.connect(self.update_summary)
 		self.model().sig_data_changed.connect(self.list_trts.fit_headers)
 		self.model().sig_data_changed.connect(self.update_control_buttons)
 
+		# Data model bins have changed
 		self.model().sig_bins_changed.connect(self.save_bins)
-		#self.model().sig_data_changed.connect(self.save_bins)
 		
-		#self.model().sig_trims_changed.connect(lambda: self.trt_trims.set_head_trim(self.model().trimFromHead()))
-		#self.model().sig_trims_changed.connect(lambda: self.trt_trims.set_tail_trim(self.model().trimFromTail()))
+		# Trim timecode changed
+		self.model().sig_trims_changed.connect(lambda: self.trt_trims.set_head_trim(self.model().trimFromHead()))
+		self.model().sig_trims_changed.connect(lambda: self.trt_trims.set_tail_trim(self.model().trimFromTail()))
 		self.model().sig_trims_changed.connect(self.save_trims)
 
+		# Trim marker presets have changed
 		self.model().sig_marker_presets_model_changed.connect(self.trt_trims.set_marker_presets)
 		self.model().sig_head_marker_preset_changed.connect(self.save_head_trim_marker_preset)
 		self.model().sig_head_marker_preset_changed.connect(self.trt_trims.set_head_marker_preset_name)
@@ -348,23 +352,29 @@ class LBTRTCalculator(LBUtilityTab):
 		self.prog_loading.sig_progress_completed.connect(lambda: self.stack_bin_loading.setCurrentWidget(self.bin_mode))
 		self.bin_mode.sig_sequence_selection_mode_changed.connect(self.model().setSequenceSelectionMode)
 		
+		# Treeview requests for add/remove bins (drag and drop or selection delete)
 		self.list_trts.sig_add_bins.connect(self.set_bins)
 		self.list_trts.sig_remove_rows.connect(self.remove_bins)
 		
+		# Top control buttons
 		self.btn_add_bins.clicked.connect(self.choose_folder)
 		self.btn_refresh_bins.clicked.connect(self.refresh_bins)
 		self.btn_clear_bins.clicked.connect(lambda: self.remove_bins(self.list_trts.selectedRows()))
 
+		# Trim timecode spinners
 		self.trt_trims.sig_head_trim_changed.connect(self.model().setTrimFromHead)
 		self.trt_trims.sig_tail_trim_changed.connect(self.model().setTrimFromTail)
 		
+		# Trim marker preset controls
+		self.trt_trims.sig_head_trim_marker_preset_chosen.connect(self.model().set_active_head_marker_preset_name)
+		self.trt_trims.sig_tail_trim_marker_preset_chosen.connect(self.model().set_active_tail_marker_preset_name)
+		self.trt_trims.sig_marker_preset_editor_requested.connect(self.show_marker_maker_dialog)
+		
+		# Total adjustment spinner
 		self.trim_total.sig_timecode_changed.connect(self.save_trims)
 		self.trim_total.sig_timecode_changed.connect(self.model().setTrimTotal)
 
-		self.trt_trims.sig_head_trim_marker_preset_chosen.connect(self.model().set_active_head_marker_preset_name)
-		self.trt_trims.sig_tail_trim_marker_preset_chosen.connect(self.model().set_active_tail_marker_preset_name)
 
-		self.trt_trims.sig_marker_preset_editor_requested.connect(self.show_marker_maker_dialog)
 		
 	@QtCore.Slot(str, markers_trt.LBMarkerPreset)
 	def save_marker_preset(self, preset_name:str, marker_preset:markers_trt.LBMarkerPreset):
