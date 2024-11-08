@@ -156,7 +156,8 @@ class TRTSummary(QtWidgets.QGroupBox):
 		self._add_initial_summary_items()
 
 	def _add_initial_summary_items(self):
-			"""Demo info for now"""
+			"""Initial info for now"""
+
 			self.add_summary_item(TRTSummaryItem(
 				label="Sequences",
 				value="0"
@@ -324,8 +325,7 @@ class LBTRTCalculator(LBUtilityTab):
 		"""Connect signals and slots"""
 
 		# Bin/sequence loading mode
-		self.model().sig_sequence_selection_mode_changed.connect(self.bin_mode.setSequenceSelectionMode)
-		self.model().sig_sequence_selection_mode_changed.connect(lambda mode: QtCore.QSettings().setValue("trt/sequence_selection_mode", mode))
+		self.model().sig_sequence_selection_mode_changed.connect(self.sequenceSelectionModeChanged)
 
 		# Data model has changed
 		self.model().sig_data_changed.connect(self.update_summary)
@@ -433,6 +433,8 @@ class LBTRTCalculator(LBUtilityTab):
 		settings.setValue("trt/trim_total", str(self.model().trimTotal()))
 		settings.setValue("trt/rate", self.model().rate())
 
+		print("Saved", settings.value("trt/trim_tail"))
+
 	def get_sequence_info(self, paths):
 
 		last_bin = ""
@@ -499,3 +501,8 @@ class LBTRTCalculator(LBUtilityTab):
 		enabled = bool(list(self.model().data()))
 		self.btn_clear_bins.setEnabled(enabled)
 		self.btn_refresh_bins.setEnabled(enabled)
+	
+	@QtCore.Slot(model_trt.SequenceSelectionMode)
+	def sequenceSelectionModeChanged(self, mode:model_trt.SequenceSelectionMode):
+		self.bin_mode.setSequenceSelectionMode(mode)
+		QtCore.QSettings().setValue("trt/sequence_selection_mode", mode)
