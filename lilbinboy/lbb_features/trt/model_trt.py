@@ -17,6 +17,9 @@ class SequenceSelectionMode(enum.Enum):
 
 class TRTDataModel(QtCore.QObject):
 
+	sig_bins_changed = QtCore.Signal()
+	"""Bins (sequnces?) were added or removed"""
+
 	sig_data_changed  = QtCore.Signal()
 	sig_trims_changed = QtCore.Signal()
 
@@ -143,6 +146,7 @@ class TRTDataModel(QtCore.QObject):
 	def set_data(self, bin_info_list:list[logic_trt.BinInfo]):
 		self._data = bin_info_list
 		self.sig_data_changed.emit()
+		self.sig_bins_changed.emit()
 	
 	def set_marker_presets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
 		self._marker_presets = marker_presets
@@ -182,6 +186,7 @@ class TRTDataModel(QtCore.QObject):
 	
 	def add_bin(self, bin_info:logic_trt.BinInfo):
 		self._data.append(bin_info)
+		self.sig_bins_changed.emit()
 		self.sig_data_changed.emit()
 	
 	def remove_sequence(self, index:int):
@@ -190,6 +195,7 @@ class TRTDataModel(QtCore.QObject):
 		except Exception as e:
 			print(f"Didn't remove because {e}")
 		
+		self.sig_bins_changed.emit()
 		self.sig_data_changed.emit()
 
 	def clear(self):
@@ -223,13 +229,22 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		"""Create and setup a new model"""
 		super().__init__()
 
-		self.setDataModel(trt_model)
+		self._data_model = trt_model or TRTDataModel()
 		self._headers = headers_list or []
 
+		self.set_headers([
+			treeview_trt.TRTTreeViewHeaderColor("","sequence_color"),
+			treeview_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
+			treeview_trt.TRTTreeViewHeaderDuration("Full Duration","duration_total"),
+			treeview_trt.TRTTreeViewHeaderDuration("Trimmed Duration","duration_trimmed"),
+			treeview_trt.TRTTreeViewHeaderDuration("LFOA", "lfoa"),
+			treeview_trt.TRTTreeViewHeaderDateTime("Date Modified","date_modified"),
+			treeview_trt.TRTTreeViewHeaderPath("From Bin","bin_path"),
+			treeview_trt.TRTTreeViewHeaderBinLock("Bin Lock","bin_lock"),
+
+		])
+
 		self.model().sig_data_changed.connect(self.modelReset)
-		
-		# Typically a list of data here
-		# Typically a dict of header keys and values here
 	
 	def setDataModel(self, trt_model:TRTDataModel):
 		self._data_model = trt_model

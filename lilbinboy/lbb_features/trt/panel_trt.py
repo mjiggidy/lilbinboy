@@ -86,8 +86,8 @@ class TRTModeSelection(QtWidgets.QGroupBox):
 
 		super().__init__()
 
-		self.setContentsMargins(0,0,0,0)
 		self.setLayout(QtWidgets.QHBoxLayout())
+		self.layout().setContentsMargins(0,0,0,0)
 
 		self._rdo_one_sequence = QtWidgets.QRadioButton()
 		self._btn_one_sequence_config = QtWidgets.QPushButton()
@@ -235,7 +235,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.btn_clear_bins = QtWidgets.QPushButton()
 		
 		# Stacked widget to toggle between progress bar and bin/sequence mode
-		self.lay_top_stack = QtWidgets.QStackedLayout()
+		self.stack_bin_loading = QtWidgets.QStackedWidget()
 		self.prog_loading = TRTBinLoadingProgressBar()
 		self.bin_mode = TRTModeSelection()
 
@@ -250,16 +250,16 @@ class LBTRTCalculator(LBUtilityTab):
 
 
 		self._setupSignals()
-		self._setupModels()
 		self._setupWidgets()
+		self._loadInitial()
 
+
+
+
+	def _loadInitial(self):
+		"""Load initial data from preferences (or defaults)"""
+		
 		self.model().setSequenceSelectionMode(QtCore.QSettings().value("trt/sequence_selection_mode", model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN))
-
-		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
-
-
-	def _setupModels(self):
-		"""Configure the important data"""
 
 		self.model().setTrimFromHead(Timecode(QtCore.QSettings().value("trt/trim_head",0), rate=QtCore.QSettings().value("trt/rate",24)))
 		self.model().setTrimFromTail(Timecode(QtCore.QSettings().value("trt/trim_tail",0), rate=QtCore.QSettings().value("trt/rate",24)))
@@ -270,18 +270,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().set_active_tail_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_tail"))
 
 		# TODO: Load in from user settings
-		self._treeview_model.set_headers([
-			treeview_trt.TRTTreeViewHeaderColor("","sequence_color"),
-			treeview_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
-			treeview_trt.TRTTreeViewHeaderDuration("Full Duration","duration_total"),
-			treeview_trt.TRTTreeViewHeaderDuration("Trimmed Duration","duration_trimmed"),
-			treeview_trt.TRTTreeViewHeaderDuration("LFOA", "lfoa"),
-			treeview_trt.TRTTreeViewHeaderDateTime("Date Modified","date_modified"),
-			treeview_trt.TRTTreeViewHeaderPath("From Bin","bin_path"),
-			treeview_trt.TRTTreeViewHeaderBinLock("Bin Lock","bin_lock"),
-
-		])
-
+		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
 
 	def _setupWidgets(self):
 		"""Setup the widgets and add them to the layout"""
@@ -295,11 +284,12 @@ class LBTRTCalculator(LBUtilityTab):
 
 		
 		#ctrl_layout.addWidget(self.prog_loading)
-		self.lay_top_stack.addWidget(self.prog_loading)
-		self.lay_top_stack.addWidget(self.bin_mode)
+		self.stack_bin_loading.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Maximum))
+		self.stack_bin_loading.addWidget(self.prog_loading)
+		self.stack_bin_loading.addWidget(self.bin_mode)
+		self.stack_bin_loading.setCurrentWidget(self.bin_mode)
 
-		
-		ctrl_layout.addLayout(self.lay_top_stack)
+		ctrl_layout.addWidget(self.stack_bin_loading)
 
 		self.btn_refresh_bins.setToolTip("Reload the existing bins for updates")
 		self.btn_refresh_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRefresh))
@@ -339,7 +329,9 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().sig_data_changed.connect(self.update_summary)
 		self.model().sig_data_changed.connect(self.list_trts.fit_headers)
 		self.model().sig_data_changed.connect(self.update_control_buttons)
-		self.model().sig_data_changed.connect(self.save_bins)
+
+		self.model().sig_bins_changed.connect(self.save_bins)
+		#self.model().sig_data_changed.connect(self.save_bins)
 		
 		#self.model().sig_trims_changed.connect(lambda: self.trt_trims.set_head_trim(self.model().trimFromHead()))
 		#self.model().sig_trims_changed.connect(lambda: self.trt_trims.set_tail_trim(self.model().trimFromTail()))
@@ -352,8 +344,8 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().sig_tail_marker_preset_changed.connect(self.trt_trims.set_tail_marker_preset_name)
 
 		# Swap between progress bar and bin mode selection depending on if the progress bar is active
-		self.prog_loading.sig_progress_started.connect(lambda: self.lay_top_stack.setCurrentWidget(self.prog_loading))
-		self.prog_loading.sig_progress_completed.connect(lambda: self.lay_top_stack.setCurrentWidget(self.bin_mode))
+		self.prog_loading.sig_progress_started.connect(lambda: self.stack_bin_loading.setCurrentWidget(self.prog_loading))
+		self.prog_loading.sig_progress_completed.connect(lambda: self.stack_bin_loading.setCurrentWidget(self.bin_mode))
 		self.bin_mode.sig_sequence_selection_mode_changed.connect(self.model().setSequenceSelectionMode)
 		
 		self.list_trts.sig_add_bins.connect(self.set_bins)
@@ -408,12 +400,10 @@ class LBTRTCalculator(LBUtilityTab):
 	@QtCore.Slot(str)
 	def save_head_trim_marker_preset(self, preset_name:str):
 		QtCore.QSettings().setValue("trt/trim_marker_preset_head", preset_name)
-		print("Head", preset_name)
 
 	@QtCore.Slot(str)
 	def save_tail_trim_marker_preset(self, preset_name:str):
 		QtCore.QSettings().setValue("trt/trim_marker_preset_tail", preset_name)		
-		print("Tail", preset_name)
 
 	def setModel(self, model:model_trt.TRTDataModel):
 		self._data_model = model
@@ -456,8 +446,10 @@ class LBTRTCalculator(LBUtilityTab):
 	def set_bins(self, bin_paths: list[str]):
 
 		#self.list_trts.clear()
-		self.get_sequence_info(pathlib.Path(x) for x in bin_paths)
-		self.save_bins()
+		if not bin_paths:
+			self.model().clear()
+		else:
+			self.get_sequence_info(pathlib.Path(x) for x in bin_paths)
 	
 	def refresh_bins(self):
 		pass
@@ -467,7 +459,6 @@ class LBTRTCalculator(LBUtilityTab):
 		# Remove selection
 		if selected:
 			[self.model().remove_sequence(idx) for idx in selected]
-			self.save_bins()
 
 		# Or remove everything if nothing is selected
 		elif QtWidgets.QMessageBox.warning(self,
@@ -476,12 +467,10 @@ class LBTRTCalculator(LBUtilityTab):
 			QtWidgets.QMessageBox.StandardButton.Ok, QtWidgets.QMessageBox.StandardButton.Cancel) == QtWidgets.QMessageBox.StandardButton.Ok:
 
 			self.model().clear()
-			self.save_bins()
 	
 	def choose_folder(self):
 		last_bin_path = QtCore.QSettings().value("trt/last_bin")
-		print(last_bin_path)
-		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", dir=last_bin_path, filter="Avid Bins (*.avb)")
+		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", dir=last_bin_path, filter="Avid Bins (*.avb);;All Files (*)")
 		
 		if not files:
 			return
