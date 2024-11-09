@@ -139,7 +139,8 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.btn_box.rejected.connect(self.reject)
 
 	
-	def addMarker(self, marker:markers_trt.LBMarkerIcon):
+	def addMarkerColor(self, marker:markers_trt.LBMarkerIcon):
+		"""Add marker color to marker color combo box"""
 		self.cmb_marker_color.addItem(marker, marker.name())
 		self.cmb_marker_color.update()
 	
@@ -155,17 +156,23 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	
 	@QtCore.Slot(dict)
 	def setMarkerPresets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
+		"""Set the marker presets model"""
+		
 		self._marker_presets = marker_presets
 		self.cmb_marker_presets.setMarkerPresets(self._marker_presets)
 		self.update_completers()
 
 		if self.txt_preset_name.text() in self._marker_presets:
-			self.cmb_marker_presets.setCurrentText(self.txt_preset_name.text())
+			self.setCurrentMarkerPresetName(self.txt_preset_name.text())
+		elif self._marker_presets:
+			print("Here I set to", self.cmb_marker_presets.itemText(0))
+			self.setCurrentMarkerPresetName(self.cmb_marker_presets.itemText(0))
 		else:
-			self.cmb_marker_presets.setCurrentIndex(0)
+			self.createNewPreset()
 	
 	@QtCore.Slot(str)
 	def setCurrentMarkerPresetName(self, marker_preset_name:str|None):
+		"""Set the currently active marker by preset name"""
 
 		self.setEditingMode(self.EditingMode.EDIT_EXISTING)
 		self.stack_name_editor.setCurrentWidget(self.stack_page_update)
@@ -175,10 +182,11 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 			return
 		
 		marker_preset:markers_trt.LBMarkerPreset = self._marker_presets[marker_preset_name]
+		self.cmb_marker_presets.setCurrentText(marker_preset_name)
 		self.txt_preset_name.setText(marker_preset_name)
 		self.txt_preset_name.setVisible(False)
 
-		self.cmb_marker_color.setCurrentIndex(self.cmb_marker_color.findText(marker_preset.color))
+		self.cmb_marker_color.setCurrentText(marker_preset.color)
 		self.txt_marker_comment.setText(marker_preset.comment)
 		self.txt_marker_author.setText(marker_preset.author)
 	
@@ -206,9 +214,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	
 	@QtCore.Slot(str)
 	def presetNameChanged(self, preset_name:str):
-		"""Update the little groupbox title to include the preset name"""
-
-		#self.grp_edit.setTitle(f"Marker Match Criteria for \"{preset_name or '(Untited)'}\"")
+		"""User is typing the preset name"""
 		
 		self.btn_save_new_preset.setEnabled(self.vld_preset_name.validate(preset_name, len(preset_name)) is self.vld_preset_name.State.Acceptable)
 	

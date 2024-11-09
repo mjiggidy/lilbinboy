@@ -394,11 +394,16 @@ class LBTRTCalculator(LBUtilityTab):
 	def show_marker_maker_dialog(self) -> bool:
 		wnd_marker = dlg_marker.TRTMarkerMaker(self)
 		
+		# Add valid marker colors
 		for marker in markers_trt.LBMarkerIcons():
-			wnd_marker.addMarker(marker)
+			wnd_marker.addMarkerColor(marker)
+
+		# Set current marker presets
 		wnd_marker.setMarkerPresets(self.model().marker_presets())
 
+		# Setup signals & slots
 		self.model().sig_marker_presets_model_changed.connect(wnd_marker.setMarkerPresets)
+		
 		wnd_marker.sig_save_preset.connect(self.save_marker_preset)
 		wnd_marker.sig_delete_preset.connect(self.remove_marker_preset)
 
