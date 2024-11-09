@@ -197,7 +197,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.setEditingMode(self.EditingMode.CREATE_NEW)
 		self.stack_name_editor.setCurrentWidget(self.stack_page_addnew)
 
-		self.cmb_marker_presets.setCurrentMarkerPreset(None)
+		self.cmb_marker_presets.setCurrentMarkerPresetName(None)
 		self.txt_preset_name.setText("New Preset")
 		self.txt_preset_name.setVisible(True)
 		self.cmb_marker_color.setCurrentIndex(0)
