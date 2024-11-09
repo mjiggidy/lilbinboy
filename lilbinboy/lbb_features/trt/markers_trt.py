@@ -157,13 +157,13 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 			print("Setting data we don't have...?")
 		
 	@QtCore.Slot(str)
-	def setCurrentMarkerPresetName(self, marker_preset:str):
+	def setCurrentMarkerPresetName(self, marker_preset:str|None):
 		
 		idx = self.findText(marker_preset)
-		if idx < 0:
-			print("Not found for", marker_preset)
+		if marker_preset is None or self.findText(marker_preset) < 0: # findText() returns -1 if not found
+			self.setCurrentIndex(self.count()-1)
 		else:
-			self.setCurrentIndex(idx)
+			self.setCurrentText(marker_preset)
 
 	def currentMarkerPresetName(self) -> str:
 
