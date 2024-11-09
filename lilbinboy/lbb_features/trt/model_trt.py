@@ -21,6 +21,9 @@ class TRTDataModel(QtCore.QObject):
 	"""Bins (sequnces?) were added or removed"""
 
 	sig_data_changed  = QtCore.Signal()
+
+	sig_head_trim_tc_changed = QtCore.Signal(Timecode)
+	sig_tail_trim_tc_changed = QtCore.Signal(Timecode)
 	sig_trims_changed = QtCore.Signal()
 
 	sig_sequence_selection_mode_changed = QtCore.Signal(SequenceSelectionMode)
@@ -103,7 +106,9 @@ class TRTDataModel(QtCore.QObject):
 	
 	def setTrimFromHead(self, timecode:Timecode):
 		self._trim_head = timecode
+		
 		self.sig_data_changed.emit()
+		self.sig_head_trim_tc_changed.emit(self.trimFromHead())
 		self.sig_trims_changed.emit()
 	
 	def trimFromTail(self) -> Timecode:
@@ -111,7 +116,9 @@ class TRTDataModel(QtCore.QObject):
 	
 	def setTrimFromTail(self, timecode:Timecode):
 		self._trim_tail = timecode
+		
 		self.sig_data_changed.emit()
+		self.sig_tail_trim_tc_changed.emit(self.trimFromTail())
 		self.sig_trims_changed.emit()
 
 	def trimTotal(self) -> Timecode:

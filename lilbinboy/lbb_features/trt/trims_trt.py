@@ -27,7 +27,7 @@ class TRTControlsTrims(QtWidgets.QGroupBox):
 
 		super().__init__()
 
-		self.setTitle("Sequence Trimming")
+		self.setTitle("Per-Sequence Trimming")
 
 		self.setLayout(QtWidgets.QGridLayout())
 

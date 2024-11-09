@@ -315,7 +315,7 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		# Set up total trim controls
 		# TODO: Better
-		grp_totaltrim = QtWidgets.QGroupBox()
+		grp_totaltrim = QtWidgets.QGroupBox("Total Running Adjustment")
 		grp_totaltrim.setLayout(QtWidgets.QHBoxLayout())
 		self.trim_total.setAllowNegative(True)
 		grp_totaltrim.layout().addWidget(self.trim_total)
@@ -336,16 +336,13 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().sig_bins_changed.connect(self.save_bins)
 		
 		# Trim timecode changed
-		self.model().sig_trims_changed.connect(lambda: self.trt_trims.set_head_trim(self.model().trimFromHead()))
-		self.model().sig_trims_changed.connect(lambda: self.trt_trims.set_tail_trim(self.model().trimFromTail()))
-		self.model().sig_trims_changed.connect(self.save_trims)
+		self.model().sig_head_trim_tc_changed.connect(self.trimHeadTCChanged)
+		self.model().sig_tail_trim_tc_changed.connect(self.trimTailTCChanged)
 
 		# Trim marker presets have changed
 		self.model().sig_marker_presets_model_changed.connect(self.trt_trims.set_marker_presets)
-		self.model().sig_head_marker_preset_changed.connect(self.save_head_trim_marker_preset)
-		self.model().sig_head_marker_preset_changed.connect(self.trt_trims.set_head_marker_preset_name)
-		self.model().sig_tail_marker_preset_changed.connect(self.save_tail_trim_marker_preset)
-		self.model().sig_tail_marker_preset_changed.connect(self.trt_trims.set_tail_marker_preset_name)
+		self.model().sig_head_marker_preset_changed.connect(self.trimHeadMarkerChanged)
+		self.model().sig_tail_marker_preset_changed.connect(self.trimTailMarkerChanged)
 
 		# Swap between progress bar and bin mode selection depending on if the progress bar is active
 		self.prog_loading.sig_progress_started.connect(lambda: self.stack_bin_loading.setCurrentWidget(self.prog_loading))
@@ -371,7 +368,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.trt_trims.sig_marker_preset_editor_requested.connect(self.show_marker_maker_dialog)
 		
 		# Total adjustment spinner
-		self.trim_total.sig_timecode_changed.connect(self.save_trims)
+		#self.trim_total.sig_timecode_changed.connect(self.save_trims)
 		self.trim_total.sig_timecode_changed.connect(self.model().setTrimTotal)
 
 
@@ -408,11 +405,13 @@ class LBTRTCalculator(LBUtilityTab):
 		return bool(wnd_marker.exec())
 
 	@QtCore.Slot(str)
-	def save_head_trim_marker_preset(self, preset_name:str):
+	def trimHeadMarkerChanged(self, preset_name:str):
+		self.trt_trims.set_head_marker_preset_name(preset_name)
 		QtCore.QSettings().setValue("trt/trim_marker_preset_head", preset_name)
 
 	@QtCore.Slot(str)
-	def save_tail_trim_marker_preset(self, preset_name:str):
+	def trimTailMarkerChanged(self, preset_name:str):
+		self.trt_trims.set_tail_marker_preset_name(preset_name)
 		QtCore.QSettings().setValue("trt/trim_marker_preset_tail", preset_name)		
 
 	def setModel(self, model:model_trt.TRTDataModel):
@@ -426,14 +425,20 @@ class LBTRTCalculator(LBUtilityTab):
 		settings = QtCore.QSettings()
 		settings.setValue("trt/bin_paths", [str(b.path) for b in self.model().data()])
 	
-	def save_trims(self):
-		settings = QtCore.QSettings()
-		settings.setValue("trt/trim_head", str(self.model().trimFromHead()))
-		settings.setValue("trt/trim_tail", str(self.model().trimFromTail()))
-		settings.setValue("trt/trim_total", str(self.model().trimTotal()))
-		settings.setValue("trt/rate", self.model().rate())
+	def trimHeadTCChanged(self, tc:Timecode):
+		self.trt_trims.set_head_trim(tc)
+		QtCore.QSettings().setValue("trt/trim_head", str(tc))
 
-		print("Saved", settings.value("trt/trim_tail"))
+	def trimTailTCChanged(self, tc:Timecode):
+		self.trt_trims.set_tail_trim(tc)
+		QtCore.QSettings().setValue("trt/trim_tail", str(tc))
+	
+	def trimTotalTCChanged(self, tc:Timecode):
+		self.trim_total.setTimecode(tc)
+		QtCore.QSettings().setValue("trt/trim_total", str(tc))
+
+	
+		QtCore.QSettings().setValue("trt/rate", self.model().rate())
 
 	def get_sequence_info(self, paths):
 
