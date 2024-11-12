@@ -2,7 +2,7 @@ import dataclasses, pathlib, re
 from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
 from ...lbb_common import LBUtilityTab, LBSpinBoxTC
-from . import dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt
+from . import dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 
@@ -81,6 +81,7 @@ class TRTModeSelection(QtWidgets.QGroupBox):
 	"""Select how sequences are chosen from bins"""
 
 	sig_sequence_selection_mode_changed = QtCore.Signal(model_trt.SequenceSelectionMode)
+	sig_sequence_selection_settings_requested = QtCore.Signal()
 
 	def __init__(self):
 
@@ -113,6 +114,7 @@ class TRTModeSelection(QtWidgets.QGroupBox):
 		self.layout().addStretch()
 
 		self._btn_group.buttonClicked.connect(self.selectionChanged)
+		self._btn_one_sequence_config.clicked.connect(self.sig_sequence_selection_settings_requested)
 	
 	@QtCore.Slot(QtWidgets.QAbstractButton)
 	def selectionChanged(self, button:QtWidgets.QAbstractButton):
@@ -348,6 +350,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.prog_loading.sig_progress_started.connect(lambda: self.stack_bin_loading.setCurrentWidget(self.prog_loading))
 		self.prog_loading.sig_progress_completed.connect(lambda: self.stack_bin_loading.setCurrentWidget(self.bin_mode))
 		self.bin_mode.sig_sequence_selection_mode_changed.connect(self.model().setSequenceSelectionMode)
+		self.bin_mode.sig_sequence_selection_settings_requested.connect(self.showSequenceSelectionSettings)
 		
 		# Treeview requests for add/remove bins (drag and drop or selection delete)
 		self.list_trts.sig_add_bins.connect(self.set_bins)
@@ -370,6 +373,12 @@ class LBTRTCalculator(LBUtilityTab):
 		# Total adjustment spinner
 		#self.trim_total.sig_timecode_changed.connect(self.save_trims)
 		self.trim_total.sig_timecode_changed.connect(self.model().setTrimTotal)
+
+	@QtCore.Slot()
+	def showSequenceSelectionSettings(self):
+
+		wnd_sss = dlg_sequence_selection.TRTSequenceSelection()
+		wnd_sss.exec()
 
 
 		
