@@ -406,8 +406,17 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		wnd_marker.sig_save_preset.connect(self.save_marker_preset)
 		wnd_marker.sig_delete_preset.connect(self.remove_marker_preset)
+		wnd_marker.finished.connect(self.marker_maker_dialog_closed)
 
 		return bool(wnd_marker.exec())
+	
+	@QtCore.Slot()
+	def marker_maker_dialog_closed(self):
+		"""Marker preset editor was closed, clean up"""
+
+		# Reset TRT combo boxes?
+		self.trt_trims.set_head_marker_preset_name(self.model().activeHeadMarkerPresetName())
+		self.trt_trims.set_tail_marker_preset_name(self.model().activeTailMarkerPresetName())
 
 	@QtCore.Slot(str)
 	def trimHeadMarkerChanged(self, preset_name:str):

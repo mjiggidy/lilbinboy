@@ -121,8 +121,15 @@ class TRTControlsTrims(QtWidgets.QGroupBox):
 	def set_head_marker_preset_name(self, marker_preset_name:str|None):
 		"""Set the active marker preset based on preset name (or None to deactivate)"""
 
+		print("Setting head marker to", marker_preset_name)
+
 		if not marker_preset_name:
 			self._use_head_marker.setCheckState(QtCore.Qt.CheckState.Unchecked)
+			
+			self._from_head_marker.blockSignals(True)
+			self._from_head_marker.setCurrentIndex(0)
+			self._from_head_marker.blockSignals(False)
+
 		else:
 			self._use_head_marker.setCheckState(QtCore.Qt.CheckState.Checked)
 			self._from_head_marker.setCurrentMarkerPresetName(marker_preset_name)
@@ -131,8 +138,14 @@ class TRTControlsTrims(QtWidgets.QGroupBox):
 	def set_tail_marker_preset_name(self, marker_preset_name:str|None):
 		"""Set the active marker preset based on preset name (or None to deactivate)"""
 
+		print("Setting tail marker to ", marker_preset_name)
+		
 		if not marker_preset_name:
 			self._use_tail_marker.setCheckState(QtCore.Qt.CheckState.Unchecked)
+			
+			self._from_tail_marker.blockSignals(True)
+			self._from_tail_marker.setCurrentIndex(0)
+			self._from_tail_marker.blockSignals(False)
 		else:
 			self._use_tail_marker.setCheckState(QtCore.Qt.CheckState.Checked)
 			self._from_tail_marker.setCurrentMarkerPresetName(marker_preset_name)

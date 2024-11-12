@@ -144,6 +144,9 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 		elif self.allowEditOption():
 # TEMP		self.setCurrentIndex(self.findText(self._last_selected_preset_name))
 			self.sig_marker_preset_editor_requested.emit()
+			
+			# TODO: Then return to last?? I think?
+			#self.setCurrentText(self._last_selected_preset_name)
 		
 	@QtCore.Slot(str)
 	def setCurrentMarkerPresetName(self, marker_preset:str|None):

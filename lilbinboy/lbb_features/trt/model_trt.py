@@ -157,6 +157,13 @@ class TRTDataModel(QtCore.QObject):
 	
 	def set_marker_presets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
 		self._marker_presets = marker_presets
+
+		# TODO: Try this
+		if self.activeHeadMarkerPresetName() and self.activeHeadMarkerPresetName() not in self.marker_presets():
+			self.set_active_head_marker_preset_name(None)
+		if self.activeTailMarkerPresetName() and self.activeTailMarkerPresetName() not in self.marker_presets():
+			self.set_active_tail_marker_preset_name(None)
+
 		self.sig_marker_presets_model_changed.emit(self.marker_presets())
 
 	def activeHeadMarkerPresetName(self) -> str|None:
