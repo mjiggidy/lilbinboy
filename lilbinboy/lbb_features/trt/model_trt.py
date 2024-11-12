@@ -170,9 +170,17 @@ class TRTDataModel(QtCore.QObject):
 		"""Active head marker preset name"""
 		return self._head_marker_preset_name
 	
+	def activeHeadMarkerPreset(self) -> markers_trt.LBMarkerPreset|None:
+		"""Active head marker preset, or None"""
+		return self.marker_presets().get(self.activeHeadMarkerPresetName(), None)
+	
 	def activeTailMarkerPresetName(self) -> str|None:
 		"""Active tail marker preset name"""
 		return self._tail_marker_preset_name
+	
+	def activeTailMarkerPreset(self) -> markers_trt.LBMarkerPreset|None:
+		"""Active tail marker preset"""
+		return self.marker_presets().get(self.activeTailMarkerPresetName(), None)
 	
 	@QtCore.Slot(str)
 	def set_active_head_marker_preset_name(self, marker_preset_name:str|None):
@@ -223,9 +231,12 @@ class TRTDataModel(QtCore.QObject):
 		bin_info = self._data[index]
 		reel_info = bin_info.reel
 
+		# TODO: Probably wanna make this into a thing
+		seq_color = QtGui.QColor(QtGui.QRgba64.fromRgba64(*reel_info.sequence_color, 2**16-1)) if reel_info.sequence_color else None
+
 		return {
 			"sequence_name": reel_info.sequence_name,
-			"sequence_color": QtGui.QColor(*(c/self.MAX_16b * self.MAX_8b for c in reel_info.sequence_color)) if reel_info.sequence_color else None,
+			"sequence_color": seq_color,
 			"duration_total": reel_info.duration_total,
 			"duration_trimmed": max(Timecode(0, rate=self.rate()), reel_info.duration_total - self._trim_head - self._trim_tail),
 			"head_trimmed": self._trim_head,
