@@ -14,13 +14,13 @@ REEL_NUMBER_BIN_COLUMN_NAME = "Reel #"
 
 BinInfo = namedtuple("BinInfo","reel path lock")
 
-@dataclasses.dataclass(frozen=True)
-class AVBLocator:
-	"Avid locator"
-
-	locator_name:str
-	locator_author:str
-	locator_position:Timecode
+#@dataclasses.dataclass(frozen=True)
+#class AVBMarker:
+#	"Avid marker"
+#
+#	marker_name:str
+#	marker_author:str
+#	marker_position:Timecode
 
 @dataclasses.dataclass(frozen=True)
 class ReelInfo:
@@ -41,8 +41,8 @@ class ReelInfo:
 	reel_number:int|None = None
 	"""The number of the reel in the feature"""
 
-	locators:list[AVBLocator]|None = None
-	"""Locators found in this reel"""
+	markers:list[avbutils.MarkerInfo]|None = None
+	"""markers found in this reel"""
 
 def get_reel_number_from_timeline_attributes(attrs:avb.components.core.AVBPropertyData) -> str|None:
 	"""Extract the 'Reel #' bin column data from a sequence's attributes.  Returns None if not set."""
@@ -66,7 +66,7 @@ def get_reel_info(
 		date_modified=sequence.last_modified,
 		reel_number=get_reel_number_from_timeline_attributes(sequence.attributes),
 		duration_total=Timecode(sequence.length, rate=round(sequence.edit_rate)),
-		locators=avbutils.get_markers_from_timeline(sequence)
+		markers=avbutils.get_markers_from_timeline(sequence)
 	)
 
 def get_reel_info_from_path(
