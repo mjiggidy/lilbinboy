@@ -1,4 +1,5 @@
 import re
+import avbutils
 from PySide6 import QtWidgets, QtCore, QtGui
 from timecode import Timecode
 
@@ -104,3 +105,64 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 	
 	def valueFromText(self, text:str) -> int:
 		return Timecode(text, rate=self.rate()).frame_number
+
+class LBBClipColorPicker(QtWidgets.QWidget):
+	"""Clip color picker widget"""
+
+	sig_color_chosen = QtCore.Signal(avbutils.ClipColor)
+
+	class LBBColorButton(QtWidgets.QPushButton):
+		"""Click color picker button"""
+
+		sig_color_chosen = QtCore.Signal(avbutils.ClipColor)
+
+		def __init__(self, color:QtGui.QRgba64, *args, **kwargs):
+			
+			super().__init__(*args, **kwargs)
+
+			#self.setFlat(True)
+			
+			self._clip_color = None
+
+			self.setClipColor(color)
+
+			self.clicked.connect(lambda: self.sig_color_chosen.emit(self.clipColor()))
+		
+		def setClipColor(self, color:avbutils.ClipColor):
+			"""Set the color the button represents"""
+
+			self._clip_color = color
+
+			# Setup Button Visual Color
+			p = self.palette()
+			p.setColor(QtGui.QPalette.ColorRole.Button, QtGui.QColor.fromRgba64(*self._clip_color.as_rgb16(), self._clip_color.max_16b()))
+			self.setPalette(p)
+
+			# Setup tooltip
+			rgb8 = self.palette().color(QtGui.QPalette.ColorRole.Button)
+			self.setToolTip(f"R: {rgb8.red()}  G: {rgb8.green()}  B: {rgb8.blue()}")
+
+		def clipColor(self):
+			"""The color the button represents"""
+			return self._clip_color
+		
+
+
+	def __init__(self):
+		super().__init__()
+
+		self.setLayout(QtWidgets.QGridLayout())
+		self.buttonGroup = QtWidgets.QButtonGroup()
+		#self.layout().setContentsMargins(0,0,0,0)
+		self.layout().setSpacing(0)
+
+		for idx, color in enumerate(avbutils.get_default_clip_colors()):
+			b = self.LBBColorButton(color)
+			self.buttonGroup.addButton(b)
+			b.setContentsMargins(0,0,0,0)
+			b.setFixedSize(24,24)
+			b.setCheckable(True)
+			
+			self.layout().addWidget(b, idx//8, idx%8)
+		
+		self.buttonGroup.buttonClicked.connect(lambda b: self.sig_color_chosen.emit(b.clipColor()))

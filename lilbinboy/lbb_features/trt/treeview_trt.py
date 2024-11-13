@@ -212,8 +212,9 @@ class TRTTreeView(QtWidgets.QTreeView):
 		super().setModel(model_trt.TRTViewSortModel())
 		self.model().setSortRole(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
 
-		self.setColumnWidth(0, 24)
-		self.setColumnWidth(1, 128)
+		#self.setColumnWidth(0, 24)
+		#self.setColumnWidth(1, 128)
+		self.setUniformRowHeights(True)
 		self.setAlternatingRowColors(True)
 		self.setIndentation(0)
 		self.setSortingEnabled(True)

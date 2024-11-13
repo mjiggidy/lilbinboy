@@ -1,7 +1,7 @@
 import dataclasses, pathlib, re
 from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
-from ...lbb_common import LBUtilityTab, LBSpinBoxTC
+from ...lbb_common import LBUtilityTab, LBSpinBoxTC, LBBClipColorPicker
 from . import dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
@@ -280,11 +280,11 @@ class LBTRTCalculator(LBUtilityTab):
 
 		# Setup top controls
 		ctrl_layout = QtWidgets.QHBoxLayout()
+
 		
 		self.btn_add_bins.setToolTip("Add the latest sequence(s) from one or more bins")
 		self.btn_add_bins.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd))
 		ctrl_layout.addWidget(self.btn_add_bins)
-
 		
 		#ctrl_layout.addWidget(self.prog_loading)
 		self.stack_bin_loading.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Maximum))
