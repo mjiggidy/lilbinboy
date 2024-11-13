@@ -146,8 +146,6 @@ class LBBClipColorPicker(QtWidgets.QWidget):
 			"""The color the button represents"""
 			return self._clip_color
 		
-
-
 	def __init__(self):
 		super().__init__()
 

@@ -233,7 +233,7 @@ class TRTDataModel(QtCore.QObject):
 
 		return {
 			"sequence_name": reel_info.sequence_name,
-			"sequence_color": QtGui.QColor(*(c/self.MAX_16b * self.MAX_8b for c in reel_info.sequence_color)) if reel_info.sequence_color else None,
+			"sequence_color": QtGui.QColor.fromRgba64(*reel_info.sequence_color.as_rgb16(), reel_info.sequence_color.max_16b()) if reel_info.sequence_color else None,
 			"duration_total": reel_info.duration_total,
 			"duration_trimmed": max(Timecode(0, rate=self.rate()), reel_info.duration_total - self._trim_head - self._trim_tail),
 			"head_trimmed": self._trim_head,
