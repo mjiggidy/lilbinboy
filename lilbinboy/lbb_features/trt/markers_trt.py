@@ -9,7 +9,9 @@ class LBMarkerIcons:
 	def __init__(self):
 
 		# "Any" color
-		self.ICONS.update({None: LBMarkerIcon(None)})
+		self.ICONS.update({"(Any Color)": LBMarkerIcon(None)})
+		# NOTE: At the moment I think this can just be a list? I don't think I'm looking anything up by key
+		# But I.... I dunno
 		
 		for color in avbutils.MarkerColors:
 			self.ICONS.update({color.value: LBMarkerIcon(color.value)})
@@ -170,12 +172,11 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 		# If new selection contains a marker preset, store its preset name and notify the peoples
 		if self.currentData() is not None:
 			self._last_selected_preset_name = self.currentText()
-			self.updateToolTip()
+			self.setToolTip(self.formatToolTip(self.currentData()))
 			self.sig_marker_preset_changed.emit(self._last_selected_preset_name)
 
 		# If new selection does not contain a preset (Add/Edit Option), and it wasn't previously selected, request the editor
 		elif self.allowEditOption():
-# TEMP		self.setCurrentIndex(self.findText(self._last_selected_preset_name))
 			self.sig_marker_preset_editor_requested.emit()
 			
 			# TODO: Then return to last?? I think?
@@ -184,20 +185,18 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 	@QtCore.Slot(str)
 	def setCurrentMarkerPresetName(self, marker_preset:str|None):
 		
-		idx = self.findText(marker_preset)
 		if marker_preset is None or self.findText(marker_preset) < 0: # findText() returns -1 if not found
 			self.setCurrentIndex(self.count()-1)
+			self.setToolTip(None)
 		else:
 			self.setCurrentText(marker_preset)
+			self.setToolTip(self.formatToolTip(self.currentData()))
 
 	def currentMarkerPresetName(self) -> str:
 
 		return self.currentText() if self.currentData() else None
-
-	@QtCore.Slot()
-	def updateToolTip(self):
-
-		marker_preset = self.currentData()
+	
+	def formatToolTip(self, marker_preset:LBMarkerPreset):
 		
 		if marker_preset is None:
 			return "No Marker Preset Chosen"
