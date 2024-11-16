@@ -8,6 +8,9 @@ class LBMarkerIcons:
 
 	def __init__(self):
 
+		# "Any" color
+		self.ICONS.update({None: LBMarkerIcon(None)})
+		
 		for color in avbutils.MarkerColors:
 			self.ICONS.update({color.value: LBMarkerIcon(color.value)})
 	
@@ -46,7 +49,7 @@ class LBMarkerIcon(QtGui.QIcon):
 		super().__init__()
 
 		self._name = color
-		self._color = QtGui.QColor().fromString(color)
+		self._color = QtGui.QColor().fromString(color) if color else None
 
 		self.addPixmap(self._create_pixmap())
 	
@@ -64,11 +67,41 @@ class LBMarkerIcon(QtGui.QIcon):
 		painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
 
 		pen = QtGui.QPen()
-		pen.setWidth(3)
-		pen.setColor(self.color().darker(300))
+
+		if self.color():
+			pen.setWidth(3)
+			pen.setColor(self.color().darker(300))
+			pen.setStyle(QtCore.Qt.PenStyle.SolidLine)
+		else:
+			pen.setWidth(3)
+			pen.setColor(QtGui.QColor(0,0,0))
+			#pen.setColor(QtGui.QColor.fromString("White"))
+			#pen.setStyle(QtCore.Qt.PenStyle.DashLine)
+		
 		painter.setPen(pen)
 		
-		brush = QtGui.QBrush(self.color())
+		brush = QtGui.QBrush()
+
+		if self.color():
+			brush.setColor(self.color())
+			brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
+		else:
+			gradient = QtGui.QLinearGradient()
+			gradient.setCoordinateMode(QtGui.QGradient.CoordinateMode.ObjectMode)
+			gradient.setInterpolationMode(QtGui.QGradient.InterpolationMode.ColorInterpolation)
+			gradient.setStart(0,0)
+			gradient.setFinalStop(0,1)
+			gradient.setStops([
+				(0.15, QtGui.QColor.fromString("Red")),
+				(0.3, QtGui.QColor.fromString("Green")),
+				(0.45, QtGui.QColor.fromString("Blue")),
+				(0.6, QtGui.QColor.fromString("Cyan")),
+				(0.75, QtGui.QColor.fromString("Magenta")),
+				(0.9, QtGui.QColor.fromString("Yellow")),
+			])
+			brush = QtGui.QBrush(gradient)
+
+		
 		painter.setBrush(brush)
 
 		painter.drawRoundedRect(QtCore.QRect(5, 2, pixmap.rect().height()/2, pixmap.rect().height()-4), 75, 50, QtGui.Qt.SizeMode.RelativeSize)

@@ -141,7 +141,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	
 	def addMarkerColor(self, marker:markers_trt.LBMarkerIcon):
 		"""Add marker color to marker color combo box"""
-		self.cmb_marker_color.addItem(marker, marker.name())
+		self.cmb_marker_color.addItem(marker, marker.name() or "(Any)", marker.name() or None)
 		self.cmb_marker_color.update()
 	
 	@QtCore.Slot()
@@ -149,7 +149,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		"""Create a marker preset from the current settings"""
 
 		self.sig_save_preset.emit(self.txt_preset_name.text(), markers_trt.LBMarkerPreset(
-			color   = self.cmb_marker_color.currentText(),	# TODO: Use data in preparation for (Any) and such
+			color   = self.cmb_marker_color.currentData(),	# None indicates "Any" marker
 			comment = self.txt_marker_comment.text() or None,
 			author  = self.txt_marker_author.text() or None
 		))
