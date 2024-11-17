@@ -20,6 +20,9 @@ class TRTDataModel(QtCore.QObject):
 	sig_bins_changed = QtCore.Signal()
 	"""Bins (sequnces?) were added or removed"""
 
+	sig_sequence_added = QtCore.Signal(logic_trt.BinInfo)
+	"""BinInfo for a new bin added"""
+
 	sig_data_changed  = QtCore.Signal()
 
 	sig_head_trim_tc_changed = QtCore.Signal(Timecode)
@@ -208,6 +211,7 @@ class TRTDataModel(QtCore.QObject):
 	
 	def add_bin(self, bin_info:logic_trt.BinInfo):
 		self._data.append(bin_info)
+		self.sig_sequence_added.emit(bin_info)
 		self.sig_bins_changed.emit()
 		self.sig_data_changed.emit()
 	
@@ -226,62 +230,67 @@ class TRTDataModel(QtCore.QObject):
 	def data(self):
 		return iter(self._data)
 	
-	def item_to_dict(self, index:int):
+	def item_to_dict(self, bin_info:logic_trt.BinInfo):
 		
-		bin_info = self._data[index]
-		reel_info = bin_info.reel
+		sequence_info = bin_info.reel
 
 		return {
-			"sequence_name": reel_info.sequence_name,
-			"sequence_color": QtGui.QColor.fromRgba64(*reel_info.sequence_color.as_rgb16(), reel_info.sequence_color.max_16b()) if reel_info.sequence_color else None,
-			"duration_total": reel_info.duration_total,
-			"duration_trimmed": max(Timecode(0, rate=self.rate()), reel_info.duration_total - self._trim_head - self._trim_tail),
-			"head_trimmed": self._trim_head,
-			"tail_trimmed": self._trim_tail,
-			"lfoa": self.tc_to_lfoa(max(Timecode(0, rate=self.rate()), reel_info.duration_total - self._trim_tail - 1)), # TODO: Think through the -1 but I think it makes sense being zero-based instead of 1-based for durations? Like, LFOA may be on 0+00 but that means it's 0+01 frame long
-			"date_modified": reel_info.date_modified,
-			"bin_path": bin_info.path,
-			"bin_lock": bin_info.lock
+			"sequence_name": 	treeview_trt.TRTStringItem(sequence_info.sequence_name),
+			"sequence_color": 	treeview_trt.TRTClipColorItem(QtGui.QRgba64.fromRgba64(*sequence_info.sequence_color.as_rgb16(), sequence_info.sequence_color.max_16b()) if sequence_info.sequence_color else None),
+			"duration_total": 	treeview_trt.TRTDurationItem(sequence_info.duration_total),
+			"duration_trimmed": treeview_trt.TRTDurationItem(max(Timecode(0, rate=self.rate()), sequence_info.duration_total - self._trim_head - self._trim_tail)),
+			"head_trimmed": 	treeview_trt.TRTDurationItem(self._trim_head),
+			"tail_trimmed": 	treeview_trt.TRTDurationItem(self._trim_tail),
+			"lfoa": 			treeview_trt.TRTFeetFramesItem(self.tc_to_lfoa(max(Timecode(0, rate=self.rate()), sequence_info.duration_total - self._trim_tail - 1))), # TODO: Need a an AbstractItem type for this
+			"date_modified": 	treeview_trt.TRTStringItem(str(sequence_info.date_modified)),	# TODO: Need an Item type fro this
+			"bin_path": 		treeview_trt.TRTPathItem(bin_info.path),
+			"bin_lock": 		treeview_trt.TRTBinLockItem(bin_info.lock)
 		}
 	
 
 class TRTViewModel(QtCore.QAbstractItemModel):
 	
-	def __init__(self, trt_model:TRTDataModel, headers_list:list[treeview_trt.TRTTreeViewHeaderItem]=None):
+	def __init__(self, headers_list:list[treeview_trt.TRTTreeViewHeaderItem]=None):
 		"""Create and setup a new model"""
 		super().__init__()
 
-		self._data_model = trt_model or TRTDataModel()
-		self._headers = headers_list or []
+		self._data:list[dict[str, treeview_trt.TRTAbstractItem]] = []
+		self._headers:list[treeview_trt.TRTTreeViewHeaderItem]   = headers_list or []
 
-		self.set_headers([
-			treeview_trt.TRTTreeViewHeaderColor("","sequence_color"),
+		self.setHeaderItems([
+			treeview_trt.TRTTreeViewHeaderItem("","sequence_color", display_delegate=treeview_trt.TRTClipColorDisplayDelegate()),
 			treeview_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
-			treeview_trt.TRTTreeViewHeaderDuration("Full Duration","duration_total"),
-			treeview_trt.TRTTreeViewHeaderDuration("Trimmed Duration","duration_trimmed"),
-			treeview_trt.TRTTreeViewHeaderDuration("LFOA", "lfoa"),
-			treeview_trt.TRTTreeViewHeaderDateTime("Date Modified","date_modified"),
-			treeview_trt.TRTTreeViewHeaderPath("From Bin","bin_path"),
-			treeview_trt.TRTTreeViewHeaderBinLock("Bin Lock","bin_lock"),
-
+			treeview_trt.TRTTreeViewHeaderItem("Full Duration","duration_total"),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration","duration_trimmed"),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head", "head_trimmed"),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail", "tail_trimmed"),
+			treeview_trt.TRTTreeViewHeaderItem("LFOA", "lfoa"),
+			treeview_trt.TRTTreeViewHeaderItem("Date Modified","date_modified"),
+			treeview_trt.TRTTreeViewHeaderItem("From Bin","bin_path"),
+			treeview_trt.TRTTreeViewHeaderItem("Bin Lock","bin_lock"),
 		])
-
-		self.model().sig_data_changed.connect(self.modelReset)
 	
-	def setDataModel(self, trt_model:TRTDataModel):
-		self._data_model = trt_model
-		self.modelReset.emit()
+	def setSequenceInfoList(self, trt_data:list[dict[str,treeview_trt.TRTAbstractItem]]):
+		self.beginResetModel()
+		self._data = trt_data
+		self.endResetModel()
 	
-	def model(self) -> TRTDataModel:
-		return self._data_model
+	def addSequenceInfo(self, sequence_info:dict[str, treeview_trt.TRTAbstractItem]):
+		self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
+		self._data.append(sequence_info)
+		self.endInsertRows()
 	
-	def set_headers(self, headers:list[treeview_trt.TRTTreeViewHeaderItem]):
+	def sequenceInfoList(self) -> list[dict[str, treeview_trt.TRTAbstractItem]]:
+		return self._data
+	
+	def setHeaderItems(self, headers:list[treeview_trt.TRTTreeViewHeaderItem]):
 		self._headers = headers
 		self.headerDataChanged.emit(QtCore.Qt.Orientation.Horizontal, 0, len(self._headers)-1)
 	
 	def index(self, row:int, column:int, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> QtCore.QModelIndex:
 		"""Returns the index of the item in the model specified by the given row, column and parent index."""
-		return self.createIndex(row, column, self.model().item_to_dict(row))
+		header = self._headers[column]
+		return self.createIndex(row, column, header.field())
 	
 	def parent(self, child:QtCore.QModelIndex) -> QtCore.QModelIndex:
 		"""Returns the parent of the model item with the given index. If the item has no parent, an invalid QModelIndex is returned."""
@@ -292,7 +301,7 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		if parent.isValid():
 			return 0
 		else:
-			return self.model().sequence_count()
+			return len(self.sequenceInfoList())
 	
 	def columnCount(self, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> int:
 		"""Returns the number of columns for the children of the given parent."""
@@ -300,23 +309,24 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 
 	def data(self, index:QtCore.QModelIndex, role:int=QtCore.Qt.ItemDataRole.DisplayRole) -> QtCore.QObject:
 		"""Returns the data stored under the given role for the item referred to by the index."""
-		header = self._headers[index.column()]
-		return header.item_data(self.model().item_to_dict(index.row()), role)
+
+		#item:treeview_trt.TRTAbstractItem = index.data()
+		#return item.data(role)
+
+		field = self._headers[index.column()].field()
+		item  = self._data[index.row()]
+		#print(field, item)
+		return item.get(field).data(role)
 
 	def headerData(self, section:int, orientation:QtCore.Qt.Orientation=QtCore.Qt.Orientation.Horizontal, role:int=QtCore.Qt.ItemDataRole.DisplayRole) -> QtCore.QObject:
 		"""Returns the data for the given role and section in the header with the specified orientation."""
 		return self._headers[section].header_data(role)
 	
+	def headers(self) -> list[treeview_trt.TRTTreeViewHeaderItem]:
+		return self._headers
+	
 class TRTViewSortModel(QtCore.QSortFilterProxyModel):
 	
 	def lessThan(self, left_idx:QtCore.QModelIndex, right_idx:QtCore.QModelIndex) -> bool:
-		"""Reimplemented sort function"""
-
-		left_data  = left_idx.data(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
-		right_data = right_idx.data(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
-		
-		# Mimic human sorting (1-10; not 1,10,2-9) if strings.  Otherwise use data type's native sorting.
-		if isinstance(left_data, str):
-			return avbutils.human_sort(left_data) < avbutils.human_sort(right_data)
-		
-		return left_data < right_data
+		"""Reimplemented sort function to use InitialSortOrderRole"""
+		return left_idx.data(QtCore.Qt.ItemDataRole.InitialSortOrderRole) < right_idx.data(QtCore.Qt.ItemDataRole.InitialSortOrderRole)

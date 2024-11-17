@@ -230,7 +230,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		# Declare models
 		self._data_model = model_trt.TRTDataModel()
-		self._treeview_model = model_trt.TRTViewModel(self.model())
+		self._treeview_model = model_trt.TRTViewModel()
 		
 		# Declare top controls
 		self.btn_add_bins = QtWidgets.QPushButton("Add From Bins...")
@@ -262,18 +262,19 @@ class LBTRTCalculator(LBUtilityTab):
 	def _loadInitial(self):
 		"""Load initial data from preferences (or defaults)"""
 		
-		self.model().setSequenceSelectionMode(QtCore.QSettings().value("trt/sequence_selection_mode", model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN))
+		self.model().setRate(QtCore.QSettings().value("trt/rate", 24))
 
-		self.model().setTrimFromHead(Timecode(QtCore.QSettings().value("trt/trim_head",0), rate=QtCore.QSettings().value("trt/rate",24)))
-		self.model().setTrimFromTail(Timecode(QtCore.QSettings().value("trt/trim_tail",0), rate=QtCore.QSettings().value("trt/rate",24)))
+		self.model().setSequenceSelectionMode(QtCore.QSettings().value("trt/sequence_selection_mode", model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN))
 		
 		self.model().set_marker_presets(QtCore.QSettings().value("lbb/marker_presets", dict()))
 
+		self.model().setTrimFromHead(Timecode(QtCore.QSettings().value("trt/trim_head",0), rate=self.model().rate()))
+		self.model().setTrimFromTail(Timecode(QtCore.QSettings().value("trt/trim_tail",0), rate=self.model().rate()))
+		
 		self.model().set_active_head_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_head"))
 		self.model().set_active_tail_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_tail"))
-
-		# TODO: Load in from user settings
-		self.set_bins(QtCore.QSettings().value("trt/bin_paths",[]))
+		
+		self.add_bins_from_paths(QtCore.QSettings().value("trt/bin_paths",[]))
 
 	def _setupWidgets(self):
 		"""Setup the widgets and add them to the layout"""
@@ -331,8 +332,9 @@ class LBTRTCalculator(LBUtilityTab):
 
 		# Data model has changed
 		self.model().sig_data_changed.connect(self.update_summary)
-		self.model().sig_data_changed.connect(self.list_trts.fit_headers)
 		self.model().sig_data_changed.connect(self.update_control_buttons)
+
+		self.model().sig_sequence_added.connect(self.sequenceAdded)
 
 		# Data model bins have changed
 		self.model().sig_bins_changed.connect(self.save_bins)
@@ -353,8 +355,8 @@ class LBTRTCalculator(LBUtilityTab):
 		self.bin_mode.sig_sequence_selection_settings_requested.connect(self.showSequenceSelectionSettings)
 		
 		# Treeview requests for add/remove bins (drag and drop or selection delete)
-		self.list_trts.sig_add_bins.connect(self.set_bins)
-		self.list_trts.sig_remove_rows.connect(self.remove_bins)
+		self.list_trts.sig_bins_dragged_dropped.connect(self.add_bins_from_paths)
+		self.list_trts.sig_remove_rows_requested.connect(self.remove_bins)
 		
 		# Top control buttons
 		self.btn_add_bins.clicked.connect(self.choose_folder)
@@ -373,6 +375,11 @@ class LBTRTCalculator(LBUtilityTab):
 		# Total adjustment spinner
 		#self.trim_total.sig_timecode_changed.connect(self.save_trims)
 		self.trim_total.sig_timecode_changed.connect(self.model().setTrimTotal)
+	
+
+	#
+	# Sequence selection methods
+	#
 
 	@QtCore.Slot()
 	def showSequenceSelectionSettings(self):
@@ -380,8 +387,10 @@ class LBTRTCalculator(LBUtilityTab):
 		wnd_sss = dlg_sequence_selection.TRTSequenceSelection()
 		wnd_sss.exec()
 
+	#
+	# Marker matching presets methods
+	#
 
-		
 	@QtCore.Slot(str, markers_trt.LBMarkerPreset)
 	def save_marker_preset(self, preset_name:str, marker_preset:markers_trt.LBMarkerPreset):
 		presets = self.model().marker_presets()
@@ -427,6 +436,10 @@ class LBTRTCalculator(LBUtilityTab):
 		self.trt_trims.set_head_marker_preset_name(self.model().activeHeadMarkerPresetName())
 		self.trt_trims.set_tail_marker_preset_name(self.model().activeTailMarkerPresetName())
 
+	#
+	# Trim methods
+	#
+	
 	@QtCore.Slot(str)
 	def trimHeadMarkerChanged(self, preset_name:str):
 		self.trt_trims.set_head_marker_preset_name(preset_name)
@@ -437,16 +450,6 @@ class LBTRTCalculator(LBUtilityTab):
 		self.trt_trims.set_tail_marker_preset_name(preset_name)
 		QtCore.QSettings().setValue("trt/trim_marker_preset_tail", preset_name)		
 
-	def setModel(self, model:model_trt.TRTDataModel):
-		self._data_model = model
-		self._treeview_model.setDataModel(model)
-	
-	def model(self) -> model_trt.TRTDataModel:
-		return self._data_model
-	
-	def save_bins(self):
-		settings = QtCore.QSettings()
-		settings.setValue("trt/bin_paths", [str(b.path) for b in self.model().data()])
 	
 	def trimHeadTCChanged(self, tc:Timecode):
 		self.trt_trims.set_head_trim(tc)
@@ -460,20 +463,43 @@ class LBTRTCalculator(LBUtilityTab):
 		self.trim_total.setTimecode(tc)
 		QtCore.QSettings().setValue("trt/trim_total", str(tc))
 
-	
+		# TODO: Misplaced this little guy?
 		QtCore.QSettings().setValue("trt/rate", self.model().rate())
 
-	def get_sequence_info(self, paths):
+	#
+	# Data model methods
+	#
+
+	def setModel(self, model:model_trt.TRTDataModel):
+		self._data_model = model
+		self._treeview_model.setDataModel(model)
+	
+	def model(self) -> model_trt.TRTDataModel:
+		return self._data_model
+
+	def save_bins(self):
+		settings = QtCore.QSettings()
+		settings.setValue("trt/bin_paths", [str(b.path) for b in self.model().data()])
+	
+	@QtCore.Slot(logic_trt.BinInfo)
+	def sequenceAdded(self, bin_info: logic_trt.BinInfo):
+		"""Model reports that a sequence has been added"""
+
+		view_item = self.model().item_to_dict(bin_info)
+		self._treeview_model.addSequenceInfo(view_item)
+		self.list_trts.fit_headers()
+	
+	def add_bins_from_paths(self, paths):
 
 		last_bin = ""
 
 		for path in paths:
-			
 			thread = TRTThreadedBinGetter(path)
-			
-			self.prog_loading.step_added()
 			thread.signals().sig_got_bin_info.connect(self.model().add_bin)
 			thread.signals().sig_got_bin_info.connect(self.prog_loading.step_complete)
+			
+			self.prog_loading.step_added()
+			# TODO: Call prog_loading.step_complete for error too
 
 			self._pool.start(thread)
 
@@ -482,14 +508,6 @@ class LBTRTCalculator(LBUtilityTab):
 		# Save last bin path if it's a good 'un
 		if last_bin:
 			QtCore.QSettings().setValue("trt/last_bin", last_bin)
-	
-	def set_bins(self, bin_paths: list[str]):
-
-		#self.list_trts.clear()
-		if not bin_paths:
-			self.model().clear()
-		else:
-			self.get_sequence_info(pathlib.Path(x) for x in bin_paths)
 	
 	def refresh_bins(self):
 		pass
@@ -515,7 +533,7 @@ class LBTRTCalculator(LBUtilityTab):
 		if not files:
 			return
 		
-		self.set_bins(files)
+		self.add_bins_from_paths(files)
 
 	@QtCore.Slot()
 	def update_summary(self):

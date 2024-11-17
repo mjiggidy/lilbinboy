@@ -1,15 +1,140 @@
-import pathlib
+import pathlib, typing
+import avbutils
 from PySide6 import QtCore, QtGui, QtWidgets
+from timecode import Timecode
 from . import model_trt
+
+#
+# Cell items
+# I figured I'd precompute the ItemDataRoles for performance purposes
+#
+
+class TRTAbstractItem(QtCore.QObject):
+	"""An abstract item for TRT views"""
+
+	def __init__(self, raw_data:typing.Any):
+		super().__init__()
+		self._data = raw_data
+		self._data_roles = {}
+		self._prepare_data()
+	
+	def _prepare_data(self):
+		"""Precalculate data for all them roles"""
+		self._data_roles.update({
+			QtCore.Qt.ItemDataRole.DisplayRole:				str(self._data),
+			QtCore.Qt.ItemDataRole.InitialSortOrderRole: 	avbutils.human_sort(str(self._data)),
+			QtCore.Qt.ItemDataRole.UserRole:				self._data,
+		})
+
+	def data(self, role:QtCore.Qt.ItemDataRole) -> typing.Any:
+		"""Get item data for a given role.  By default, returns the raw data as a string."""
+		return self._data_roles.get(role, None)
+	
+class TRTStringItem(TRTAbstractItem):
+	"""A standard string"""
+
+	def __init__(self, raw_data:str):
+		super().__init__(str(raw_data))
+
+class TRTPathItem(TRTAbstractItem):
+	"""A file path"""
+
+	def __init__(self, raw_data:str|pathlib.Path):
+		super().__init__(QtCore.QFileInfo(raw_data))
+	
+	def _prepare_data(self):
+		super()._prepare_data()
+
+		self._data_roles.update({
+			QtCore.Qt.ItemDataRole.DisplayRole:				self._data.fileName(),
+			QtCore.Qt.ItemDataRole.InitialSortOrderRole: 	avbutils.human_sort(self._data.fileName()),
+			QtCore.Qt.ItemDataRole.DecorationRole:			QtWidgets.QFileIconProvider().icon(self._data),
+			QtCore.Qt.ItemDataRole.ToolTipRole:				self._data.absoluteFilePath(),
+		})
+
+class TRTTimecodeItem(TRTAbstractItem):
+	"""A timecode"""
+
+	def __init__(self, raw_data:Timecode):
+		if not isinstance(raw_data, Timecode):
+			raise TypeError("Data must be an instance of `Timecode`")
+		super().__init__(raw_data)
+	
+	def _prepare_data(self):
+		super()._prepare_data()
+		self._data_roles.update({
+			QtCore.Qt.ItemDataRole.DisplayRole:				str(self._data).rjust(12),
+			QtCore.Qt.ItemDataRole.InitialSortOrderRole:	self._data.frame_number,
+			QtCore.Qt.ItemDataRole.FontRole:				QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
+		})
+	
+class TRTDurationItem(TRTTimecodeItem):
+	"""A duration (hh:mm:ss:ff), a subset of timecode"""
+
+	def _prepare_data(self):
+		super()._prepare_data()
+		self._data_roles.update({
+			QtCore.Qt.ItemDataRole.DisplayRole:	str("-" if str(self._data).startswith("-") else "" + str(self._data).lstrip("-00:")).rjust(12),
+		})
+
+class TRTFeetFramesItem(TRTStringItem):
+
+	def _prepare_data(self):
+		super()._prepare_data()
+		self._data_roles.update({
+			QtCore.Qt.ItemDataRole.DisplayRole:	str(self._data).rjust(9),
+			QtCore.Qt.ItemDataRole.FontRole: 	QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont),
+		})
+
+class TRTClipColorItem(TRTAbstractItem):
+	"""A clip color"""
+
+	def __init__(self, raw_data:avbutils.ClipColor|QtGui.QRgba64):
+
+		if isinstance(raw_data, avbutils.ClipColor):
+			raw_data = QtGui.QRgba64.fromRgba64(*raw_data, raw_data.max_16b())
+		#elif not isinstance(raw_data, QtGui.QColor) or raw_data is not None:
+		#	raise TypeError(f"Data must be a 16-bit color or None (got {type(raw_data)})")
+		
+		super().__init__(raw_data)
+	
+	def _prepare_data(self):
+		# Not calling super, would be weird
+
+		color_8b = QtGui.QColor(self._data)
+
+		self._data_roles.update({
+			QtCore.Qt.ItemDataRole.UserRole: self._data,
+			QtCore.Qt.ItemDataRole.ToolTipRole: f"R: {color_8b.red()} G: {color_8b.green()} B: {color_8b.blue()}" if color_8b.isValid() else None
+		})
+
+class TRTBinLockItem(TRTAbstractItem):
+	"""Bin lock info"""
+
+	# Note: For now I think we'll do a string, but want to expand this later probably
+	def __init__(self, raw_data:str):
+		super().__init__(raw_data or "")
+
+	def _prepare_data(self):
+		super()._prepare_data()
+		self._data_roles.update({
+			QtCore.Qt.ItemDataRole.DecorationRole: QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.SystemLockScreen if self._data else None)
+		})
+
+
+#
+# Header items
+#
 
 class TRTTreeViewHeaderItem(QtCore.QObject):
 
-	def __init__(self, text:str, key:str):
+	def __init__(self, text:str, key:str, display_delegate:QtWidgets.QStyledItemDelegate|None=None):
 
 		super().__init__()
 
 		self._text = str(text)
 		self._key  = str(key)
+		self._display_delegate = display_delegate
 
 	def header_data(self, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole):
 
@@ -19,191 +144,75 @@ class TRTTreeViewHeaderItem(QtCore.QObject):
 		elif role == QtCore.Qt.ItemDataRole.UserRole:
 			return self.field()
 	
-	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
-
-		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return str(bin_dict.get(self.field(), ""))
-		
-		if role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
-			return bin_dict.get(self.field(),"")
-		
-		elif role == QtCore.Qt.ItemDataRole.UserRole:
-			return bin_dict
-	
 	def name(self) -> str:
+		"""Get the title of this header"""
 		return self._text
 	
 	def field(self) -> str:
+		"""Get the field of item data this header will display"""
 		return self._key
 	
-class TRTTreeViewHeaderPath(TRTTreeViewHeaderItem):
-
-	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
-
-		path_data = bin_dict.get(self.field(), pathlib.Path())
-
-		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return path_data.name
-		
-		if role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
-			return path_data.name
-		
-		elif role == QtCore.Qt.ItemDataRole.ToolTipRole:
-			return str(path_data)
-		
-		elif role == QtCore.Qt.ItemDataRole.DecorationRole:
-			return QtWidgets.QFileIconProvider().icon(QtCore.QFileInfo(str(path_data)))
-
-class TRTTreeViewHeaderDuration(TRTTreeViewHeaderItem):
-
-	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
-
-		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return str(bin_dict.get(self.field(), "")).lstrip("0:")
-		
-		elif role == QtCore.Qt.ItemDataRole.TextAlignmentRole:
-			return QtGui.Qt.AlignmentFlag.AlignRight | QtGui.Qt.AlignmentFlag.AlignVCenter
-		
-		elif role == QtCore.Qt.ItemDataRole.FontRole:
-			return QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
-		
-		elif role == QtCore.Qt.ItemDataRole.UserRole:
-			return bin_dict
-		
-		elif role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
-			return int(bin_dict.get("duration_total",""))
+	def displayDelegate(self) -> QtWidgets.QStyledItemDelegate|None:
+		"""Get the display delegate assigned to this header"""
+		return self._display_delegate
 	
-	def header_data(self, role: QtCore.Qt.ItemDataRole = QtCore.Qt.ItemDataRole.DisplayRole):
-		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return self.name()
-		
-		elif role == QtCore.Qt.ItemDataRole.TextAlignmentRole:
-			return QtGui.Qt.AlignmentFlag.AlignRight
-		
-		elif role == QtCore.Qt.ItemDataRole.UserRole:
-			return self.field()
 
-		
-class TRTTreeViewHeaderColor(TRTTreeViewHeaderItem):
 
-	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
-
-		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return ""
-		
-		elif role == QtCore.Qt.ItemDataRole.UserRole:
-			return bin_dict
-		
-		elif role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
-			return 0
-		
-		elif role == QtCore.Qt.ItemDataRole.DecorationRole:
-			return self.draw_color(bin_dict.get(self.field(),None))
+#
+# Delegates
+#
 	
-	def header_data(self, role: QtCore.Qt.ItemDataRole = QtCore.Qt.ItemDataRole.DisplayRole):
-		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return self.name()
+
+class TRTClipColorDisplayDelegate(QtWidgets.QStyledItemDelegate):
+	"""Draw a clip color"""
+
+	PADDING = 5 #px
+	SHADOW_OFFSET = QtCore.QPoint(1,1)
+
+	def paint(self, painter:QtGui.QPainter, option:QtWidgets.QStyleOptionViewItem, index:QtCore.QModelIndex|QtCore.QPersistentModelIndex):
+		"""Painter"""
+
+		super().paint(painter, option, index)
 		
-		elif role == QtCore.Qt.ItemDataRole.UserRole:
-			return self.field()
-		
-	def draw_color(self, color):
+		clip_color = QtGui.QColor(index.data(role=QtCore.Qt.ItemDataRole.UserRole))
 
-		self.pixmap = QtGui.QPixmap(16,16)
-		self.pixmap.fill(QtCore.Qt.GlobalColor.transparent)
-
-		painter = QtGui.QPainter(self.pixmap)
-
-		color_box = QtCore.QRect(0,0, 12, 12)
-		color_box.moveCenter(QtCore.QPoint(7,6))
+		# Set box location
+		color_box = QtCore.QRect(0,0, option.rect.height()-self.PADDING, option.rect.height()-self.PADDING)
+		color_box.moveCenter(option.rect.center())
 		
 		# Set outline and fill
 		pen = QtGui.QPen(QtGui.QColorConstants.Black)
-		brush = QtGui.QBrush()
-		#painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+		brush = QtGui.QBrush()	
 
 		# Use clip color if available
-		#clip_color_attr = avbutils.composition_clip_color(mob)
-
-		if color is not None:
-			clip_color = QtGui.QColor(color)
-			brush.setColor(clip_color)
-			brush.setStyle(QtGui.Qt.BrushStyle.SolidPattern)
+		if not clip_color.isValid():
+			brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
 		else:
-			brush.setStyle(QtGui.Qt.BrushStyle.NoBrush)
+			brush.setColor(clip_color)
+			brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
 		
 		painter.setBrush(brush)
 		painter.setPen(pen)
 		painter.drawRect(color_box)
 
 		# Box Shadow (TODO: 128 opactiy not working)
-		color_box.moveCenter(color_box.center()+QtCore.QPoint(1,1))
+		color_box.moveCenter(color_box.center() + self.SHADOW_OFFSET)
 		#color_box.setWidth(color_box.width() + 2)
 
 		pen.setColor(QtGui.QColor(0,0,0,64))
 		brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
 		painter.setPen(pen)
 		painter.setBrush(brush)
-		painter.drawRect(color_box)
-
-		return self.pixmap
-		
-class TRTTreeViewHeaderBinLock(TRTTreeViewHeaderItem):
-
-	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
-
-		lock = bin_dict.get("bin_lock")
-
-		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return str(lock).rstrip('\0') if lock is not None else ""
-		
-		elif role == QtCore.Qt.ItemDataRole.UserRole:
-			return bin_dict
-		
-		elif role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
-			return 0 if lock is not None else 1
-		
-		elif role == QtCore.Qt.ItemDataRole.DecorationRole:
-			return QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.SystemLockScreen) if lock is not None else None
+		painter.drawRect(color_box)	
 	
-	def header_data(self, role: QtCore.Qt.ItemDataRole = QtCore.Qt.ItemDataRole.DisplayRole):
-		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return self.name()
-		
-		elif role == QtCore.Qt.ItemDataRole.UserRole:
-			return self.field()
-		
-class TRTTreeViewHeaderDateTime(TRTTreeViewHeaderItem):
 
-	def item_data(self, bin_dict:dict, role:QtCore.Qt.ItemDataRole):
 
-		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return str(bin_dict.get(self.field(), ""))
-		
-		elif role == QtCore.Qt.ItemDataRole.TextAlignmentRole:
-			return QtGui.Qt.AlignmentFlag.AlignRight | QtGui.Qt.AlignmentFlag.AlignVCenter
-		
-		elif role == QtCore.Qt.ItemDataRole.UserRole:
-			return bin_dict
-		
-		elif role == QtCore.Qt.ItemDataRole.InitialSortOrderRole:
-			return int(bin_dict.get(self.field()).timestamp())
-	
-	def header_data(self, role: QtCore.Qt.ItemDataRole = QtCore.Qt.ItemDataRole.DisplayRole):
-		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return self.name()
-		
-		elif role == QtCore.Qt.ItemDataRole.TextAlignmentRole:
-			return QtGui.Qt.AlignmentFlag.AlignRight
-		
-		elif role == QtCore.Qt.ItemDataRole.UserRole:
-			return self.field()
 		
 class TRTTreeView(QtWidgets.QTreeView):
 	"""TRT Readout"""
 
-	sig_remove_rows = QtCore.Signal(list)
-	sig_add_bins = QtCore.Signal(list)
+	sig_remove_rows_requested = QtCore.Signal(list)
+	sig_bins_dragged_dropped  = QtCore.Signal(list)
 
 	def __init__(self, *args, **kwargs):
 
@@ -215,6 +224,7 @@ class TRTTreeView(QtWidgets.QTreeView):
 		#self.setColumnWidth(0, 24)
 		#self.setColumnWidth(1, 128)
 		self.setUniformRowHeights(True)
+		self.setAllColumnsShowFocus(True)
 		self.setAlternatingRowColors(True)
 		self.setIndentation(0)
 		self.setSortingEnabled(True)
@@ -222,6 +232,8 @@ class TRTTreeView(QtWidgets.QTreeView):
 		self.setSelectionMode(QtWidgets.QTreeView.SelectionMode.ExtendedSelection)
 		self.setAcceptDrops(True)
 		self.setDropIndicatorShown(True)
+
+		self.model().headerDataChanged.connect(self.headerDataChanged)
 #		print(self.dragDropMode())
 
 	def setModel(self, model:QtCore.QAbstractItemModel):
@@ -235,7 +247,7 @@ class TRTTreeView(QtWidgets.QTreeView):
 	def keyPressEvent(self, event:QtCore.QEvent):
 		if event.key() == QtCore.Qt.Key_Delete:
 			rows = self.selectedRows()
-			self.sig_remove_rows.emit(rows)
+			self.sig_remove_rows_requested.emit(rows)
 		else:
 			super().keyPressEvent(event)
 
@@ -257,10 +269,19 @@ class TRTTreeView(QtWidgets.QTreeView):
 		if event.mimeData().hasUrls():
 			event.setDropAction(QtGui.Qt.DropAction.LinkAction)
 			event.acceptProposedAction()
-			self.sig_add_bins.emit([f.toLocalFile() for f in event.mimeData().urls()])
+			self.sig_bins_dragged_dropped.emit([f.toLocalFile() for f in event.mimeData().urls()])
 		else:
 			event.ignore()
 	
 	@QtCore.Slot()
 	def selectedRows(self) -> list[int]:
 		return sorted(set([self.model().mapToSource(idx).row() for idx in self.selectedIndexes()]), reverse=True)
+	
+	@QtCore.Slot(QtCore.Qt.Orientation, int, int)
+	def headerDataChanged(self, orientation: QtCore.Qt.Orientation, idx_first:int, idx_last:int):
+		"""Headers were inserted or something"""
+
+		for idx_header in range(idx_first, idx_last+1):
+			header = self.model().sourceModel().headers()[idx_header]
+			if header.displayDelegate():
+				self.setItemDelegateForColumn(idx_header, header.displayDelegate())

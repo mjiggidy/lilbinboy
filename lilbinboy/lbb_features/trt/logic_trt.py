@@ -99,7 +99,7 @@ def get_reel_info_from_path(
 	return sequence_info
 
 
-def get_latest_stats_from_bins(bin_paths:list[pathlib.Path]) -> list[BinInfo]:
+def get_latest_stats_from_bins(bin_paths:list[str]) -> list[BinInfo]:
 	"""Get stats for a list of bins"""
 
 	parsed_info = []
@@ -121,7 +121,7 @@ def get_latest_stats_from_bins(bin_paths:list[pathlib.Path]) -> list[BinInfo]:
 			try:
 				info = future_result.result()
 			except Exception as e:
-				print(f"Skipping {bin_path.name}: {e}")
+				print(f"Skipping {bin_path}: {e}")
 				continue
 
 			lock = avbutils.get_lockfile_for_bin(bin_path)
