@@ -22,6 +22,8 @@ class TRTDataModel(QtCore.QObject):
 
 	sig_sequence_added = QtCore.Signal(logic_trt.BinInfo)
 	"""BinInfo for a new bin added"""
+	sig_sequence_removed = QtCore.Signal(int)
+	"""Row index for a sequence removed"""
 
 	sig_data_changed  = QtCore.Signal()
 
@@ -221,6 +223,8 @@ class TRTDataModel(QtCore.QObject):
 		except Exception as e:
 			print(f"Didn't remove because {e}")
 		
+		self.sig_sequence_removed.emit(index)
+		
 		self.sig_bins_changed.emit()
 		self.sig_data_changed.emit()
 
@@ -237,11 +241,15 @@ class TRTDataModel(QtCore.QObject):
 		return {
 			"sequence_name": 	treeview_trt.TRTStringItem(sequence_info.sequence_name),
 			"sequence_color": 	treeview_trt.TRTClipColorItem(QtGui.QRgba64.fromRgba64(*sequence_info.sequence_color.as_rgb16(), sequence_info.sequence_color.max_16b()) if sequence_info.sequence_color else None),
+			"sequence_start_tc":treeview_trt.TRTTimecodeItem(sequence_info.sequence_tc_range.start),
 			"duration_total": 	treeview_trt.TRTDurationItem(sequence_info.duration_total),
 			"duration_trimmed": treeview_trt.TRTDurationItem(max(Timecode(0, rate=self.rate()), sequence_info.duration_total - self._trim_head - self._trim_tail)),
 			"head_trimmed": 	treeview_trt.TRTDurationItem(self._trim_head),
 			"tail_trimmed": 	treeview_trt.TRTDurationItem(self._trim_tail),
-			"lfoa": 			treeview_trt.TRTFeetFramesItem(self.tc_to_lfoa(max(Timecode(0, rate=self.rate()), sequence_info.duration_total - self._trim_tail - 1))), # TODO: Need a an AbstractItem type for this
+			"ffoa_tc":			treeview_trt.TRTTimecodeItem(sequence_info.sequence_tc_range.start + self._trim_head),
+			"ffoa_ff":			treeview_trt.TRTFeetFramesItem(self.tc_to_lfoa(self._trim_head)),
+			"lfoa_tc":			treeview_trt.TRTTimecodeItem(max(Timecode(0, rate=self.rate()), sequence_info.duration_total - self._trim_tail - 1) + sequence_info.sequence_tc_range.start),
+			"lfoa_ff": 			treeview_trt.TRTFeetFramesItem(self.tc_to_lfoa(max(Timecode(0, rate=self.rate()), sequence_info.duration_total - self._trim_tail - 1))), # TODO: Need a an AbstractItem type for this
 			"date_modified": 	treeview_trt.TRTStringItem(str(sequence_info.date_modified)),	# TODO: Need an Item type fro this
 			"bin_path": 		treeview_trt.TRTPathItem(bin_info.path),
 			"bin_lock": 		treeview_trt.TRTBinLockItem(bin_info.lock)
@@ -264,7 +272,11 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration","duration_trimmed"),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head", "head_trimmed"),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail", "tail_trimmed"),
-			treeview_trt.TRTTreeViewHeaderItem("LFOA", "lfoa"),
+			treeview_trt.TRTTreeViewHeaderItem("Sequence Start", "sequence_start_tc"),
+			treeview_trt.TRTTreeViewHeaderItem("FFOA (F+F)", "ffoa_ff"),
+			treeview_trt.TRTTreeViewHeaderItem("FFOA (TC)", "ffoa_tc"),
+			treeview_trt.TRTTreeViewHeaderItem("LFOA (F+F)", "lfoa_ff"),
+			treeview_trt.TRTTreeViewHeaderItem("LFOA (TC)", "lfoa_tc"),
 			treeview_trt.TRTTreeViewHeaderItem("Date Modified","date_modified"),
 			treeview_trt.TRTTreeViewHeaderItem("From Bin","bin_path"),
 			treeview_trt.TRTTreeViewHeaderItem("Bin Lock","bin_lock"),
@@ -279,6 +291,12 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
 		self._data.append(sequence_info)
 		self.endInsertRows()
+	
+	@QtCore.Slot(int)
+	def removeSequenceInfo(self, idx:int):
+		self.beginRemoveRows(QtCore.QModelIndex(), idx, idx)
+		del self._data[idx]
+		self.endRemoveRows()
 	
 	def sequenceInfoList(self) -> list[dict[str, treeview_trt.TRTAbstractItem]]:
 		return self._data

@@ -2,7 +2,7 @@ import dataclasses, pathlib, re
 from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
 from ...lbb_common import LBUtilityTab, LBSpinBoxTC, LBBClipColorPicker
-from . import dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection
+from . import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 
@@ -307,6 +307,8 @@ class LBTRTCalculator(LBUtilityTab):
 
 		# Set up main treeview
 		self.list_trts.setModel(self._treeview_model)
+		self.list_trts.header().setContextMenuPolicy(QtGui.Qt.ContextMenuPolicy.CustomContextMenu)
+		self.list_trts.header().customContextMenuRequested.connect(self.showColumnChooserContextMenu)
 
 		self.layout().addWidget(self.list_trts)
 		self.layout().addWidget(self.trt_summary)
@@ -335,6 +337,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().sig_data_changed.connect(self.update_control_buttons)
 
 		self.model().sig_sequence_added.connect(self.sequenceAdded)
+		self.model().sig_sequence_removed.connect(self.sequenceRemoved)
 
 		# Data model bins have changed
 		self.model().sig_bins_changed.connect(self.save_bins)
@@ -489,6 +492,10 @@ class LBTRTCalculator(LBUtilityTab):
 		self._treeview_model.addSequenceInfo(view_item)
 		self.list_trts.fit_headers()
 	
+	@QtCore.Slot(int)
+	def sequenceRemoved(self, idx:int):
+		self._treeview_model.removeSequenceInfo(idx)
+	
 	def add_bins_from_paths(self, paths):
 
 		last_bin = ""
@@ -525,6 +532,30 @@ class LBTRTCalculator(LBUtilityTab):
 			QtWidgets.QMessageBox.StandardButton.Ok, QtWidgets.QMessageBox.StandardButton.Cancel) == QtWidgets.QMessageBox.StandardButton.Ok:
 
 			self.model().clear()
+
+	#
+	# Treeview show/hide columns
+	#
+	@QtCore.Slot(QtCore.QPoint)
+	def showColumnChooserContextMenu(self, pos:QtCore.QPoint):
+		"""Show the menu"""
+
+		menu = QtWidgets.QMenu(self.list_trts.header())
+		action_showchooser = QtGui.QAction("Choose visible columns...")
+		action_showchooser.triggered.connect(self.showColumnChooserWindow)
+		menu.addAction(action_showchooser)
+		menu.exec(menu.parent().mapToGlobal(pos))
+	
+	def showColumnChooserWindow(self, *args):
+		wnd_choosecolumns = dlg_choose_columns.TRTChooseColumnsDialog(self.list_trts)
+		
+		for idx, header in enumerate(self._treeview_model.headers()):
+			wnd_choosecolumns.addColumn(header, is_hidden=self.list_trts.header().isSectionHidden(idx))
+
+
+		wnd_choosecolumns.exec()
+
+
 	
 	def choose_folder(self):
 		last_bin_path = QtCore.QSettings().value("trt/last_bin")
