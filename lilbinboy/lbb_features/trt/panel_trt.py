@@ -273,6 +273,8 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		self.model().set_active_head_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_head"))
 		self.model().set_active_tail_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_tail"))
+
+		self.setColumnsVisible(QtCore.QSettings().value("trt/columns_visible", range(self._treeview_model.columnCount())))
 		
 		self.add_bins_from_paths(QtCore.QSettings().value("trt/bin_paths",[]))
 
@@ -309,6 +311,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.list_trts.setModel(self._treeview_model)
 		self.list_trts.header().setContextMenuPolicy(QtGui.Qt.ContextMenuPolicy.CustomContextMenu)
 		self.list_trts.header().customContextMenuRequested.connect(self.showColumnChooserContextMenu)
+		self.list_trts.fit_headers()
 
 		self.layout().addWidget(self.list_trts)
 		self.layout().addWidget(self.trt_summary)
@@ -551,9 +554,14 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		for idx, header in enumerate(self._treeview_model.headers()):
 			wnd_choosecolumns.addColumn(header, is_hidden=self.list_trts.header().isSectionHidden(idx))
-
-
+		wnd_choosecolumns.sig_columns_chosen.connect(self.setColumnsVisible)
 		wnd_choosecolumns.exec()
+	
+	@QtCore.Slot(list)
+	def setColumnsVisible(self, idx_visible:list[int]):
+		for idx in range(self._treeview_model.columnCount()):
+			self.list_trts.setColumnHidden(idx, idx not in idx_visible)
+		QtCore.QSettings().setValue("trt/columns_visible", idx_visible)
 
 
 	

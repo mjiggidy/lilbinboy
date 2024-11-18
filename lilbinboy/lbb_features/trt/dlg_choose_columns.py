@@ -13,7 +13,8 @@ class TRTChooseColumnsList(QtWidgets.QListWidget):
 class TRTChooseColumnsDialog(QtWidgets.QDialog):
 	"""Choose columns"""
 
-	sig_columns_chosen = QtCore.Signal(list[int])
+	sig_columns_chosen = QtCore.Signal(list)
+	"""Column indices chosen"""
 
 	def __init__(self, *args):
 		super().__init__(*args)
@@ -63,6 +64,7 @@ class TRTChooseColumnsDialog(QtWidgets.QDialog):
 	def selectionChanged(self):
 		count_selected = len(self.list_headers.selectedItems())
 		self.txt_summary.setText(f"{count_selected} Shown / {self.list_headers.count() - count_selected} Hidden")
+		self.btn_box.button(QtWidgets.QDialogButtonBox.StandardButton.Save).setEnabled(bool(count_selected))
 	
 	@QtCore.Slot()
 	def toggleSelection(self):
@@ -70,10 +72,10 @@ class TRTChooseColumnsDialog(QtWidgets.QDialog):
 			self.list_headers.clearSelection()
 		else:
 			self.list_headers.selectAll()
-			self.list_headers.setFocus()
+		self.list_headers.setFocus()
 
 	@QtCore.Slot()
 	def saveChanges(self):
 		"""Inform the people"""
-		self.sig_columns_chosen.emit(self.list_headers.selectedIndexes())
+		self.sig_columns_chosen.emit([idx.row() for idx in self.list_headers.selectedIndexes()])
 		self.accept()
