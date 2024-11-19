@@ -273,10 +273,16 @@ class TRTDataModel(QtCore.QObject):
 		return self.trimFromTail()
 	
 	def getSequenceFFOATimecode(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
-		return self.getSequenceStartTimecode(sequence_info) + self.trimFromHead()
+		return self.getSequenceStartTimecode(sequence_info) + self.getSequenceTrimFromHead(sequence_info)
 	
 	def getSequenceLFOATimecode(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
-		return self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromTail(sequence_info) - 1
+		return self.getSequenceStartTimecode(sequence_info) + self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromTail(sequence_info) - 1
+	
+	def getSequenceFFOAFeetFrames(self, sequence_info:logic_trt.ReelInfo) -> str:
+		return self.tc_to_lfoa(self.getSequenceTrimFromHead(sequence_info))
+	
+	def getSequenceLFOAFeetFrames(self, sequence_info:logic_trt.ReelInfo) -> str:
+		return self.tc_to_lfoa(self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromTail(sequence_info) -1)
 	
 	def getSequenceDateModified(self, sequence_info:logic_trt.ReelInfo) -> datetime:
 		return sequence_info.date_modified
@@ -284,12 +290,14 @@ class TRTDataModel(QtCore.QObject):
 	def matchMarkersToPreset(self, marker_preset:markers_trt.LBMarkerPreset, marker_list:list[avbutils.MarkerInfo]) -> avbutils.MarkerInfo:
 
 		for marker_info in marker_list:
+
 			if marker_preset.color is not None and marker_info.color.value != marker_preset.color:
 				continue
 			if marker_preset.comment is not None and marker_info.comment != marker_preset.comment:
 				continue
 			if marker_preset.author is not None and marker_info.user != marker_preset.author:
 				continue
+
 			return marker_info
 		return None
 	
@@ -300,11 +308,6 @@ class TRTDataModel(QtCore.QObject):
 		
 		sequence_info = bin_info.reel
 
-		#if self.activeHeadMarkerPreset():
-		#	marker_match = self.matchMarkersToPreset(marker_preset=self.activeHeadMarkerPreset(), marker_list=sorted(sequence_info.markers, key=lambda m: m.frm_offset))
-		#	if marker_match:
-		#		print(f"MARKER MATCHED:", self.getSequenceStartTimecode(sequence_info) + marker_match)
-
 		return {
 			"sequence_name": 	treeview_trt.TRTStringItem(self.getSequenceName(sequence_info)),
 			"sequence_color": 	treeview_trt.TRTClipColorItem(self.getSequenceColor(sequence_info)),
@@ -313,10 +316,10 @@ class TRTDataModel(QtCore.QObject):
 			"duration_trimmed": treeview_trt.TRTDurationItem(self.getSequenceTrimmedDuration(sequence_info)),
 			"head_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromHead(sequence_info)),
 			"tail_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromTail(sequence_info)),
-			"ffoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceFFOATimecode(sequence_info)),
-			"ffoa_ff":			treeview_trt.TRTFeetFramesItem(self.tc_to_lfoa(self.getSequenceFFOATimecode(sequence_info))),
+			"ffoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceFFOATimecode(sequence_info), icon=markers_trt.LBMarkerIcons().ICONS.get(self.activeHeadMarkerPreset().color) if self.activeHeadMarkerPreset() else None),
+			"ffoa_ff":			treeview_trt.TRTFeetFramesItem(self.getSequenceFFOAFeetFrames(sequence_info)),
 			"lfoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceLFOATimecode(sequence_info)),
-			"lfoa_ff": 			treeview_trt.TRTFeetFramesItem(self.tc_to_lfoa(self.getSequenceLFOATimecode(sequence_info))), # TODO: Need a an AbstractItem type for this
+			"lfoa_ff": 			treeview_trt.TRTFeetFramesItem(self.getSequenceLFOAFeetFrames(sequence_info)), # TODO: Need a an AbstractItem type for this
 			"date_modified": 	treeview_trt.TRTStringItem(self.getSequenceDateModified(sequence_info)),	# TODO: Need an Item type fro this
 			"bin_path": 		treeview_trt.TRTPathItem(bin_info.path),
 			"bin_lock": 		treeview_trt.TRTBinLockItem(bin_info.lock)
