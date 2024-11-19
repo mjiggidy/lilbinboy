@@ -12,9 +12,13 @@ from . import model_trt
 class TRTAbstractItem(QtCore.QObject):
 	"""An abstract item for TRT views"""
 
-	def __init__(self, raw_data:typing.Any):
+	def __init__(self, raw_data:typing.Any, icon:QtGui.QIcon|None=None, tooltip:QtWidgets.QToolTip|str|None=None):
 		super().__init__()
+
 		self._data = raw_data
+		self._icon = icon
+		self._tooltip = tooltip
+
 		self._data_roles = {}
 		self._prepare_data()
 	
@@ -24,6 +28,8 @@ class TRTAbstractItem(QtCore.QObject):
 			QtCore.Qt.ItemDataRole.DisplayRole:				str(self._data),
 			QtCore.Qt.ItemDataRole.InitialSortOrderRole: 	avbutils.human_sort(str(self._data)),
 			QtCore.Qt.ItemDataRole.UserRole:				self._data,
+			QtCore.Qt.ItemDataRole.DecorationRole:			self._icon,
+			QtCore.Qt.ItemDataRole.ToolTipRole:				self._tooltip
 		})
 
 	def data(self, role:QtCore.Qt.ItemDataRole) -> typing.Any:
@@ -33,8 +39,8 @@ class TRTAbstractItem(QtCore.QObject):
 class TRTStringItem(TRTAbstractItem):
 	"""A standard string"""
 
-	def __init__(self, raw_data:str):
-		super().__init__(str(raw_data))
+	def __init__(self, raw_data:str, *args, **kwargs):
+		super().__init__(str(raw_data), *args, **kwargs)
 
 class TRTPathItem(TRTAbstractItem):
 	"""A file path"""
@@ -55,10 +61,10 @@ class TRTPathItem(TRTAbstractItem):
 class TRTTimecodeItem(TRTAbstractItem):
 	"""A timecode"""
 
-	def __init__(self, raw_data:Timecode):
+	def __init__(self, raw_data:Timecode, *args, **kwargs):
 		if not isinstance(raw_data, Timecode):
 			raise TypeError("Data must be an instance of `Timecode`")
-		super().__init__(raw_data)
+		super().__init__(raw_data, *args, **kwargs)
 	
 	def _prepare_data(self):
 		super()._prepare_data()
@@ -67,6 +73,9 @@ class TRTTimecodeItem(TRTAbstractItem):
 			QtCore.Qt.ItemDataRole.InitialSortOrderRole:	self._data.frame_number,
 			QtCore.Qt.ItemDataRole.FontRole:				QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
 		})
+
+		if self._icon:
+			print(self._data_roles)
 	
 class TRTDurationItem(TRTTimecodeItem):
 	"""A duration (hh:mm:ss:ff), a subset of timecode"""
@@ -89,14 +98,14 @@ class TRTFeetFramesItem(TRTStringItem):
 class TRTClipColorItem(TRTAbstractItem):
 	"""A clip color"""
 
-	def __init__(self, raw_data:avbutils.ClipColor|QtGui.QRgba64):
+	def __init__(self, raw_data:avbutils.ClipColor|QtGui.QRgba64, *args, **kwargs):
 
 		if isinstance(raw_data, avbutils.ClipColor):
 			raw_data = QtGui.QRgba64.fromRgba64(*raw_data, raw_data.max_16b())
 		#elif not isinstance(raw_data, QtGui.QColor) or raw_data is not None:
 		#	raise TypeError(f"Data must be a 16-bit color or None (got {type(raw_data)})")
 		
-		super().__init__(raw_data)
+		super().__init__(raw_data, *args, **kwargs)
 	
 	def _prepare_data(self):
 		# Not calling super, would be weird
@@ -112,8 +121,8 @@ class TRTBinLockItem(TRTAbstractItem):
 	"""Bin lock info"""
 
 	# Note: For now I think we'll do a string, but want to expand this later probably
-	def __init__(self, raw_data:str):
-		super().__init__(raw_data or "")
+	def __init__(self, raw_data:str, *args, **kwargs):
+		super().__init__(raw_data or "", *args, **kwargs)
 
 	def _prepare_data(self):
 		super()._prepare_data()
