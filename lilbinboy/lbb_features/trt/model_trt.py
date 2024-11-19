@@ -1,6 +1,7 @@
 
 import enum
 import avbutils
+from datetime import datetime
 from PySide6 import QtCore, QtGui
 from timecode import Timecode
 from . import logic_trt, treeview_trt, markers_trt
@@ -234,23 +235,89 @@ class TRTDataModel(QtCore.QObject):
 	def data(self):
 		return iter(self._data)
 	
+	#
+	# Item To Dict Methods
+	#
+	
+	def getSequenceName(self, sequence_info:logic_trt.ReelInfo) -> str:
+		return sequence_info.sequence_name
+	
+	def getSequenceColor(self, sequence_info:logic_trt.ReelInfo) -> QtGui.QRgba64|None:
+		return QtGui.QRgba64.fromRgba64(*sequence_info.sequence_color.as_rgb16(), sequence_info.sequence_color.max_16b()) if sequence_info.sequence_color else None
+	
+	def getSequenceStartTimecode(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
+		return sequence_info.sequence_tc_range.start
+	
+	def getSequenceTotalDuration(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
+		return sequence_info.duration_total
+	
+	def getSequenceTrimmedDuration(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
+		return max(Timecode(0, rate=self.rate()), sequence_info.duration_total - self._trim_head - self._trim_tail)
+	
+	def getSequenceTrimFromHead(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
+		
+		if self.activeHeadMarkerPreset():
+			matched_marker = self.matchMarkersToPreset(self.activeHeadMarkerPreset(), sorted(sequence_info.markers, key=lambda m: m.frm_offset))
+			if matched_marker:
+				return Timecode(matched_marker.frm_offset, rate=self.rate())
+
+		return self.trimFromHead()
+	
+	def getSequenceTrimFromTail(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
+		
+		if self.activeTailMarkerPreset():
+			matched_marker = self.matchMarkersToPreset(self.activeTailMarkerPreset(), sorted(sequence_info.markers, key=lambda m: m.frm_offset, reverse=True))
+			if matched_marker:
+				return Timecode(matched_marker.frm_offset, rate=self.rate())
+		
+		return self.trimFromTail()
+	
+	def getSequenceFFOATimecode(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
+		return self.getSequenceStartTimecode(sequence_info) + self.trimFromHead()
+	
+	def getSequenceLFOATimecode(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
+		return self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromTail(sequence_info) - 1
+	
+	def getSequenceDateModified(self, sequence_info:logic_trt.ReelInfo) -> datetime:
+		return sequence_info.date_modified
+	
+	def matchMarkersToPreset(self, marker_preset:markers_trt.LBMarkerPreset, marker_list:list[avbutils.MarkerInfo]) -> avbutils.MarkerInfo:
+
+		for marker_info in marker_list:
+			if marker_preset.color is not None and marker_info.color.value != marker_preset.color:
+				continue
+			if marker_preset.comment is not None and marker_info.comment != marker_preset.comment:
+				continue
+			if marker_preset.author is not None and marker_info.user != marker_preset.author:
+				continue
+			return marker_info
+		return None
+	
+
+	
+	
 	def item_to_dict(self, bin_info:logic_trt.BinInfo):
 		
 		sequence_info = bin_info.reel
 
+		#if self.activeHeadMarkerPreset():
+		#	marker_match = self.matchMarkersToPreset(marker_preset=self.activeHeadMarkerPreset(), marker_list=sorted(sequence_info.markers, key=lambda m: m.frm_offset))
+		#	if marker_match:
+		#		print(f"MARKER MATCHED:", self.getSequenceStartTimecode(sequence_info) + marker_match)
+
 		return {
-			"sequence_name": 	treeview_trt.TRTStringItem(sequence_info.sequence_name),
-			"sequence_color": 	treeview_trt.TRTClipColorItem(QtGui.QRgba64.fromRgba64(*sequence_info.sequence_color.as_rgb16(), sequence_info.sequence_color.max_16b()) if sequence_info.sequence_color else None),
-			"sequence_start_tc":treeview_trt.TRTTimecodeItem(sequence_info.sequence_tc_range.start),
-			"duration_total": 	treeview_trt.TRTDurationItem(sequence_info.duration_total),
-			"duration_trimmed": treeview_trt.TRTDurationItem(max(Timecode(0, rate=self.rate()), sequence_info.duration_total - self._trim_head - self._trim_tail)),
-			"head_trimmed": 	treeview_trt.TRTDurationItem(self._trim_head),
-			"tail_trimmed": 	treeview_trt.TRTDurationItem(self._trim_tail),
-			"ffoa_tc":			treeview_trt.TRTTimecodeItem(sequence_info.sequence_tc_range.start + self._trim_head),
-			"ffoa_ff":			treeview_trt.TRTFeetFramesItem(self.tc_to_lfoa(self._trim_head)),
-			"lfoa_tc":			treeview_trt.TRTTimecodeItem(max(Timecode(0, rate=self.rate()), sequence_info.duration_total - self._trim_tail - 1) + sequence_info.sequence_tc_range.start),
-			"lfoa_ff": 			treeview_trt.TRTFeetFramesItem(self.tc_to_lfoa(max(Timecode(0, rate=self.rate()), sequence_info.duration_total - self._trim_tail - 1))), # TODO: Need a an AbstractItem type for this
-			"date_modified": 	treeview_trt.TRTStringItem(str(sequence_info.date_modified)),	# TODO: Need an Item type fro this
+			"sequence_name": 	treeview_trt.TRTStringItem(self.getSequenceName(sequence_info)),
+			"sequence_color": 	treeview_trt.TRTClipColorItem(self.getSequenceColor(sequence_info)),
+			"sequence_start_tc":treeview_trt.TRTTimecodeItem(self.getSequenceStartTimecode(sequence_info)),
+			"duration_total": 	treeview_trt.TRTDurationItem(self.getSequenceTotalDuration(sequence_info)),
+			"duration_trimmed": treeview_trt.TRTDurationItem(self.getSequenceTrimmedDuration(sequence_info)),
+			"head_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromHead(sequence_info)),
+			"tail_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromTail(sequence_info)),
+			"ffoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceFFOATimecode(sequence_info)),
+			"ffoa_ff":			treeview_trt.TRTFeetFramesItem(self.tc_to_lfoa(self.getSequenceFFOATimecode(sequence_info))),
+			"lfoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceLFOATimecode(sequence_info)),
+			"lfoa_ff": 			treeview_trt.TRTFeetFramesItem(self.tc_to_lfoa(self.getSequenceLFOATimecode(sequence_info))), # TODO: Need a an AbstractItem type for this
+			"date_modified": 	treeview_trt.TRTStringItem(self.getSequenceDateModified(sequence_info)),	# TODO: Need an Item type fro this
 			"bin_path": 		treeview_trt.TRTPathItem(bin_info.path),
 			"bin_lock": 		treeview_trt.TRTBinLockItem(bin_info.lock)
 		}
