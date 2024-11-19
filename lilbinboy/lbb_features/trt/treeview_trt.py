@@ -73,9 +73,6 @@ class TRTTimecodeItem(TRTAbstractItem):
 			QtCore.Qt.ItemDataRole.InitialSortOrderRole:	self._data.frame_number,
 			QtCore.Qt.ItemDataRole.FontRole:				QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
 		})
-
-		if self._icon:
-			print(self._data_roles)
 	
 class TRTDurationItem(TRTTimecodeItem):
 	"""A duration (hh:mm:ss:ff), a subset of timecode"""
