@@ -40,7 +40,7 @@ class TRTChooseColumnsDialog(QtWidgets.QDialog):
 		grp_available.layout().setContentsMargins(2,2,2,2)
 		
 		lay_summary = QtWidgets.QHBoxLayout()
-		self.btn_toggle_selection.setText("Select All/None")
+		self.btn_toggle_selection.setText("Select All / None")
 		self.btn_toggle_selection.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditSelectAll))
 		self.btn_toggle_selection.clicked.connect(self.toggleSelection)
 		lay_summary.addWidget(self.btn_toggle_selection)
@@ -63,7 +63,7 @@ class TRTChooseColumnsDialog(QtWidgets.QDialog):
 	@QtCore.Slot()
 	def selectionChanged(self):
 		count_selected = len(self.list_headers.selectedItems())
-		self.txt_summary.setText(f"{count_selected} Shown / {self.list_headers.count() - count_selected} Hidden")
+		self.txt_summary.setText(f"{count_selected} Visible   {self.list_headers.count() - count_selected} Hidden")
 		self.btn_box.button(QtWidgets.QDialogButtonBox.StandardButton.Save).setEnabled(bool(count_selected))
 	
 	@QtCore.Slot()

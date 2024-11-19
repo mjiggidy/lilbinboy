@@ -559,6 +559,10 @@ class LBTRTCalculator(LBUtilityTab):
 	
 	@QtCore.Slot(list)
 	def setColumnsVisible(self, idx_visible:list[int]):
+
+		# Somtimes the indexes come in as strings ugh
+		idx_visible = [int(x) for x in list(idx_visible)]
+		
 		for idx in range(self._treeview_model.columnCount()):
 			self.list_trts.setColumnHidden(idx, idx not in idx_visible)
 		QtCore.QSettings().setValue("trt/columns_visible", idx_visible)
