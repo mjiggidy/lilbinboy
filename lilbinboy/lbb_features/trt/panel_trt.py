@@ -449,20 +449,24 @@ class LBTRTCalculator(LBUtilityTab):
 	@QtCore.Slot(str)
 	def trimHeadMarkerChanged(self, preset_name:str):
 		self.trt_trims.set_head_marker_preset_name(preset_name)
+		self.updateSequenceInfo()
 		QtCore.QSettings().setValue("trt/trim_marker_preset_head", preset_name)
 
 	@QtCore.Slot(str)
 	def trimTailMarkerChanged(self, preset_name:str):
 		self.trt_trims.set_tail_marker_preset_name(preset_name)
+		self.updateSequenceInfo()
 		QtCore.QSettings().setValue("trt/trim_marker_preset_tail", preset_name)		
 
 	
 	def trimHeadTCChanged(self, tc:Timecode):
 		self.trt_trims.set_head_trim(tc)
+		self.updateSequenceInfo()
 		QtCore.QSettings().setValue("trt/trim_head", str(tc))
 
 	def trimTailTCChanged(self, tc:Timecode):
 		self.trt_trims.set_tail_trim(tc)
+		self.updateSequenceInfo()
 		QtCore.QSettings().setValue("trt/trim_tail", str(tc))
 	
 	def trimTotalTCChanged(self, tc:Timecode):
@@ -518,6 +522,12 @@ class LBTRTCalculator(LBUtilityTab):
 		# Save last bin path if it's a good 'un
 		if last_bin:
 			QtCore.QSettings().setValue("trt/last_bin", last_bin)
+	
+	def updateSequenceInfo(self):
+
+		for idx, bin_info in enumerate(self._data_model.data()):
+			view_item = self.model().item_to_dict(bin_info)
+			self._treeview_model.updateSequenceInfo(idx, view_item)
 	
 	def refresh_bins(self):
 		pass

@@ -361,6 +361,12 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
 		self._data.append(sequence_info)
 		self.endInsertRows()
+
+	def updateSequenceInfo(self, idx:int, sequence_info:dict[str, treeview_trt.TRTAbstractItem]):
+		idx_start = self.index(idx, 0)
+		idx_end = self.index(idx, self.columnCount()-1)
+		self._data[idx] = sequence_info
+		self.dataChanged.emit(idx_start, idx_end)
 	
 	@QtCore.Slot(int)
 	def removeSequenceInfo(self, idx:int):
