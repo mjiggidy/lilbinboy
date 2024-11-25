@@ -2,7 +2,7 @@
 import enum
 import avbutils
 from datetime import datetime
-from PySide6 import QtCore, QtGui
+from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
 from . import logic_trt, treeview_trt, markers_trt
 
@@ -316,7 +316,7 @@ class TRTDataModel(QtCore.QObject):
 			"duration_trimmed": treeview_trt.TRTDurationItem(self.getSequenceTrimmedDuration(sequence_info)),
 			"head_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromHead(sequence_info)),
 			"tail_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromTail(sequence_info)),
-			"ffoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceFFOATimecode(sequence_info), icon=markers_trt.LBMarkerIcons().ICONS.get(self.activeHeadMarkerPreset().color) if self.activeHeadMarkerPreset() else None),
+			"ffoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceFFOATimecode(sequence_info)),
 			"ffoa_ff":			treeview_trt.TRTFeetFramesItem(self.getSequenceFFOAFeetFrames(sequence_info)),
 			"lfoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceLFOATimecode(sequence_info)),
 			"lfoa_ff": 			treeview_trt.TRTFeetFramesItem(self.getSequenceLFOAFeetFrames(sequence_info)), # TODO: Need a an AbstractItem type for this
@@ -363,7 +363,7 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		self.endInsertRows()
 
 	def updateSequenceInfo(self, idx:int, sequence_info:dict[str, treeview_trt.TRTAbstractItem]):
-		idx_start = self.index(idx, 0)
+		idx_start = self.index(idx, 2)
 		idx_end = self.index(idx, self.columnCount()-1)
 		self._data[idx] = sequence_info
 		self.dataChanged.emit(idx_start, idx_end)

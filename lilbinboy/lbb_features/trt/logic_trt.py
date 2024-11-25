@@ -62,6 +62,15 @@ def get_reel_number_from_timeline_attributes(attrs:avb.components.core.AVBProper
 def get_reel_info(
 	sequence:avb.trackgroups.Composition) -> ReelInfo:
 	"""Get the properties of a given sequence"""
+
+	temp_m = avbutils.get_markers_from_timeline(sequence)
+	
+	try:
+		temp_first = sorted(temp_m, key=lambda m: m.frm_offset)[0]
+		print(f"Got {len(temp_m)} markers for {sequence.name} (first: {temp_first})")
+	except Exception as e:
+		print("No:",e)
+
 	
 	return ReelInfo(
 		sequence_name=sequence.name,
