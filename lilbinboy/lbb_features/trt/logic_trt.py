@@ -67,7 +67,7 @@ def get_reel_info(
 	
 	try:
 		temp_first = sorted(temp_m, key=lambda m: m.frm_offset)[0]
-		print(f"Got {len(temp_m)} markers for {sequence.name} (first: {temp_first})")
+		#print(f"Got {len(temp_m)} markers for {sequence.name} (first: {temp_first})")
 	except Exception as e:
 		print("No:",e)
 

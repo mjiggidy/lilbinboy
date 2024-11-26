@@ -1,7 +1,7 @@
 import dataclasses, pathlib, re
 from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
-from ...lbb_common import LBUtilityTab, LBSpinBoxTC, LBBClipColorPicker
+from ...lbb_common import LBUtilityTab, LBSpinBoxTC, LBTimelineView
 from . import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
@@ -246,6 +246,9 @@ class LBTRTCalculator(LBUtilityTab):
 		self.list_trts = treeview_trt.TRTTreeView()
 		self.trt_summary = TRTSummary()
 
+		# Longplay Layout
+		self.view_longplay = LBTimelineView()
+
 		# Declare trims
 		self.trt_trims = trims_trt.TRTControlsTrims()
 		self.trim_total = LBSpinBoxTC()
@@ -312,9 +315,15 @@ class LBTRTCalculator(LBUtilityTab):
 		self.list_trts.header().setContextMenuPolicy(QtGui.Qt.ContextMenuPolicy.CustomContextMenu)
 		self.list_trts.header().customContextMenuRequested.connect(self.showColumnChooserContextMenu)
 		self.list_trts.fit_headers()
-
 		self.layout().addWidget(self.list_trts)
+		
+		# Longplay view
+		self.view_longplay.setThings([])
+		self.view_longplay.setCornerRadius(0)
+		self.layout().addWidget(self.view_longplay)
+		
 		self.layout().addWidget(self.trt_summary)
+
 
 		
 		# Set up sequence trim controls
@@ -363,6 +372,10 @@ class LBTRTCalculator(LBUtilityTab):
 		# Treeview requests for add/remove bins (drag and drop or selection delete)
 		self.list_trts.sig_bins_dragged_dropped.connect(self.add_bins_from_paths)
 		self.list_trts.sig_remove_rows_requested.connect(self.remove_bins)
+
+		# Hook in to the sort/filter model to update the LP timeline view
+		self.list_trts.model().layoutChanged.connect(self.update_lp_layout)
+		#print(self.list_trts.model().data(0,1))
 		
 		# Top control buttons
 		self.btn_add_bins.clicked.connect(self.choose_folder)
@@ -549,6 +562,7 @@ class LBTRTCalculator(LBUtilityTab):
 	#
 	# Treeview show/hide columns
 	#
+
 	@QtCore.Slot(QtCore.QPoint)
 	def showColumnChooserContextMenu(self, pos:QtCore.QPoint):
 		"""Show the menu"""
@@ -605,3 +619,23 @@ class LBTRTCalculator(LBUtilityTab):
 	def sequenceSelectionModeChanged(self, mode:model_trt.SequenceSelectionMode):
 		self.bin_mode.setSequenceSelectionMode(mode)
 		QtCore.QSettings().setValue("trt/sequence_selection_mode", mode)
+
+	@QtCore.Slot()
+	def update_lp_layout(self):
+		
+		unsorted_durs:list[tuple[str,int]] = []
+
+		for row_idx in range(self.list_trts.model().rowCount()):
+			
+			prx_index = self.list_trts.model().index(row_idx, 0, QtCore.QModelIndex())
+			main_index = self.list_trts.model().mapToSource(prx_index)
+
+			mapped_idx = main_index.row()
+
+
+
+			bin_info = self.model().data()[mapped_idx]
+			bin_dict = self.model().item_to_dict(bin_info)
+			unsorted_durs.append((bin_dict.get("sequence_name").data(QtCore.Qt.ItemDataRole.UserRole), bin_dict.get("duration_trimmed").data(QtCore.Qt.ItemDataRole.UserRole).frame_number))
+		
+		self.view_longplay.setThings(unsorted_durs)

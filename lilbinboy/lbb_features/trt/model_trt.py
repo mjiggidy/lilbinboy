@@ -233,7 +233,7 @@ class TRTDataModel(QtCore.QObject):
 		self.set_data([])
 	
 	def data(self):
-		return iter(self._data)
+		return self._data
 	
 	#
 	# Item To Dict Methods
