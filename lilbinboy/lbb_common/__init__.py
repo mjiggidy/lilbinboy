@@ -40,6 +40,20 @@ class LBMainWindow(QtWidgets.QMainWindow):
 		super().resizeEvent(event)
 		self.sig_resized.emit(self.geometry())
 
+class LBTimelineView(QtWidgets.QWidget):
+	"""A little timeline layout graphic thing"""
+
+	def paintEvent(self, e:QtGui.QPaintEvent):
+
+		painter = QtGui.QPainter(self)
+
+		rect = QtCore.QRect(0, 0, painter.device().width(), painter.device().height())
+		brush = QtGui.QBrush()
+		brush.setColor(QtGui.QColor("Black"))
+		painter.fillRect(rect, brush)
+		painter.end()
+
+
 
 class LBSpinBoxTC(QtWidgets.QSpinBox):
 
