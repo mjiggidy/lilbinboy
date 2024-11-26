@@ -6,6 +6,19 @@ from timecode import Timecode
 class LBTimelineView(QtWidgets.QWidget):
 	"""A little timeline layout graphic thing"""
 
+	def __init__(self, *args, **kwargs):
+
+		super().__init__(*args, **kwargs)
+
+		# Set size hint based on two lines of text, basically
+		box = QtGui.QFontMetrics("test").boundingRect("00:00:00:00")
+
+		self.setMinimumHeight(box.height() * 2 + 6)
+		self.setSizePolicy(
+			QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+			QtWidgets.QSizePolicy.Policy.Maximum
+		)
+
 	def setBottomMargin(self, margin:int):
 		self._bottom_margin = margin
 
@@ -15,7 +28,7 @@ class LBTimelineView(QtWidgets.QWidget):
 	# Debug
 	def setThings(self, things:list[int]):
 		self._things = things
-		self._pallette = [QtGui.QColor.fromHsvF(x/len(things), .4, .5) for x in range(len(things))]
+		self._pallette = [QtGui.QColor.fromHsvF(x/len(things), .4, .4) for x in range(len(things))]
 		self._total = sum(things)
 		self.update()
 
@@ -24,7 +37,6 @@ class LBTimelineView(QtWidgets.QWidget):
 		painter = QtGui.QPainter(self)
 
 		rect = QtCore.QRect(0, 0, painter.device().width(), painter.device().height())
-		brush = QtGui.QBrush()
 		
 		font = painter.font()
 		font.setPointSize(font.pointSize() - 3)
@@ -57,6 +69,9 @@ class LBTimelineView(QtWidgets.QWidget):
 			painter.drawRoundedRect(rect, self._corner_radius, self._corner_radius)
 
 			# Draw Box Label
+			pen = painter.pen()
+			pen.setColor(painter.brush().color().lighter(300))
+			painter.setPen(pen)
 			text_location = QtCore.QPoint(x_pos + 5, painter.device().height() - 5 - self._bottom_margin)
 			painter.drawText(text_location, "SNL Reel " + str(idx+1))
 
