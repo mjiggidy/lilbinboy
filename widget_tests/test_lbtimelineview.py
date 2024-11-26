@@ -1,4 +1,4 @@
-import random
+import random, math
 from PySide6 import QtWidgets, QtCore, QtGui
 from timecode import Timecode
 
@@ -15,7 +15,7 @@ class LBTimelineView(QtWidgets.QWidget):
 	# Debug
 	def setThings(self, things:list[int]):
 		self._things = things
-		self._pallette = [QtGui.QColor.fromHsvF(x/len(things), .6, .65) for x in range(len(things))]
+		self._pallette = [QtGui.QColor.fromHsvF(x/len(things), .4, .5) for x in range(len(things))]
 		self._total = sum(things)
 		self.update()
 
@@ -25,68 +25,82 @@ class LBTimelineView(QtWidgets.QWidget):
 
 		rect = QtCore.QRect(0, 0, painter.device().width(), painter.device().height())
 		brush = QtGui.QBrush()
+		
+		font = painter.font()
+		font.setPointSize(font.pointSize() - 3)
+		painter.setFont(font)
 
 		x_pos = 0
+
 		for idx, thing in enumerate(self._things):
 
+			# Draw Box
 			painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-
-			rect = QtCore.QRectF(x_pos, 0, (thing/self._total)*(painter.device().width()), painter.device().height() - self._bottom_margin)
+			rect = QtCore.QRect(x_pos, 0, math.ceil((thing/self._total)*(painter.device().width())), painter.device().height() - self._bottom_margin)
 			
+			brush = painter.brush()
 			brush.setColor(self._pallette[idx])
-			brush.setStyle(QtGui.Qt.SolidPattern)
-
-			pen = QtGui.QPen()
-			pen.setColor(QtGui.QColor("Black"))
-			pen.setWidth(1)
-
-
+			brush.setStyle(QtGui.Qt.BrushStyle.SolidPattern)
 			painter.setBrush(brush)
+			
+			pen = painter.pen()
+			pen.setColor(painter.brush().color().lighter())
+			pen.setWidth(1)
 			painter.setPen(pen)
-
+			
 			painter.drawRoundedRect(rect, self._corner_radius, self._corner_radius)
 
+			# Draw Box Label
 			text_location = QtCore.QPoint(x_pos + 5, painter.device().height() - 5 - self._bottom_margin)
-			painter.drawText(text_location, "SNL Reel " + str(thing))
+			painter.drawText(text_location, "SNL Reel " + str(idx+1))
 
-			pen.setWidth(2)
-			painter.setPen(pen)
+			# Draw tick
 			painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, False)
-			
+			pen = painter.pen()
+			pen.setWidth(2)
+			pen.setColor(self._pallette[idx].lighter())
+			painter.setPen(pen)
+
+			tick_start_pos = QtCore.QPoint(max(x_pos, int(pen.width()/2)), 0)
+			tick_end_pos   = QtCore.QPoint(tick_start_pos.x(), painter.device().height() - 4)
+
+			painter.drawLine(tick_start_pos, tick_end_pos)
+
+			# Draw Timecode
+			pen = painter.pen()	
 			pen.setColor(QtGui.QPalette().color(QtGui.QPalette.ColorRole.Text))
 			painter.setPen(pen)
 			tick_text = str(Timecode(int(x_pos))).lstrip("0:") or "0:00"
-			painter.drawLine(x_pos, 0, x_pos, painter.device().height() - 15)
-
-			font_metrics = QtGui.QFontMetrics(painter.font())
-			tick_text_rect = font_metrics.boundingRect(tick_text)
-
-			tick_text_rect.moveCenter(QtCore.QPoint(max(x_pos, tick_text_rect.width()/2), painter.device().height() - tick_text_rect.height()/2-2))
-			tick_text_rect.adjust(-10, 0, 10, 0)
-
+			text_location.setY(painter.device().height() - self._bottom_margin + 12)
+			painter.drawText(text_location, tick_text)
 			
-			pen.setColor(QtGui.QPalette().windowText().color())
-			painter.setPen(pen)
-			painter.drawText(tick_text_rect, QtCore.Qt.AlignmentFlag.AlignCenter, tick_text)
-			
-
 			x_pos += (thing/self._total)*(painter.device().width())
 
-		pen.setWidth(2)
-		painter.setPen(pen)
+		# Draw final tick
 		painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, False)
-		
-		tick_text = str(Timecode(int(x_pos))).lstrip("0:") or "0:00"
-		painter.drawLine(x_pos, 0, x_pos, painter.device().height() - 15)
-		font_metrics = QtGui.QFontMetrics(painter.font())
-		tick_text_rect = font_metrics.boundingRect(tick_text)
-
-		tick_text_rect.moveCenter(QtCore.QPoint(min(x_pos, painter.device().width() - tick_text_rect.width()/2), painter.device().height() - tick_text_rect.height()/2-2))
-
-		
-		pen.setColor(QtGui.QPalette().windowText().color())
+		pen = painter.pen()
+		pen.setWidth(2)
+		pen.setColor(self._pallette[-1].lighter())
 		painter.setPen(pen)
-		painter.drawText(tick_text_rect, QtCore.Qt.AlignmentFlag.AlignCenter, tick_text)
+
+		tick_start_pos = QtCore.QPoint(painter.device().width() - pen.width()/2, 0)
+		tick_end_pos   = QtCore.QPoint(tick_start_pos.x(), painter.device().height() - 4)
+
+		painter.drawLine(tick_start_pos, tick_end_pos)
+
+		# Draw Final Timecode
+		pen = painter.pen()	
+		pen.setColor(QtGui.QPalette().color(QtGui.QPalette.ColorRole.Text))
+		painter.setPen(pen)
+		tick_text = str(Timecode(int(x_pos))).lstrip("0:") or "0:00"
+		text_location.setY(painter.device().height() - self._bottom_margin + 12)
+		
+		font_metrics = painter.fontMetrics()
+		font_box = font_metrics.boundingRect(tick_text)
+		text_location.setX(painter.device().width() - font_box.width() - 5 - painter.pen().width())
+		
+		painter.drawText(text_location, tick_text)
+
 
 		painter.end()
 
