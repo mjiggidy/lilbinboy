@@ -30,6 +30,12 @@ class LBTimelineView(QtWidgets.QWidget):
 		font.setPointSize(font.pointSize() - 3)
 		painter.setFont(font)
 
+		# Determine bottom margin
+		font_metrics = painter.fontMetrics()
+		font_box = font_metrics.boundingRect("00:00")
+		self._bottom_margin = font_box.height() + 4 # 4x padding
+
+
 		x_pos = 0
 
 		for idx, thing in enumerate(self._things):
@@ -44,7 +50,7 @@ class LBTimelineView(QtWidgets.QWidget):
 			painter.setBrush(brush)
 			
 			pen = painter.pen()
-			pen.setColor(painter.brush().color().lighter())
+			pen.setColor(painter.brush().color().lighter(200))
 			pen.setWidth(1)
 			painter.setPen(pen)
 			
@@ -58,11 +64,11 @@ class LBTimelineView(QtWidgets.QWidget):
 			painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, False)
 			pen = painter.pen()
 			pen.setWidth(2)
-			pen.setColor(self._pallette[idx].lighter())
+			pen.setColor(self._pallette[idx].lighter(200))
 			painter.setPen(pen)
 
 			tick_start_pos = QtCore.QPoint(max(x_pos, int(pen.width()/2)), 0)
-			tick_end_pos   = QtCore.QPoint(tick_start_pos.x(), painter.device().height() - 4)
+			tick_end_pos   = QtCore.QPoint(tick_start_pos.x(), painter.device().height())
 
 			painter.drawLine(tick_start_pos, tick_end_pos)
 
@@ -80,11 +86,11 @@ class LBTimelineView(QtWidgets.QWidget):
 		painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, False)
 		pen = painter.pen()
 		pen.setWidth(2)
-		pen.setColor(self._pallette[-1].lighter())
+		pen.setColor(self._pallette[-1].lighter(200))
 		painter.setPen(pen)
 
 		tick_start_pos = QtCore.QPoint(painter.device().width() - pen.width()/2, 0)
-		tick_end_pos   = QtCore.QPoint(tick_start_pos.x(), painter.device().height() - 4)
+		tick_end_pos   = QtCore.QPoint(tick_start_pos.x(), painter.device().height())
 
 		painter.drawLine(tick_start_pos, tick_end_pos)
 
@@ -103,6 +109,26 @@ class LBTimelineView(QtWidgets.QWidget):
 
 
 		painter.end()
+	
+	def event(self, event:QtCore.QEvent):
+
+		if event.type() is QtCore.QEvent.Type.ToolTip:
+			QtWidgets.QToolTip.showText(event.globalPos(), self.toolTip(event.pos()))
+		
+		else:
+			super().event(event)
+
+	def toolTip(self, position:QtCore.QPoint) -> str:
+		
+		item_pos = 0
+		for idx,item in enumerate(self._things):
+			
+			item_pos += (item/self._total) * self.width()
+			if position.x() < item_pos:
+				return f"SNL Reel {idx + 1}"
+			
+
+		
 
 app = QtWidgets.QApplication()
 app.setStyle("Fusion")
