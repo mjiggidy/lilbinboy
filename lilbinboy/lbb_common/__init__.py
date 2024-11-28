@@ -175,9 +175,9 @@ class LBTimelineView(QtWidgets.QWidget):
 
 		if event.type() is QtCore.QEvent.Type.ToolTip:
 			QtWidgets.QToolTip.showText(event.globalPos(), self.toolTip(event.pos()))
+			return True
 		
-		else:
-			super().event(event)
+		return super().event(event)
 
 	def toolTip(self, position:QtCore.QPoint) -> str:
 		
