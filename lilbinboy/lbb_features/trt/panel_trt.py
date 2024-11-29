@@ -136,7 +136,7 @@ class TRTModeSelection(QtWidgets.QGroupBox):
 		elif mode is model_trt.SequenceSelectionMode.ALL_SEQUENCES_PER_BIN:
 			self._rdo_all_sequence.setChecked(True)
 
-class TRTSummary(QtWidgets.QGroupBox):
+class TRTSummary(QtWidgets.QWidget):
 
 	_fnt_label = QtGui.QFont()
 	_fnt_value = QtGui.QFont()
@@ -316,13 +316,18 @@ class LBTRTCalculator(LBUtilityTab):
 		self.list_trts.header().customContextMenuRequested.connect(self.showColumnChooserContextMenu)
 		self.list_trts.fit_headers()
 		self.layout().addWidget(self.list_trts)
-		
+
 		# Longplay view
 		self.view_longplay.setThings([])
 		self.view_longplay.setCornerRadius(0)
 		self.layout().addWidget(self.view_longplay)
-		
-		self.layout().addWidget(self.trt_summary)
+
+		grp_summaries = QtWidgets.QGroupBox()
+		grp_summaries.setLayout(QtWidgets.QVBoxLayout())
+		grp_summaries.layout().setContentsMargins(0,0,0,0)
+		grp_summaries.layout().addWidget(self.trt_summary)
+
+		self.layout().addWidget(grp_summaries)
 
 
 		
@@ -375,6 +380,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		# Hook in to the sort/filter model to update the LP timeline view
 		self.list_trts.model().layoutChanged.connect(self.update_lp_layout)
+		self.model().sig_data_changed.connect(self.update_lp_layout)
 		#print(self.list_trts.model().data(0,1))
 		
 		# Top control buttons
@@ -627,15 +633,18 @@ class LBTRTCalculator(LBUtilityTab):
 
 		for row_idx in range(self.list_trts.model().rowCount()):
 			
-			prx_index = self.list_trts.model().index(row_idx, 0, QtCore.QModelIndex())
-			main_index = self.list_trts.model().mapToSource(prx_index)
+			# NOTE on the try:
+			# Need to test this further -- at one point I messed this up
+			try:
+				prx_index = self.list_trts.model().index(row_idx, 0, QtCore.QModelIndex())
+				main_index = self.list_trts.model().mapToSource(prx_index)
 
-			mapped_idx = main_index.row()
+				mapped_idx = main_index.row()
 
-
-
-			bin_info = self.model().data()[mapped_idx]
-			bin_dict = self.model().item_to_dict(bin_info)
-			unsorted_durs.append((bin_dict.get("sequence_name").data(QtCore.Qt.ItemDataRole.UserRole), bin_dict.get("duration_trimmed").data(QtCore.Qt.ItemDataRole.UserRole).frame_number))
+				bin_info = self.model().data()[mapped_idx]
+				bin_dict = self.model().item_to_dict(bin_info)
+				unsorted_durs.append((bin_dict.get("sequence_name").data(QtCore.Qt.ItemDataRole.UserRole), bin_dict.get("duration_trimmed").data(QtCore.Qt.ItemDataRole.UserRole).frame_number))
+			except Exception as e:
+				print(f"Proxy out of sync with data ({self.list_trts.model().rowCount()} vs {len(self._data_model.data())})")
 		
 		self.view_longplay.setThings(unsorted_durs)
