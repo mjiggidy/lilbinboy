@@ -230,7 +230,8 @@ class TRTDataModel(QtCore.QObject):
 		self.sig_data_changed.emit()
 
 	def clear(self):
-		self.set_data([])
+		for _ in range(len(self.data())):
+			self.remove_sequence(0)
 	
 	def data(self):
 		return self._data
