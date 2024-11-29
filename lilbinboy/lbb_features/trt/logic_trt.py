@@ -38,6 +38,9 @@ class ReelInfo:
 	duration_total:Timecode = Timecode(0)
 	"""The total duration of the sequence"""
 
+	date_created:datetime.datetime = datetime.datetime.now()
+	"""The date the sequence was last modified in the bin"""
+
 	date_modified:datetime.datetime = datetime.datetime.now()
 	"""The date the sequence was last modified in the bin"""
 
@@ -76,6 +79,7 @@ def get_reel_info(
 		sequence_name=sequence.name,
 		sequence_color=avbutils.composition_clip_color(sequence),
 		sequence_tc_range=avbutils.get_timecode_range_for_composition(sequence),
+		date_created=sequence.creation_time,
 		date_modified=sequence.last_modified,
 		reel_number=get_reel_number_from_timeline_attributes(sequence.attributes),
 		duration_total=Timecode(sequence.length, rate=round(sequence.edit_rate)),

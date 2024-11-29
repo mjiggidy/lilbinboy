@@ -288,6 +288,9 @@ class TRTDataModel(QtCore.QObject):
 	def getSequenceDateModified(self, sequence_info:logic_trt.ReelInfo) -> datetime:
 		return sequence_info.date_modified
 	
+	def getSequenceDateCreated(self, sequence_info:logic_trt.ReelInfo) -> datetime:
+		return sequence_info.date_created
+	
 	def matchMarkersToPreset(self, marker_preset:markers_trt.LBMarkerPreset, marker_list:list[avbutils.MarkerInfo]) -> avbutils.MarkerInfo:
 
 		for marker_info in marker_list:
@@ -322,6 +325,7 @@ class TRTDataModel(QtCore.QObject):
 			"lfoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceLFOATimecode(sequence_info)),
 			"lfoa_ff": 			treeview_trt.TRTFeetFramesItem(self.getSequenceLFOAFeetFrames(sequence_info)), # TODO: Need a an AbstractItem type for this
 			"date_modified": 	treeview_trt.TRTStringItem(self.getSequenceDateModified(sequence_info)),	# TODO: Need an Item type fro this
+			"date_created":		treeview_trt.TRTStringItem(self.getSequenceDateCreated(sequence_info)),
 			"bin_path": 		treeview_trt.TRTPathItem(bin_info.path),
 			"bin_lock": 		treeview_trt.TRTBinLockItem(bin_info.lock)
 		}
@@ -348,6 +352,7 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 			treeview_trt.TRTTreeViewHeaderItem("FFOA (TC)", "ffoa_tc"),
 			treeview_trt.TRTTreeViewHeaderItem("LFOA (F+F)", "lfoa_ff"),
 			treeview_trt.TRTTreeViewHeaderItem("LFOA (TC)", "lfoa_tc"),
+			treeview_trt.TRTTreeViewHeaderItem("Date Created","date_created"),
 			treeview_trt.TRTTreeViewHeaderItem("Date Modified","date_modified"),
 			treeview_trt.TRTTreeViewHeaderItem("From Bin","bin_path"),
 			treeview_trt.TRTTreeViewHeaderItem("Bin Lock","bin_lock"),
