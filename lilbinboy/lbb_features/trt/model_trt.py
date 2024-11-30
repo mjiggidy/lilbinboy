@@ -393,8 +393,8 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		self.endResetModel()
 	
 	def addSequenceInfo(self, sequence_info:dict[str, treeview_trt.TRTAbstractItem]):
-		self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
-		self._data.append(sequence_info)
+		self.beginInsertRows(QtCore.QModelIndex(), 0, 0)
+		self._data.insert(0, sequence_info)
 		self.endInsertRows()
 
 	def updateSequenceInfo(self, idx:int, sequence_info:dict[str, treeview_trt.TRTAbstractItem]):
