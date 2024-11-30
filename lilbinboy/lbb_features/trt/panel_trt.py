@@ -1,6 +1,7 @@
 import dataclasses, pathlib, re
 from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
+from concurrent import futures
 from ...lbb_common import LBUtilityTab, LBSpinBoxTC, LBTimelineView
 from . import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns
 
@@ -50,8 +51,35 @@ class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 		self.setHidden(True)
 		self.sig_progress_completed.emit()
 
+class TRTThreadedMulticoreAbomination(QtCore.QRunnable):
+	"""I don't like this"""
+
+	class TRTThreadedSignals(QtCore.QObject):
+		sig_got_bin_info = QtCore.Signal(list)
+		sig_had_error    = QtCore.Signal(str, Exception)
+	
+	def __init__(self, bin_paths:list[str]):
+		super().__init__()
+		self._bin_paths = bin_paths
+		self._signals = self.TRTThreadedSignals()
+	
+	def signals(self) -> TRTThreadedSignals:
+		return self._signals
+	
+	def run(self):
+		with futures.ProcessPoolExecutor(max_workers=6) as executor:
+			bin_futures = {executor.submit(logic_trt.get_timelines_from_bin, bin_path) : bin_path for bin_path in self._bin_paths}
+			for bin_future in futures.as_completed(bin_futures):
+				try:
+					timeline_info_list = bin_future.result()
+					self.signals().sig_got_bin_info.emit(timeline_info_list)
+				except Exception as e:
+					print("Didn't load " + bin_futures[bin_future] + ": " + str(e))
+					self.signals().sig_had_error.emit(bin_futures[bin_future], e)
+
 
 class TRTThreadedBinGetter(QtCore.QRunnable):
+	"""The old one"""
 
 	class TRTThreadedSignals(QtCore.QObject):
 		sig_got_bin_info = QtCore.Signal(list)
@@ -525,22 +553,20 @@ class LBTRTCalculator(LBUtilityTab):
 	def sequenceRemoved(self, idx:int):
 		self._treeview_model.removeSequenceInfo(idx)
 	
-	def add_bins_from_paths(self, paths):
+	def add_bins_from_paths(self, paths:list[str]):
 
-		last_bin = ""
+		last_bin = paths[-1]
 
-		for path in paths:
-			thread = TRTThreadedBinGetter(path)
-			thread.signals().sig_got_bin_info.connect(self.model().add_timelines_from_bin)
-			thread.signals().sig_got_bin_info.connect(self.prog_loading.step_complete)
-			
+		thread = TRTThreadedMulticoreAbomination(paths)
+		thread.signals().sig_got_bin_info.connect(self.model().add_timelines_from_bin)
+		thread.signals().sig_got_bin_info.connect(self.prog_loading.step_complete)
+		thread.signals().sig_had_error.connect(self.prog_loading.step_complete)
+
+		for _ in range(len(paths)):
 			self.prog_loading.step_added()
-			# TODO: Call prog_loading.step_complete for error too
-
-			self._pool.start(thread)
-
-			last_bin = str(path)
 		
+		self._pool.start(thread)
+
 		# Save last bin path if it's a good 'un
 		if last_bin:
 			QtCore.QSettings().setValue("trt/last_bin", last_bin)
