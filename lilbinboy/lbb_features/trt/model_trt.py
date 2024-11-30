@@ -21,7 +21,7 @@ class TRTDataModel(QtCore.QObject):
 	sig_bins_changed = QtCore.Signal()
 	"""Bins (sequnces?) were added or removed"""
 
-	sig_sequence_added = QtCore.Signal(logic_trt.BinInfo)
+	sig_sequence_added = QtCore.Signal(logic_trt.TimelineInfo)
 	"""BinInfo for a new bin added"""
 	sig_sequence_removed = QtCore.Signal(int)
 	"""Row index for a sequence removed"""
@@ -57,7 +57,7 @@ class TRTDataModel(QtCore.QObject):
 	MAX_16b = (1 << 16) - 1
 	"""Maximum 16-bit value"""
 
-	def __init__(self, bin_info_list:list[logic_trt.BinInfo]=None):
+	def __init__(self, bin_info_list:list[logic_trt.TimelineInfo]=None):
 		super().__init__()
 
 		self._data = bin_info_list or []
@@ -95,8 +95,7 @@ class TRTDataModel(QtCore.QObject):
 		trt = Timecode(0, rate=self._fps)
 
 		for bin_info in self._data:
-			reel_info = bin_info.reel
-			trt += reel_info.duration_total - self._trim_head_amount(reel_info) - self._trim_tail_amount(reel_info)
+			trt += self.getSequenceTrimmedDuration(bin_info)
 		
 		return max(Timecode(0, rate=self.rate()), trt + self.trimTotal())
 	
@@ -140,23 +139,33 @@ class TRTDataModel(QtCore.QObject):
 		return self.tc_to_lfoa(trt)
 	
 	def locked_bin_count(self) -> int:
-		return len([x for x in self.data() if x.lock is not None])
+		locked = 0
+		unique_bins = set()
+
+		for timeline in self._data:
+			if timeline.bin_path in unique_bins:
+				continue
+			unique_bins.add(timeline.bin_path)
+			if timeline.bin_lock:
+				locked += 1
+
+		return locked
 	
 	def tc_to_lfoa(self, tc:Timecode) -> str:
 		zpadding = len(str(self.LFOA_PERFS_PER_FOOT))
 		#tc = max(tc, Timecode(0, rate=self.rate()))
 		return str(tc.frame_number // 16) + "+" + str(tc.frame_number % self.LFOA_PERFS_PER_FOOT).zfill(zpadding)
 		
-	def _trim_head_amount(self, reel_info:logic_trt.ReelInfo) -> Timecode:
+	def _trim_head_amount(self) -> Timecode:
 		# TODO: Implement markers; indiciate if it was Marker or head trim
 		return self._trim_head
 	
-	def _trim_tail_amount(self, reel_info:logic_trt.ReelInfo) -> Timecode:
+	def _trim_tail_amount(self) -> Timecode:
 		# TODO: Implement markers; indiciate if it was Marker or tail trim
 		return self._trim_tail
 
 	
-	def set_data(self, bin_info_list:list[logic_trt.BinInfo]):
+	def set_data(self, bin_info_list:list[logic_trt.TimelineInfo]):
 		self._data = bin_info_list
 		self.sig_data_changed.emit()
 		self.sig_bins_changed.emit()
@@ -214,11 +223,31 @@ class TRTDataModel(QtCore.QObject):
 	def marker_presets(self) -> dict[str, markers_trt.LBMarkerPreset]:
 		return self._marker_presets
 	
-	def add_bin(self, bin_info:logic_trt.BinInfo):
-		self._data.append(bin_info)
-		self.sig_sequence_added.emit(bin_info)
+	#
+	# Actual bin/timeline data model stuff here
+	#
+	
+	def add_timelines_from_bin(self, bin_info:list[logic_trt.TimelineInfo]):
+		"""Given all timelines in a bin, add it depending on the SequenceSelection mode"""
+
+		if not bin_info:
+			# TODO: Think about doing something with the interface or like... you know
+			return
+
+		if self._sequence_selection_mode is SequenceSelectionMode.ALL_SEQUENCES_PER_BIN:
+			for timeline_info in bin_info:
+				self.add_sequence(timeline_info)
+		
+		else:
+			self.add_sequence(sorted(bin_info, key=lambda timeline: timeline.date_modified, reverse=True)[0])
+			
+
+	def add_sequence(self, sequence_info:logic_trt.TimelineInfo):
+		self._data.insert(0, sequence_info)
+		self.sig_sequence_added.emit(sequence_info)
 		self.sig_bins_changed.emit()
 		self.sig_data_changed.emit()
+
 	
 	def remove_sequence(self, index:int):
 		try:
@@ -242,22 +271,22 @@ class TRTDataModel(QtCore.QObject):
 	# Item To Dict Methods
 	#
 	
-	def getSequenceName(self, sequence_info:logic_trt.ReelInfo) -> str:
-		return sequence_info.sequence_name
+	def getSequenceName(self, sequence_info:logic_trt.TimelineInfo) -> str:
+		return sequence_info.timeline_name
 	
-	def getSequenceColor(self, sequence_info:logic_trt.ReelInfo) -> QtGui.QRgba64|None:
-		return QtGui.QRgba64.fromRgba64(*sequence_info.sequence_color.as_rgb16(), sequence_info.sequence_color.max_16b()) if sequence_info.sequence_color else None
+	def getSequenceColor(self, sequence_info:logic_trt.TimelineInfo) -> QtGui.QRgba64|None:
+		return QtGui.QRgba64.fromRgba64(*sequence_info.timeline_color.as_rgb16(), sequence_info.timeline_color.max_16b()) if sequence_info.timeline_color else None
 	
-	def getSequenceStartTimecode(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
-		return sequence_info.sequence_tc_range.start
+	def getSequenceStartTimecode(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
+		return sequence_info.timeline_tc_range.start
 	
-	def getSequenceTotalDuration(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
-		return sequence_info.duration_total
+	def getSequenceTotalDuration(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
+		return sequence_info.timeline_tc_range.duration
 	
-	def getSequenceTrimmedDuration(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
+	def getSequenceTrimmedDuration(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
 		return max(Timecode(0, rate=self.rate()), self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromHead(sequence_info) - self.getSequenceTrimFromTail(sequence_info))
 	
-	def getSequenceTrimFromHead(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
+	def getSequenceTrimFromHead(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
 		
 		if self.activeHeadMarkerPreset():
 			matched_marker = self.matchMarkersToPreset(self.activeHeadMarkerPreset(), sorted(sequence_info.markers, key=lambda m: m.frm_offset))
@@ -266,7 +295,7 @@ class TRTDataModel(QtCore.QObject):
 
 		return self.trimFromHead()
 	
-	def getSequenceTrimFromTail(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
+	def getSequenceTrimFromTail(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
 		
 		if self.activeTailMarkerPreset():
 			matched_marker = self.matchMarkersToPreset(self.activeTailMarkerPreset(), sorted(sequence_info.markers, key=lambda m: m.frm_offset, reverse=True))
@@ -275,22 +304,22 @@ class TRTDataModel(QtCore.QObject):
 		
 		return self.trimFromTail()
 	
-	def getSequenceFFOATimecode(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
+	def getSequenceFFOATimecode(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
 		return self.getSequenceStartTimecode(sequence_info) + self.getSequenceTrimFromHead(sequence_info)
 	
-	def getSequenceLFOATimecode(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
+	def getSequenceLFOATimecode(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
 		return self.getSequenceStartTimecode(sequence_info) + self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromTail(sequence_info) - 1
 	
-	def getSequenceFFOAFeetFrames(self, sequence_info:logic_trt.ReelInfo) -> str:
+	def getSequenceFFOAFeetFrames(self, sequence_info:logic_trt.TimelineInfo) -> str:
 		return self.tc_to_lfoa(self.getSequenceTrimFromHead(sequence_info))
 	
-	def getSequenceLFOAFeetFrames(self, sequence_info:logic_trt.ReelInfo) -> str:
+	def getSequenceLFOAFeetFrames(self, sequence_info:logic_trt.TimelineInfo) -> str:
 		return self.tc_to_lfoa(self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromTail(sequence_info) -1)
 	
-	def getSequenceDateModified(self, sequence_info:logic_trt.ReelInfo) -> datetime:
+	def getSequenceDateModified(self, sequence_info:logic_trt.TimelineInfo) -> datetime:
 		return sequence_info.date_modified
 	
-	def getSequenceDateCreated(self, sequence_info:logic_trt.ReelInfo) -> datetime:
+	def getSequenceDateCreated(self, sequence_info:logic_trt.TimelineInfo) -> datetime:
 		return sequence_info.date_created
 	
 	def matchMarkersToPreset(self, marker_preset:markers_trt.LBMarkerPreset, marker_list:list[avbutils.MarkerInfo]) -> avbutils.MarkerInfo:
@@ -310,26 +339,24 @@ class TRTDataModel(QtCore.QObject):
 
 	
 	
-	def item_to_dict(self, bin_info:logic_trt.BinInfo):
-		
-		sequence_info = bin_info.reel
+	def item_to_dict(self, timeline_info:logic_trt.TimelineInfo):
 
 		return {
-			"sequence_name": 	treeview_trt.TRTStringItem(self.getSequenceName(sequence_info)),
-			"sequence_color": 	treeview_trt.TRTClipColorItem(self.getSequenceColor(sequence_info)),
-			"sequence_start_tc":treeview_trt.TRTTimecodeItem(self.getSequenceStartTimecode(sequence_info)),
-			"duration_total": 	treeview_trt.TRTDurationItem(self.getSequenceTotalDuration(sequence_info)),
-			"duration_trimmed": treeview_trt.TRTDurationItem(self.getSequenceTrimmedDuration(sequence_info)),
-			"head_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromHead(sequence_info)),
-			"tail_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromTail(sequence_info)),
-			"ffoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceFFOATimecode(sequence_info)),
-			"ffoa_ff":			treeview_trt.TRTFeetFramesItem(self.getSequenceFFOAFeetFrames(sequence_info)),
-			"lfoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceLFOATimecode(sequence_info)),
-			"lfoa_ff": 			treeview_trt.TRTFeetFramesItem(self.getSequenceLFOAFeetFrames(sequence_info)), # TODO: Need a an AbstractItem type for this
-			"date_modified": 	treeview_trt.TRTStringItem(self.getSequenceDateModified(sequence_info)),	# TODO: Need an Item type fro this
-			"date_created":		treeview_trt.TRTStringItem(self.getSequenceDateCreated(sequence_info)),
-			"bin_path": 		treeview_trt.TRTPathItem(bin_info.path),
-			"bin_lock": 		treeview_trt.TRTBinLockItem(bin_info.lock)
+			"sequence_name": 	treeview_trt.TRTStringItem(self.getSequenceName(timeline_info)),
+			"sequence_color": 	treeview_trt.TRTClipColorItem(self.getSequenceColor(timeline_info)),
+			"sequence_start_tc":treeview_trt.TRTTimecodeItem(self.getSequenceStartTimecode(timeline_info)),
+			"duration_total": 	treeview_trt.TRTDurationItem(self.getSequenceTotalDuration(timeline_info)),
+			"duration_trimmed": treeview_trt.TRTDurationItem(self.getSequenceTrimmedDuration(timeline_info)),
+			"head_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromHead(timeline_info)),
+			"tail_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromTail(timeline_info)),
+			"ffoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceFFOATimecode(timeline_info)),
+			"ffoa_ff":			treeview_trt.TRTFeetFramesItem(self.getSequenceFFOAFeetFrames(timeline_info)),
+			"lfoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceLFOATimecode(timeline_info)),
+			"lfoa_ff": 			treeview_trt.TRTFeetFramesItem(self.getSequenceLFOAFeetFrames(timeline_info)), # TODO: Need a an AbstractItem type for this
+			"date_modified": 	treeview_trt.TRTStringItem(self.getSequenceDateModified(timeline_info)),	# TODO: Need an Item type fro this
+			"date_created":		treeview_trt.TRTStringItem(self.getSequenceDateCreated(timeline_info)),
+			"bin_path": 		treeview_trt.TRTPathItem(timeline_info.bin_path),
+			"bin_lock": 		treeview_trt.TRTBinLockItem(timeline_info.bin_lock)
 		}
 	
 

@@ -54,7 +54,7 @@ class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 class TRTThreadedBinGetter(QtCore.QRunnable):
 
 	class TRTThreadedSignals(QtCore.QObject):
-		sig_got_bin_info = QtCore.Signal(logic_trt.BinInfo)
+		sig_got_bin_info = QtCore.Signal(list)
 
 	def __init__(self, bin_path:str):
 		super().__init__()
@@ -65,7 +65,7 @@ class TRTThreadedBinGetter(QtCore.QRunnable):
 		return self._signals
 
 	def run(self):
-		self.signals().sig_got_bin_info.emit(logic_trt.get_latest_stats_from_bins([self._bin_path])[0])
+		self.signals().sig_got_bin_info.emit(logic_trt.get_timelines_from_bin(self._bin_path))
 
 @dataclasses.dataclass(frozen=True)
 class TRTSummaryItem():
@@ -508,10 +508,13 @@ class LBTRTCalculator(LBUtilityTab):
 
 	def save_bins(self):
 		settings = QtCore.QSettings()
-		settings.setValue("trt/bin_paths", [str(b.path) for b in self.model().data()])
+
+		unique_bin_paths = list(set([QtCore.QFileInfo(timeline.bin_path).absoluteFilePath() for timeline in self.model().data()]))
+
+		settings.setValue("trt/bin_paths", unique_bin_paths)
 	
-	@QtCore.Slot(logic_trt.BinInfo)
-	def sequenceAdded(self, bin_info: logic_trt.BinInfo):
+	@QtCore.Slot(logic_trt.TimelineInfo)
+	def sequenceAdded(self, bin_info: logic_trt.TimelineInfo):
 		"""Model reports that a sequence has been added"""
 
 		view_item = self.model().item_to_dict(bin_info)
@@ -528,7 +531,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		for path in paths:
 			thread = TRTThreadedBinGetter(path)
-			thread.signals().sig_got_bin_info.connect(self.model().add_bin)
+			thread.signals().sig_got_bin_info.connect(self.model().add_timelines_from_bin)
 			thread.signals().sig_got_bin_info.connect(self.prog_loading.step_complete)
 			
 			self.prog_loading.step_added()

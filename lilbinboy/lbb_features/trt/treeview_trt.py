@@ -118,12 +118,13 @@ class TRTBinLockItem(TRTAbstractItem):
 	"""Bin lock info"""
 
 	# Note: For now I think we'll do a string, but want to expand this later probably
-	def __init__(self, raw_data:str, *args, **kwargs):
-		super().__init__(raw_data or "", *args, **kwargs)
+	def __init__(self, raw_data:avbutils.LockInfo, *args, **kwargs):
+		super().__init__(raw_data, *args, **kwargs)
 
 	def _prepare_data(self):
 		super()._prepare_data()
 		self._data_roles.update({
+			QtCore.Qt.ItemDataRole.DisplayRole:    self._data.name if self._data else "",
 			QtCore.Qt.ItemDataRole.DecorationRole: QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.SystemLockScreen if self._data else None)
 		})
 

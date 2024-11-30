@@ -1,153 +1,64 @@
 import avb, avbutils
-import pathlib, concurrent.futures, datetime, dataclasses
-from collections import namedtuple
-from timecode import Timecode, TimecodeRange
-
-# How to sort sequences to find the "most current"
-BIN_SORTING_METHOD = avbutils.BinSorting.DATE_MODIFIED
-"""How to sort sequences in a bin to determine the most current one"""
-
-REEL_NUMBER_BIN_COLUMN_NAME = "Reel #"
-"""The name of the Avid bin column from which to extract the Reel Number"""
-
-# END CONFIG
-
-BinInfo = namedtuple("BinInfo","reel path lock")
-
-#@dataclasses.dataclass(frozen=True)
-#class AVBMarker:
-#	"Avid marker"
-#
-#	marker_name:str
-#	marker_author:str
-#	marker_position:Timecode
+import pathlib,datetime, dataclasses
+from timecode import TimecodeRange
 
 @dataclasses.dataclass(frozen=True)
-class ReelInfo:
-	"""Representation of a Sequence from an Avid bin"""
+class TimelineInfo:
+	"""Representation of a Timeline (well, Sequence) from an Avid bin"""
 
-	sequence_name:str = str()
+	timeline_name:str
 	"""The name of the sequence"""
 
-	sequence_tc_range:TimecodeRange = TimecodeRange(start=Timecode(0), duration=0)
+	timeline_tc_range:TimecodeRange
 	"""Start TC of sequence"""
 
-	sequence_color:tuple[int,int,int]|None = None
+	timeline_color:tuple[int,int,int]|None
 	"""16-bit RGB triad chosen for the sequence color label"""
 
-	duration_total:Timecode = Timecode(0)
-	"""The total duration of the sequence"""
-
-	date_created:datetime.datetime = datetime.datetime.now()
+	date_created:datetime.datetime
 	"""The date the sequence was last modified in the bin"""
 
-	date_modified:datetime.datetime = datetime.datetime.now()
+	date_modified:datetime.datetime
 	"""The date the sequence was last modified in the bin"""
 
-	reel_number:int|None = None
-	"""The number of the reel in the feature"""
-
-	markers:list[avbutils.MarkerInfo]|None = None
+	markers:list[avbutils.MarkerInfo]
 	"""markers found in this reel"""
 
-def get_reel_number_from_timeline_attributes(attrs:avb.components.core.AVBPropertyData) -> str|None:
-	"""Extract the 'Reel #' bin column data from a sequence's attributes.  Returns None if not set."""
+	bin_path:str
+	"""Bin path"""
 
-	# Raise an exception if we weren't given property data.  Otherwise we'll treat failures as "that data just wasn't set"
-	if not isinstance(attrs, avb.components.core.AVBPropertyData):
-		raise ValueError(f"Expected AVBPropertyData, but got {type(attrs)} instead.")
+	bin_lock:avbutils.LockInfo|None
+	"""Bin lock info if available"""
 
-	try:
-		return attrs["_USER"][REEL_NUMBER_BIN_COLUMN_NAME]
-	except KeyError:
-		return None
+def get_timelines_from_bin(bin_path:str) -> list[TimelineInfo]:
+	"""Given a Avid bin's file path, parse the bin and get sequence info"""
 
-def get_reel_info(
-	sequence:avb.trackgroups.Composition) -> ReelInfo:
-	"""Get the properties of a given sequence"""
-
-	temp_m = avbutils.get_markers_from_timeline(sequence)
-	
-	try:
-		temp_first = sorted(temp_m, key=lambda m: m.frm_offset)[0]
-		#print(f"Got {len(temp_m)} markers for {sequence.name} (first: {temp_first})")
-	except Exception as e:
-		print("No:",e)
-
-	
-	return ReelInfo(
-		sequence_name=sequence.name,
-		sequence_color=avbutils.composition_clip_color(sequence),
-		sequence_tc_range=avbutils.get_timecode_range_for_composition(sequence),
-		date_created=sequence.creation_time,
-		date_modified=sequence.last_modified,
-		reel_number=get_reel_number_from_timeline_attributes(sequence.attributes),
-		duration_total=Timecode(sequence.length, rate=round(sequence.edit_rate)),
-		markers=avbutils.get_markers_from_timeline(sequence)
-	)
-
-def get_reel_info_from_path(
-	bin_path:pathlib.Path,
-	sort_by:avbutils.BinSorting=avbutils.BinSorting.NAME)-> ReelInfo:
-	"""Given a Avid bin's file path, parse the bin and get the latest sequence info"""
-
-	#print("Using",str(tail_duration))
+	timeline_info = []
 
 	with avb.open(bin_path) as bin_handle:
+
+		# Bin lock first, why not
+		bin_lock = avbutils.LockInfo(pathlib.Path(bin_path).with_suffix(".lck")) if pathlib.Path(bin_path).with_suffix(".lck").is_file() else None
 
 		# avb.file.AVBFile -> avb.bin.Bin
 		bin_contents = bin_handle.content
 		
 		# Get all sequences in bin
-		sequences = avbutils.get_timelines_from_bin(bin_contents)
+		timeline_compositions = avbutils.get_timelines_from_bin(bin_contents)
 
 		# Sorting by sequence name with human sorting for version numbers
-		try:
-			latest_sequence = sorted(sequences, key=avbutils.BinSorting.get_sort_lambda(sort_by), reverse=True)[0]
-		except IndexError:
-			raise Exception(f"No sequences found in bin")
-		
-		# Get info from latest reel
-		try:
-			sequence_info = get_reel_info(latest_sequence)
-		except Exception as e:
-			raise Exception(f"Error parsing sequence: {e}")
+		for timeline in timeline_compositions:
+			timeline_info.append(
+				TimelineInfo(
+					timeline_name     = timeline.name,
+					timeline_color    = avbutils.composition_clip_color(timeline),
+					date_created      = timeline.creation_time,
+					date_modified     = timeline.last_modified,
+					timeline_tc_range =	avbutils.get_timecode_range_for_composition(timeline),
+					markers           = avbutils.get_markers_from_timeline(timeline),
+					bin_path          = bin_path,
+					bin_lock          = bin_lock
+				)
+			)
 	
-	return sequence_info
-
-
-def get_latest_stats_from_bins(bin_paths:list[str]) -> list[BinInfo]:
-	"""Get stats for a list of bins"""
-
-	parsed_info = []
-	
-	# Parse Bins Concurrently
-	with concurrent.futures.ProcessPoolExecutor() as ex:
-
-		# Create a dict associating a subprocess with the path of the bin it's working on
-		future_info = {
-			ex.submit(get_reel_info_from_path,
-				bin_path=bin_path,
-				sort_by = BIN_SORTING_METHOD): bin_path for bin_path in bin_paths
-		}
-
-		# Process each result as it becomes available
-		for future_result in concurrent.futures.as_completed(future_info):
-			bin_path = future_info[future_result]
-
-			try:
-				info = future_result.result()
-			except Exception as e:
-				print(f"Skipping {bin_path}: {e}")
-				continue
-
-			lock = avbutils.get_lockfile_for_bin(bin_path)
-
-			# Combine all the info
-			parsed_info.append(BinInfo(
-				reel = info,
-				path = bin_path,
-				lock = lock
-			))
-	
-	return parsed_info
+	return timeline_info
