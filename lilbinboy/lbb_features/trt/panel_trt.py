@@ -347,10 +347,10 @@ class LBTRTCalculator(LBUtilityTab):
 		"""Connect signals and slots"""
 
 		# Bin/sequence loading mode
+		self.model().sig_data_changed.connect(self.update_summary)
 		self.model().sig_sequence_selection_mode_changed.connect(self.sequenceSelectionModeChanged)
 
 		# Data model has changed
-		self.model().sig_data_changed.connect(self.update_summary)
 		self.model().sig_data_changed.connect(self.update_control_buttons)
 
 		self.model().sig_sequence_added.connect(self.sequenceAdded)

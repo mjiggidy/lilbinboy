@@ -195,6 +195,7 @@ class TRTDataModel(QtCore.QObject):
 		if not marker_preset_name or marker_preset_name in self.marker_presets():
 			self._head_marker_preset_name = marker_preset_name or None
 			self.sig_head_marker_preset_changed.emit(self._head_marker_preset_name)
+			self.sig_data_changed.emit()
 		else:
 			print("Got weird one:", marker_preset_name, str(type(marker_preset_name)))
 
@@ -205,6 +206,7 @@ class TRTDataModel(QtCore.QObject):
 		if not marker_preset_name or marker_preset_name in self.marker_presets():
 			self._tail_marker_preset_name = marker_preset_name or None
 			self.sig_tail_marker_preset_changed.emit(self._tail_marker_preset_name)
+			self.sig_data_changed.emit()
 		else:
 			print("Noo", marker_preset_name)
 
@@ -253,7 +255,7 @@ class TRTDataModel(QtCore.QObject):
 		return sequence_info.duration_total
 	
 	def getSequenceTrimmedDuration(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
-		return max(Timecode(0, rate=self.rate()), sequence_info.duration_total - self._trim_head - self._trim_tail)
+		return max(Timecode(0, rate=self.rate()), self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromHead(sequence_info) - self.getSequenceTrimFromTail(sequence_info))
 	
 	def getSequenceTrimFromHead(self, sequence_info:logic_trt.ReelInfo) -> Timecode:
 		
