@@ -1,5 +1,5 @@
+import pathlib, datetime, dataclasses
 import avb, avbutils
-import pathlib,datetime, dataclasses
 from timecode import TimecodeRange
 
 @dataclasses.dataclass(frozen=True)
@@ -35,10 +35,11 @@ def get_timelines_from_bin(bin_path:str) -> list[TimelineInfo]:
 
 	timeline_info = []
 
+	# Check for  lock first, why not
+	bin_lock = avbutils.LockInfo(pathlib.Path(bin_path).with_suffix(".lck")) if pathlib.Path(bin_path).with_suffix(".lck").is_file() else None
+
 	with avb.open(bin_path) as bin_handle:
 
-		# Bin lock first, why not
-		bin_lock = avbutils.LockInfo(pathlib.Path(bin_path).with_suffix(".lck")) if pathlib.Path(bin_path).with_suffix(".lck").is_file() else None
 
 		# avb.file.AVBFile -> avb.bin.Bin
 		bin_contents = bin_handle.content
