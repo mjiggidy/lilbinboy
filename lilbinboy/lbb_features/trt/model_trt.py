@@ -286,6 +286,10 @@ class TRTDataModel(QtCore.QObject):
 	def getSequenceTrimmedDuration(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
 		return max(Timecode(0, rate=self.rate()), self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromHead(sequence_info) - self.getSequenceTrimFromTail(sequence_info))
 	
+	def getSequenceTrimmedDurationFF(self, sequence_info:logic_trt.TimelineInfo) -> str:
+		return self.tc_to_lfoa(self.getSequenceTrimmedDuration(sequence_info))
+
+	
 	def getSequenceTrimFromHead(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
 		
 		if self.activeHeadMarkerPreset():
@@ -347,6 +351,7 @@ class TRTDataModel(QtCore.QObject):
 			"sequence_start_tc":treeview_trt.TRTTimecodeItem(self.getSequenceStartTimecode(timeline_info)),
 			"duration_total": 	treeview_trt.TRTDurationItem(self.getSequenceTotalDuration(timeline_info)),
 			"duration_trimmed": treeview_trt.TRTDurationItem(self.getSequenceTrimmedDuration(timeline_info)),
+			"duration_trimmed_ff": treeview_trt.TRTFeetFramesItem(self.getSequenceTrimmedDurationFF(timeline_info)),
 			"head_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromHead(timeline_info)),
 			"tail_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromTail(timeline_info)),
 			"ffoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceFFOATimecode(timeline_info)),
@@ -373,7 +378,8 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 			treeview_trt.TRTTreeViewHeaderItem("","sequence_color", display_delegate=treeview_trt.TRTClipColorDisplayDelegate()),
 			treeview_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
 			treeview_trt.TRTTreeViewHeaderItem("Full Duration","duration_total"),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration","duration_trimmed"),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (TC)","duration_trimmed"),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (F+F)","duration_trimmed_ff"),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head", "head_trimmed"),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail", "tail_trimmed"),
 			treeview_trt.TRTTreeViewHeaderItem("Sequence Start", "sequence_start_tc"),
