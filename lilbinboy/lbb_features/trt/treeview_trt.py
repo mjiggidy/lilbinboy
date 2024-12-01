@@ -111,7 +111,8 @@ class TRTClipColorItem(TRTAbstractItem):
 
 		self._data_roles.update({
 			QtCore.Qt.ItemDataRole.UserRole: self._data,
-			QtCore.Qt.ItemDataRole.ToolTipRole: f"R: {color_8b.red()} G: {color_8b.green()} B: {color_8b.blue()}" if color_8b.isValid() else None
+			QtCore.Qt.ItemDataRole.ToolTipRole: f"R: {color_8b.red()} G: {color_8b.green()} B: {color_8b.blue()}" if color_8b.isValid() else None,
+			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data.toRgb16() if self._data is not None else QtGui.QRgba64().toRgb16()
 		})
 
 class TRTBinLockItem(TRTAbstractItem):
