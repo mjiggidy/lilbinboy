@@ -30,6 +30,7 @@ class TRTDataModel(QtCore.QObject):
 
 	sig_head_trim_tc_changed = QtCore.Signal(Timecode)
 	sig_tail_trim_tc_changed = QtCore.Signal(Timecode)
+	sig_total_trim_tc_changed = QtCore.Signal(Timecode)
 	sig_trims_changed = QtCore.Signal()
 
 	sig_sequence_selection_mode_changed = QtCore.Signal(SequenceSelectionMode)
@@ -131,6 +132,7 @@ class TRTDataModel(QtCore.QObject):
 
 	def setTrimTotal(self, timecode:Timecode):
 		self._trim_total = timecode
+		self.sig_total_trim_tc_changed.emit(self.trimTotal())
 		self.sig_data_changed.emit()
 		self.sig_trims_changed.emit()
 	

@@ -382,6 +382,7 @@ class LBTRTCalculator(LBUtilityTab):
 		# Trim timecode changed
 		self.model().sig_head_trim_tc_changed.connect(self.trimHeadTCChanged)
 		self.model().sig_tail_trim_tc_changed.connect(self.trimTailTCChanged)
+		self.model().sig_total_trim_tc_changed.connect(self.trimTotalTCChanged)
 
 		# Trim marker presets have changed
 		self.model().sig_marker_presets_model_changed.connect(self.trt_trims.set_marker_presets)
@@ -411,6 +412,7 @@ class LBTRTCalculator(LBUtilityTab):
 		# Trim timecode spinners
 		self.trt_trims.sig_head_trim_changed.connect(self.model().setTrimFromHead)
 		self.trt_trims.sig_tail_trim_changed.connect(self.model().setTrimFromTail)
+		self.trt_trims.sig_total_trim_changed.connect(self.model().setTrimTotal)
 		
 		# Trim marker preset controls
 		self.trt_trims.sig_head_trim_marker_preset_chosen.connect(self.model().set_active_head_marker_preset_name)
@@ -547,7 +549,8 @@ class LBTRTCalculator(LBUtilityTab):
 	
 	def add_bins_from_paths(self, paths:list[str]):
 
-		last_bin = paths[-1]
+		
+		last_bin = paths[-1] if paths else []
 
 		thread = TRTThreadedMulticoreAbomination(paths)
 		thread.signals().sig_got_bin_info.connect(self.model().add_timelines_from_bin)
