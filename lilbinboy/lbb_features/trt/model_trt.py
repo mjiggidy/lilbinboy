@@ -295,6 +295,7 @@ class TRTDataModel(QtCore.QObject):
 		if self.activeHeadMarkerPreset():
 			matched_marker = self.matchMarkersToPreset(self.activeHeadMarkerPreset(), sorted(sequence_info.markers, key=lambda m: m.frm_offset))
 			if matched_marker:
+				#print(sequence_info.timeline_name + ": Matched FFOA Marker: " + str(matched_marker))
 				return Timecode(matched_marker.frm_offset, rate=self.rate())
 
 		return self.trimFromHead()
@@ -304,7 +305,8 @@ class TRTDataModel(QtCore.QObject):
 		if self.activeTailMarkerPreset():
 			matched_marker = self.matchMarkersToPreset(self.activeTailMarkerPreset(), sorted(sequence_info.markers, key=lambda m: m.frm_offset, reverse=True))
 			if matched_marker:
-				return Timecode(matched_marker.frm_offset, rate=self.rate())
+				#print(sequence_info.timeline_name + ": Matched LFOA Marker: " + str(matched_marker))
+				return sequence_info.timeline_tc_range.duration - Timecode(matched_marker.frm_offset, rate=self.rate()) - 1
 		
 		return self.trimFromTail()
 	
@@ -339,9 +341,6 @@ class TRTDataModel(QtCore.QObject):
 
 			return marker_info
 		return None
-	
-
-	
 	
 	def item_to_dict(self, timeline_info:logic_trt.TimelineInfo):
 
