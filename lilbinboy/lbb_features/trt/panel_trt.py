@@ -362,14 +362,6 @@ class LBTRTCalculator(LBUtilityTab):
 		# Set up sequence trim controls
 		self.layout().addWidget(self.trt_trims)
 
-		
-		# Set up total trim controls
-		# TODO: Better
-		grp_totaltrim = QtWidgets.QGroupBox("Total Running Adjustment")
-		grp_totaltrim.setLayout(QtWidgets.QHBoxLayout())
-		self.trim_total.setAllowNegative(True)
-		grp_totaltrim.layout().addWidget(self.trim_total)
-		self.layout().addWidget(grp_totaltrim)
 	
 	def _setupSignals(self):
 		"""Connect signals and slots"""

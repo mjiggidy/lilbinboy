@@ -4,7 +4,7 @@ from timecode import Timecode
 from ...lbb_common import LBSpinBoxTC
 from . import markers_trt
 
-class TRTControlsTrims(QtWidgets.QGroupBox):
+class TRTControlsTrims(QtWidgets.QWidget):
 
 	# TODO: Better
 	PATH_MARK_IN = str(pathlib.Path(__file__+"../../../../res/icon_mark_in.svg").resolve())
@@ -27,12 +27,12 @@ class TRTControlsTrims(QtWidgets.QGroupBox):
 
 		super().__init__()
 
-		self.setTitle("Per-Sequence Trimming")
+		self.setLayout(QtWidgets.QHBoxLayout())
+		self.layout().setContentsMargins(0,0,0,0)
 
-		self.setLayout(QtWidgets.QGridLayout())
-
-		self._from_head = LBSpinBoxTC()
-		self._from_tail = LBSpinBoxTC()
+		self._from_head  = LBSpinBoxTC()
+		self._from_tail  = LBSpinBoxTC()
+		self._from_total = LBSpinBoxTC()
 
 		self._use_head_marker = QtWidgets.QCheckBox()
 		self._use_tail_marker = QtWidgets.QCheckBox()
@@ -43,6 +43,8 @@ class TRTControlsTrims(QtWidgets.QGroupBox):
 		self._icon_mark_in  = QtWidgets.QLabel(pixmap=QtGui.QPixmap(self.PATH_MARK_IN).scaledToHeight(16, QtCore.Qt.TransformationMode.SmoothTransformation))
 		self._icon_mark_out = QtWidgets.QLabel(pixmap=QtGui.QPixmap(self.PATH_MARK_OUT).scaledToHeight(16, QtCore.Qt.TransformationMode.SmoothTransformation))
 
+		self._lbl_total_note = QtWidgets.QLabel()
+
 		self._setupWidgets()
 		self._setupSignals()
 
@@ -50,27 +52,60 @@ class TRTControlsTrims(QtWidgets.QGroupBox):
 	def _setupWidgets(self):
 
 		# Trim from Head / Duration
-		self.layout().addWidget(self._icon_mark_in, 0, 0)
-		self.layout().addWidget(self._from_head, 0, 1)
-		self.layout().addWidget(QtWidgets.QLabel("From Head"), 0, 2)
-		self.layout().addItem(QtWidgets.QSpacerItem(0,2, QtWidgets.QSizePolicy.Policy.MinimumExpanding),0,3)
-		
+		grp_head_trims = QtWidgets.QGroupBox("Trim Each Head")
+		grp_head_trims.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+		grp_head_trims.setLayout(QtWidgets.QGridLayout())
+
+		grp_head_trims.layout().addWidget(self._icon_mark_in, 0, 0)
+		grp_head_trims.layout().addWidget(self._from_head, 0, 1)
+		grp_head_trims.layout().addWidget(QtWidgets.QLabel("From Head"), 0, 2)
+
 		# Trim from Head / Marker
 		self._use_head_marker.setCheckState(QtCore.Qt.CheckState.Checked) # Start checked to sync state with combo box
-		self.layout().addWidget(self._use_head_marker, 1, 0)
-		self.layout().addWidget(self._from_head_marker, 1, 1)
-		self.layout().addWidget(QtWidgets.QLabel("Or FFOA Locator", buddy=self._from_head), 1, 2)
+		grp_head_trims.layout().addWidget(self._use_head_marker, 1, 0)
+		grp_head_trims.layout().addWidget(self._from_head_marker, 1, 1)
+		grp_head_trims.layout().addWidget(QtWidgets.QLabel("Or FFOA Locator", buddy=self._from_head), 1, 2)
+		
+		self.layout().addWidget(grp_head_trims)
+
+		# Total Running Adjustments
+		
+		grp_total_trims = QtWidgets.QGroupBox("Total Running Adjustment")
+		grp_total_trims.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
+		grp_total_trims.setSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, grp_total_trims.sizePolicy().verticalPolicy())
+		grp_total_trims.setLayout(QtWidgets.QGridLayout())
+
+		self._from_total.setAllowNegative(True)
+		grp_total_trims.layout().addWidget(self._from_total)
+		self._lbl_total_note.setText("(This does not affect individual sequence durations)")
+		self._lbl_total_note.setWordWrap(True)
+		self._lbl_total_note.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignVCenter)
+		#self._lbl_total_note.setSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum, self._lbl_total_note.sizePolicy().verticalPolicy())
+		
+		fnt_lbl = self._lbl_total_note.font()
+		fnt_lbl.setPointSize(fnt_lbl.pointSize() - 2)
+		self._lbl_total_note.setFont(fnt_lbl)
+		grp_total_trims.layout().addWidget(self._lbl_total_note)
+
+		self.layout().addWidget(grp_total_trims)
 
 		# Trim from Tail / Duration
+
+		grp_tail_trims = QtWidgets.QGroupBox("Trim Each Tail")
+		grp_tail_trims.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+		grp_tail_trims.setLayout(QtWidgets.QGridLayout())
+
 		self._use_tail_marker.setCheckState(QtCore.Qt.CheckState.Checked)  # Start checked to sync state with combo box
-		self.layout().addWidget(QtWidgets.QLabel("From Tail", alignment=QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter, buddy=self._from_tail), 0, 4)
-		self.layout().addWidget(self._from_tail, 0, 5)
-		self.layout().addWidget(self._icon_mark_out, 0, 6)
+		grp_tail_trims.layout().addWidget(QtWidgets.QLabel("From Tail", alignment=QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter, buddy=self._from_tail), 0, 4)
+		grp_tail_trims.layout().addWidget(self._from_tail, 0, 5)
+		grp_tail_trims.layout().addWidget(self._icon_mark_out, 0, 6)
 
 		# Trim from Tail / Marker
-		self.layout().addWidget(QtWidgets.QLabel("Or LFOA Locator", alignment=QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter), 1, 4)
-		self.layout().addWidget(self._from_tail_marker, 1, 5)
-		self.layout().addWidget(self._use_tail_marker, 1, 6)
+		grp_tail_trims.layout().addWidget(QtWidgets.QLabel("Or LFOA Locator", alignment=QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter), 1, 4)
+		grp_tail_trims.layout().addWidget(self._from_tail_marker, 1, 5)
+		grp_tail_trims.layout().addWidget(self._use_tail_marker, 1, 6)
+
+		self.layout().addWidget(grp_tail_trims)
 
 		
 	def _setupSignals(self):
