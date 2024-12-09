@@ -20,6 +20,9 @@ class TRTControlsTrims(QtWidgets.QWidget):
 	sig_tail_trim_marker_preset_chosen = QtCore.Signal(str)
 	"""Marker preset trim from tail changed"""
 
+	sig_total_trim_changed = QtCore.Signal(Timecode)
+	"""Total running adjustment changed"""
+
 	sig_marker_preset_editor_requested = QtCore.Signal()
 	"""Marker editor requested"""
 
@@ -112,6 +115,7 @@ class TRTControlsTrims(QtWidgets.QWidget):
 		# Timecode trim from head/tail changed
 		self._from_head.sig_timecode_changed.connect(self.sig_head_trim_changed)
 		self._from_tail.sig_timecode_changed.connect(self.sig_tail_trim_changed)
+		self._from_total.sig_timecode_changed.connect(self.sig_total_trim_changed)
 
 		# Marker presets checkboxes toggled on/off
 		self._use_head_marker.checkStateChanged.connect(self._use_head_marker_toggled)
@@ -138,6 +142,13 @@ class TRTControlsTrims(QtWidgets.QWidget):
 		self._from_tail.blockSignals(True)
 		self._from_tail.setTimecode(timecode)
 		self._from_tail.blockSignals(False)
+	
+	@QtCore.Slot(Timecode)
+	def set_total_trim(self, timecode:Timecode):
+		"""Set total running adjustment"""
+		self._from_total.blockSignals(True)
+		self._from_total.setTimecode(timecode)
+		self._from_total.blockSignals(False)
 	
 	@QtCore.Slot(dict)
 	def set_marker_presets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
