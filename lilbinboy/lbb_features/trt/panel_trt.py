@@ -347,8 +347,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.layout().addWidget(self.list_trts)
 
 		# Longplay view
-		self.view_longplay.setThings([])
-		self.view_longplay.setCornerRadius(0)
+		self.view_longplay.setItems([])
 		self.layout().addWidget(self.view_longplay)
 
 		grp_summaries = QtWidgets.QGroupBox()
@@ -513,6 +512,7 @@ class LBTRTCalculator(LBUtilityTab):
 	
 	def trimTotalTCChanged(self, tc:Timecode):
 		self.trt_trims.set_total_trim(tc)
+		self.view_longplay.setTotalAdjust(tc.frame_number)
 		QtCore.QSettings().setValue("trt/trim_total", str(tc))
 
 		# TODO: Misplaced this little guy?
@@ -672,4 +672,4 @@ class LBTRTCalculator(LBUtilityTab):
 			except Exception as e:
 				print(f"Proxy out of sync with data ({self.list_trts.model().rowCount()} vs {len(self._data_model.data())})")
 		
-		self.view_longplay.setThings(unsorted_durs)
+		self.view_longplay.setItems(unsorted_durs)

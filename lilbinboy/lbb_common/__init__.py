@@ -1,4 +1,4 @@
-import re, math
+import re, math, random
 import avbutils
 from PySide6 import QtWidgets, QtCore, QtGui
 from timecode import Timecode
@@ -47,10 +47,13 @@ class LBTimelineView(QtWidgets.QWidget):
 
 		super().__init__(*args, **kwargs)
 
+		self._bottom_margin = 0
+		self._total_adjust  = 0
+
 		# Set size hint based on two lines of text, basically
 		box = QtGui.QFontMetrics("test").boundingRect("00:00:00:00")
 
-		self.setMinimumHeight(box.height() * 2 + 6)
+		self.setFixedHeight(box.height() * 2 + 6)
 		self.setSizePolicy(
 			QtWidgets.QSizePolicy.Policy.MinimumExpanding,
 			QtWidgets.QSizePolicy.Policy.Maximum
@@ -59,21 +62,43 @@ class LBTimelineView(QtWidgets.QWidget):
 	def setBottomMargin(self, margin:int):
 		self._bottom_margin = margin
 
-	def setCornerRadius(self, radius:int):
-		self._corner_radius = radius
+	def setTotalAdjust(self, adjust:int):
+		self._total_adjust = adjust
+		self.update()
+
+	def totalAdjust(self) -> int:
+		"""Get the adjustment to the total"""
+		return self._total_adjust
+
+	def adjustedTotal(self) -> int:
+		"""Get the total duration, including adjustments"""
+		if self._total_adjust < 0:
+			return self._total
+		return self._total + self._total_adjust
+	
+	def itemTotal(self) -> int:
+		"""Get the true total without adjustments"""
+		return self._total
 
 	# Debug
-	def setThings(self, things:list[tuple[str,int]]):
-		self._things = things
-		self._pallette = [QtGui.QColor.fromHsvF(x/len(things), .4, .4) for x in range(len(things))]
-		self._total = sum([dur for sequence_name, dur in things])
+	def setItems(self, items:list[tuple[str,int]]):
+		"""Set the items to be displayed in a timeline"""
+		
+		self._items = items
+		
+		# Build the color pallette based on item count
+		self._pallette = [QtGui.QColor.fromHsvF(x/len(items), .4, .4) for x in range(len(items))]
+		
+		# Set the total
+		self._total = sum([dur for sequence_name, dur in items])
+		
 		self.update()
 
 	def paintEvent(self, e:QtGui.QPaintEvent):
 
 		super().paintEvent(e)
 
-		if not len(self._things):
+		if not len(self._items):
 			return
 
 		painter = QtGui.QPainter(self)
@@ -93,13 +118,13 @@ class LBTimelineView(QtWidgets.QWidget):
 		x_pos = 0
 		cumulative = 0
 
-		for idx, thing in enumerate(self._things):
+		for idx, thing in enumerate(self._items):
 
 			sequence_name, sequence_duration = thing
 
 			# Draw Box
 			painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-			rect = QtCore.QRect(x_pos, 0, math.ceil((sequence_duration/self._total)*(painter.device().width())), painter.device().height() - self._bottom_margin)
+			rect = QtCore.QRect(x_pos, 0, math.ceil((sequence_duration/self.adjustedTotal())*(painter.device().width())), painter.device().height() - self._bottom_margin)
 			
 			brush = painter.brush()
 			brush.setColor(self._pallette[idx])
@@ -111,7 +136,7 @@ class LBTimelineView(QtWidgets.QWidget):
 			pen.setWidth(1)
 			painter.setPen(pen)
 			
-			painter.drawRoundedRect(rect, self._corner_radius, self._corner_radius)
+			painter.drawRect(rect)
 
 			# Draw Box Label
 			pen = painter.pen()
@@ -140,7 +165,7 @@ class LBTimelineView(QtWidgets.QWidget):
 			text_location.setY(painter.device().height() - self._bottom_margin + 12)
 			painter.drawText(text_location, tick_text)
 			
-			x_pos += (sequence_duration/self._total)*(painter.device().width())
+			x_pos += (sequence_duration/self.adjustedTotal())*(painter.device().width())
 			cumulative += sequence_duration
 
 		# Draw final tick
@@ -150,7 +175,7 @@ class LBTimelineView(QtWidgets.QWidget):
 		pen.setColor(self._pallette[-1].lighter(200))
 		painter.setPen(pen)
 
-		tick_start_pos = QtCore.QPoint(painter.device().width() - pen.width()/2, 0)
+		tick_start_pos = QtCore.QPoint(x_pos, 0)
 		tick_end_pos   = QtCore.QPoint(tick_start_pos.x(), painter.device().height())
 
 		painter.drawLine(tick_start_pos, tick_end_pos)
@@ -164,7 +189,7 @@ class LBTimelineView(QtWidgets.QWidget):
 		
 		font_metrics = painter.fontMetrics()
 		font_box = font_metrics.boundingRect(tick_text)
-		text_location.setX(painter.device().width() - font_box.width() - 5 - painter.pen().width())
+		text_location.setX(tick_start_pos.x() - font_box.width() - 5 - painter.pen().width())
 		
 		painter.drawText(text_location, tick_text)
 
@@ -182,11 +207,11 @@ class LBTimelineView(QtWidgets.QWidget):
 	def toolTip(self, position:QtCore.QPoint) -> str:
 		
 		item_pos = 0
-		for idx,item in enumerate(self._things):
+		for idx,item in enumerate(self._items):
 
 			sequence_name, sequence_duration = item
 			
-			item_pos += (sequence_duration/self._total) * self.width()
+			item_pos += (sequence_duration/self.adjustedTotal()) * self.width()
 			if position.x() < item_pos:
 				return f"{sequence_name} ({Timecode(sequence_duration)})"
 
