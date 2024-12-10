@@ -50,8 +50,6 @@ class LBTimelineView(QtWidgets.QWidget):
 		# Calculation Stuff
 		self._total_adjust  = 0
 		"""Additional frame count adjustment to total duration"""
-		
-		self._bottom_margin = 0
 
 		# Box drawing
 		self._box_line_width = 1
@@ -116,33 +114,44 @@ class LBTimelineView(QtWidgets.QWidget):
 
 		super().paintEvent(e)
 
-		if not len(self._items):
-			return
 
 		painter = QtGui.QPainter(self)
-		painter.setFont(self._font)
+		#painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
 
 		rect = QtCore.QRect(0, 0, painter.device().width(), painter.device().height())
+		item_box_height = self._font_height + self._box_inner_padding*2 + self._box_line_width*2
 
-		# Determine bottom margin
-		font_metrics = painter.fontMetrics()
-		font_box = font_metrics.boundingRect("00:00")
-		self._bottom_margin = font_box.height() + 4 # 4x padding
+		background_box = QtCore.QRect(0, 0, rect.width(), item_box_height)
+		background_box_rect = background_box.adjusted(self._box_line_width//2, self._box_line_width//2, -self._box_line_width//2, -self._box_line_width//2)
+		pen = painter.pen()
+		pen.setStyle(QtGui.Qt.PenStyle.SolidLine)
+		pen.setColor(QtGui.QColor.fromRgbF(0,0,0,.5))
+		pen.setWidth(self._box_line_width)
+		painter.setPen(pen)
+		brush = painter.brush()
+		brush.setColor(QtGui.QColor.fromRgbF(0,0,0,.1))
+		brush.setStyle(QtGui.Qt.BrushStyle.SolidPattern)
+		painter.setBrush(brush)
+		painter.drawRect(background_box_rect)
 
+
+		if not len(self._items):
+			return
+		
 
 		x_pos = 0
 		cumulative = 0
+
+		painter.setFont(self._font)
 
 		for idx, thing in enumerate(self._items):
 
 			sequence_name, sequence_duration = thing
 
 			# Draw Box
-#			painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
 			
 			# Item box
 			item_box_width = math.ceil((sequence_duration / self.adjustedTotal()) * rect.width())
-			item_box_height = self._font_height + self._box_inner_padding*2 + self._box_line_width*2
 			item_box_rect = QtCore.QRect(x_pos, 0, item_box_width, item_box_height).adjusted(self._box_line_width//2, self._box_line_width//2, -self._box_line_width//2, -self._box_line_width//2)
 			
 			brush = painter.brush()
@@ -213,10 +222,7 @@ class LBTimelineView(QtWidgets.QWidget):
 		pen.setColor(QtGui.QPalette().color(QtGui.QPalette.ColorRole.Text))
 		painter.setPen(pen)
 		tick_text = str(Timecode(int(cumulative))).lstrip("0:") or "0:00"
-		#text_location.setY(painter.device().height() - self._bottom_margin + 12)
-		
-		font_metrics = painter.fontMetrics()
-		font_box = font_metrics.boundingRect(tick_text)
+
 		#text_location.setX(tick_start_pos.x() - font_box.width() - 5 - painter.pen().width())
 		
 		#painter.drawText(text_location, tick_text)
