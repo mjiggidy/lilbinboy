@@ -208,9 +208,10 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 	
 	@QtCore.Slot()
 	def setRate(self, rate:int):
+		#self.blockSignals(True)
 		self._rate = rate
 		self.updateMaximumTC()
-		self.sig_timecode_changed.emit(self.timecode())
+		#self.sig_timecode_changed.emit(self.timecode())
 
 	@QtCore.Slot()
 	def updateMaximumTC(self):
@@ -234,6 +235,7 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 	
 	@QtCore.Slot(Timecode)
 	def setTimecode(self, timecode:Timecode):
+		#print("Hello I set to", timecode)
 		self.setRate(timecode.rate)
 		self.setValue(timecode.frame_number)
 	
@@ -252,7 +254,8 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 		return self._rate
 	
 	def textFromValue(self, val:int) -> str:
-		return str(Timecode(val, rate=self.rate()))
+		prepend = "+" if self.allowNegative() and val > 0 else ""
+		return prepend + str(Timecode(val, rate=self.rate()))
 	
 	def valueFromText(self, text:str) -> int:
 		return Timecode(text, rate=self.rate()).frame_number

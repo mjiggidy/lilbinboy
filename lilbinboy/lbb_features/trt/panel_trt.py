@@ -301,6 +301,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self.model().setTrimFromHead(Timecode(QtCore.QSettings().value("trt/trim_head",0), rate=self.model().rate()))
 		self.model().setTrimFromTail(Timecode(QtCore.QSettings().value("trt/trim_tail",0), rate=self.model().rate()))
+		self.model().setTrimTotal(Timecode(QtCore.QSettings().value("trt/trim_total"), rate=self.model().rate()))
 		
 		self.model().set_active_head_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_head"))
 		self.model().set_active_tail_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_tail"))
@@ -511,7 +512,7 @@ class LBTRTCalculator(LBUtilityTab):
 		QtCore.QSettings().setValue("trt/trim_tail", str(tc))
 	
 	def trimTotalTCChanged(self, tc:Timecode):
-		self.trim_total.setTimecode(tc)
+		self.trt_trims.set_total_trim(tc)
 		QtCore.QSettings().setValue("trt/trim_total", str(tc))
 
 		# TODO: Misplaced this little guy?
