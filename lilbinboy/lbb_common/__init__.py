@@ -47,17 +47,35 @@ class LBTimelineView(QtWidgets.QWidget):
 
 		super().__init__(*args, **kwargs)
 
-		self._bottom_margin = 0
+		# Calculation Stuff
 		self._total_adjust  = 0
+		"""Additional frame count adjustment to total duration"""
+		
+		self._bottom_margin = 0
 
-		# Set size hint based on two lines of text, basically
-		box = QtGui.QFontMetrics("test").boundingRect("00:00:00:00")
+		# Box drawing
+		self._box_line_width = 1
+		self._tick_line_width = 2
+		self._box_inner_padding = 3
+		
+		# Font stuff
+		self._font = QtGui.QFont()
+		self._font.setPointSize(self._font.pointSize() - 2)
+		self._font_height = QtGui.QFontMetrics(self._font).boundingRect("00:00:00:00").height()
+		self._text_options = QtGui.QTextOption()
+		self._text_options.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignVCenter)
+		self._text_options.setWrapMode(QtGui.QTextOption.WrapMode.NoWrap)
 
-		self.setFixedHeight(box.height() * 2 + 6)
 		self.setSizePolicy(
 			QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-			QtWidgets.QSizePolicy.Policy.Maximum
+			QtWidgets.QSizePolicy.Policy.Fixed
 		)
+	
+	def sizeHint(self) -> QtCore.QSize:
+		# Set size hint based on two lines of text, basically
+		size = QtCore.QSize(-1, self._box_inner_padding * 3 + self._box_line_width * 2 + self._font_height * 2)
+
+		return size
 
 	def setBottomMargin(self, margin:int):
 		self._bottom_margin = margin
@@ -102,12 +120,9 @@ class LBTimelineView(QtWidgets.QWidget):
 			return
 
 		painter = QtGui.QPainter(self)
+		painter.setFont(self._font)
 
 		rect = QtCore.QRect(0, 0, painter.device().width(), painter.device().height())
-		
-		font = painter.font()
-		font.setPointSize(font.pointSize() - 2)
-		painter.setFont(font)
 
 		# Determine bottom margin
 		font_metrics = painter.fontMetrics()
@@ -123,8 +138,12 @@ class LBTimelineView(QtWidgets.QWidget):
 			sequence_name, sequence_duration = thing
 
 			# Draw Box
-			painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-			rect = QtCore.QRect(x_pos, 0, math.ceil((sequence_duration/self.adjustedTotal())*(painter.device().width())), painter.device().height() - self._bottom_margin)
+#			painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+			
+			# Item box
+			item_box_width = math.ceil((sequence_duration / self.adjustedTotal()) * rect.width())
+			item_box_height = self._font_height + self._box_inner_padding*2 + self._box_line_width*2
+			item_box_rect = QtCore.QRect(x_pos, 0, item_box_width, item_box_height).adjusted(self._box_line_width//2, self._box_line_width//2, -self._box_line_width//2, -self._box_line_width//2)
 			
 			brush = painter.brush()
 			brush.setColor(self._pallette[idx])
@@ -133,50 +152,59 @@ class LBTimelineView(QtWidgets.QWidget):
 			
 			pen = painter.pen()
 			pen.setColor(painter.brush().color().lighter(200))
-			pen.setWidth(1)
+			pen.setWidth(self._box_line_width)
+			pen.setJoinStyle(QtCore.Qt.PenJoinStyle.MiterJoin)
 			painter.setPen(pen)
 			
-			painter.drawRect(rect)
+			painter.drawRect(item_box_rect)
+
 
 			# Draw Box Label
+
+			label_box_rect = item_box_rect.adjusted(self._box_inner_padding + self._tick_line_width, self._box_inner_padding, -self._box_inner_padding-self._box_line_width, -self._box_inner_padding)
+
 			pen = painter.pen()
 			pen.setColor(painter.brush().color().lighter(300))
 			painter.setPen(pen)
-			text_location = QtCore.QPoint(x_pos + 5, painter.device().height() - 5 - self._bottom_margin)
-			painter.drawText(text_location, sequence_name)
+			painter.drawText(label_box_rect, sequence_name, self._text_options)
+
 
 			# Draw tick
-			painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, False)
+			#painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, False)
 			pen = painter.pen()
-			pen.setWidth(2)
+			pen.setWidth(self._tick_line_width)
 			pen.setColor(self._pallette[idx].lighter(200))
 			painter.setPen(pen)
 
-			tick_start_pos = QtCore.QPoint(max(x_pos, int(pen.width()/2)), 0)
+			tick_start_pos = QtCore.QPoint(max(x_pos, int(pen.width()//2)), 0)
 			tick_end_pos   = QtCore.QPoint(tick_start_pos.x(), painter.device().height())
 
 			painter.drawLine(tick_start_pos, tick_end_pos)
 
 			# Draw Timecode
+			tick_text = str(Timecode(int(cumulative))).lstrip("0:") or "0:00"
+			
 			pen = painter.pen()	
 			pen.setColor(QtGui.QPalette().color(QtGui.QPalette.ColorRole.Text))
 			painter.setPen(pen)
-			tick_text = str(Timecode(int(cumulative))).lstrip("0:") or "0:00"
-			text_location.setY(painter.device().height() - self._bottom_margin + 12)
-			painter.drawText(text_location, tick_text)
 			
-			x_pos += (sequence_duration/self.adjustedTotal())*(painter.device().width())
+			# Timecode box rect is based on the label box, but moved down below the rect + stroke + padding
+			timecode_box_rect = QtCore.QRect(label_box_rect)
+			timecode_box_rect.moveTop(item_box_rect.height() + self._box_inner_padding + self._box_line_width//2)
+			painter.drawText(timecode_box_rect, tick_text, self._text_options)
+			
+			x_pos += (sequence_duration/self.adjustedTotal())*(rect.width())
 			cumulative += sequence_duration
 
 		# Draw final tick
-		painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, False)
+		#painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, False)
 		pen = painter.pen()
-		pen.setWidth(2)
+		pen.setWidth(self._tick_line_width)
 		pen.setColor(self._pallette[-1].lighter(200))
 		painter.setPen(pen)
 
-		tick_start_pos = QtCore.QPoint(x_pos, 0)
-		tick_end_pos   = QtCore.QPoint(tick_start_pos.x(), painter.device().height())
+		tick_start_pos = QtCore.QPoint(item_box_rect.right() + self._tick_line_width//2, 0)
+		tick_end_pos   = QtCore.QPoint(tick_start_pos.x(), rect.height())
 
 		painter.drawLine(tick_start_pos, tick_end_pos)
 
@@ -185,13 +213,13 @@ class LBTimelineView(QtWidgets.QWidget):
 		pen.setColor(QtGui.QPalette().color(QtGui.QPalette.ColorRole.Text))
 		painter.setPen(pen)
 		tick_text = str(Timecode(int(cumulative))).lstrip("0:") or "0:00"
-		text_location.setY(painter.device().height() - self._bottom_margin + 12)
+		#text_location.setY(painter.device().height() - self._bottom_margin + 12)
 		
 		font_metrics = painter.fontMetrics()
 		font_box = font_metrics.boundingRect(tick_text)
-		text_location.setX(tick_start_pos.x() - font_box.width() - 5 - painter.pen().width())
+		#text_location.setX(tick_start_pos.x() - font_box.width() - 5 - painter.pen().width())
 		
-		painter.drawText(text_location, tick_text)
+		#painter.drawText(text_location, tick_text)
 
 
 		painter.end()
