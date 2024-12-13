@@ -180,6 +180,7 @@ class ClipColorPicker(QtWidgets.QWidget):
 	def hoveredIndex(self) -> int|None:
 		return self._hovered_index
 	
+	@QtCore.Slot(int)
 	def setHoveredIndex(self, index:int):
 		if index is not None and index < len(self.colors()):
 			self._hovered_index = index
@@ -192,6 +193,7 @@ class ClipColorPicker(QtWidgets.QWidget):
 	def selectedIndex(self) -> int|None:
 		return self._selected_index
 
+	@QtCore.Slot(int)
 	def setSelectedIndex(self, index:int):
 		if index is not None and index < len(self.colors()):
 			self._selected_index = index
@@ -201,36 +203,39 @@ class ClipColorPicker(QtWidgets.QWidget):
 		
 		self.update()
 	
+	def selectedColor(self, color:QtGui.QColor|None):
+		if self.selectedIndex() is not None:
+			return self.colors()[self.selectedIndex()]
+		return None
+	
 	def toolTipForIndex(self, index:int):
 		if index is not None and index < len(self.colors()):
 			color = self.colors()[index]
 			return f"R: {color.red()}  G: {color.green()}  B: {color.blue()}"
 		return None
 	
-	def mousePressEvent(self, event) -> bool:
+	def mousePressEvent(self, event:QtGui.QMouseEvent) -> bool:
 		if event.button() == QtCore.Qt.MouseButton.LeftButton:
 			index = self.colorIndexFromCoords(event.position().toPoint())
 			self.setSelectedIndex(index)
-			return True
-		else:
-			return super().mousePressEvent(event)
-			
-		
-	
-	def event(self, event:QtCore.QEvent) -> bool:
 
-		if event.type() == QtCore.QEvent.Type.MouseMove:
+		return super().mousePressEvent(event)
+	
+	def mouseMoveEvent(self, event:QtGui.QMouseEvent):
 			index = self.colorIndexFromCoords(event.position().toPoint())
 			self.setHoveredIndex(index)
-			return True
+			return super().mouseMoveEvent(event)
+	
+	def leaveEvent(self, event):
+		self.setHoveredIndex(None)
+		return super().leaveEvent(event)
+
+	
+	def event(self, event:QtCore.QEvent) -> bool:
 		
-		elif event.type() == QtCore.QEvent.Type.HoverLeave:
-			#print("OOOH BYE")
-			return True
-		
-		elif event.type() == QtCore.QEvent.Type.ToolTip:
+		if event.type() == QtCore.QEvent.Type.ToolTip:
 			QtWidgets.QToolTip.showText(event.globalPos(), self.toolTipForIndex(self.colorIndexFromCoords(event.pos())))
-			return True
+		#	return True
 
 		return super().event(event)
 
