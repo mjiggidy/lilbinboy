@@ -293,7 +293,7 @@ class LBTRTCalculator(LBUtilityTab):
 	def _loadInitial(self):
 		"""Load initial data from preferences (or defaults)"""
 		
-		self.model().setRate(QtCore.QSettings().value("trt/rate", 24))
+		self.model().setRate(int(QtCore.QSettings().value("trt/rate", 24)))
 
 		self.model().setSequenceSelectionMode(QtCore.QSettings().value("trt/sequence_selection_mode", model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN))
 		
@@ -301,7 +301,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self.model().setTrimFromHead(Timecode(QtCore.QSettings().value("trt/trim_head",0), rate=self.model().rate()))
 		self.model().setTrimFromTail(Timecode(QtCore.QSettings().value("trt/trim_tail",0), rate=self.model().rate()))
-		self.model().setTrimTotal(Timecode(QtCore.QSettings().value("trt/trim_total"), rate=self.model().rate()))
+		self.model().setTrimTotal(Timecode(QtCore.QSettings().value("trt/trim_total",0), rate=self.model().rate()))
 		
 		self.model().set_active_head_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_head"))
 		self.model().set_active_tail_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_tail"))
@@ -380,6 +380,8 @@ class LBTRTCalculator(LBUtilityTab):
 
 		# Data model bins have changed
 		self.model().sig_bins_changed.connect(self.save_bins)
+
+		self.model().sig_rate_changed.connect(self.saveRate)
 		
 		# Trim timecode changed
 		self.model().sig_head_trim_tc_changed.connect(self.trimHeadTCChanged)
@@ -423,7 +425,7 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		# Total adjustment spinner
 		#self.trim_total.sig_timecode_changed.connect(self.save_trims)
-		self.trim_total.sig_timecode_changed.connect(self.model().setTrimTotal)
+		#self.trim_total.sig_timecode_changed.connect(self.model().setTrimTotal)
 	
 
 	#
@@ -499,8 +501,11 @@ class LBTRTCalculator(LBUtilityTab):
 	def trimTailMarkerChanged(self, preset_name:str):
 		self.trt_trims.set_tail_marker_preset_name(preset_name)
 		self.updateSequenceInfo()
-		QtCore.QSettings().setValue("trt/trim_marker_preset_tail", preset_name)		
+		QtCore.QSettings().setValue("trt/trim_marker_preset_tail", preset_name)
 
+	@QtCore.Slot(int)
+	def saveRate(self, rate:int):
+		QtCore.QSettings().setValue("trt/rate", rate)
 	
 	def trimHeadTCChanged(self, tc:Timecode):
 		self.trt_trims.set_head_trim(tc)
@@ -518,8 +523,6 @@ class LBTRTCalculator(LBUtilityTab):
 		QtCore.QSettings().setValue("trt/trim_total", str(tc))
 
 		# TODO: Misplaced this little guy?
-		QtCore.QSettings().setValue("trt/rate", self.model().rate())
-
 	#
 	# Data model methods
 	#

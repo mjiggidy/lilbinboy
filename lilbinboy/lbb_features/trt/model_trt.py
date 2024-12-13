@@ -28,6 +28,8 @@ class TRTDataModel(QtCore.QObject):
 
 	sig_data_changed  = QtCore.Signal()
 
+	sig_rate_changed = QtCore.Signal(int)
+
 	sig_head_trim_tc_changed = QtCore.Signal(Timecode)
 	sig_tail_trim_tc_changed = QtCore.Signal(Timecode)
 	sig_total_trim_tc_changed = QtCore.Signal(Timecode)
@@ -104,7 +106,11 @@ class TRTDataModel(QtCore.QObject):
 		return self._fps
 	
 	def setRate(self, rate:int) -> int:
+		if rate < 1:
+			print("No!  No!!!!")
+			exit
 		self._fps = rate
+		self.sig_rate_changed.emit(self.rate())
 		self.sig_data_changed.emit()
 	
 	def trimFromHead(self) -> Timecode:
