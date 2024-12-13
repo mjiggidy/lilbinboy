@@ -3,7 +3,7 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
 from concurrent import futures
 from ...lbb_common import LBUtilityTab, LBSpinBoxTC, LBTimelineView
-from . import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns
+from . import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 
@@ -362,6 +362,8 @@ class LBTRTCalculator(LBUtilityTab):
 		# Set up sequence trim controls
 		self.layout().addWidget(self.trt_trims)
 
+		self.layout().addWidget(QtWidgets.QPushButton("Export TSV", clicked=self.export_tsv))
+
 	
 	def _setupSignals(self):
 		"""Connect signals and slots"""
@@ -673,3 +675,10 @@ class LBTRTCalculator(LBUtilityTab):
 				print(f"Proxy out of sync with data ({self.list_trts.model().rowCount()} vs {len(self._data_model.data())})")
 		
 		self.view_longplay.setItems(unsorted_durs)
+
+	#
+	# Exporters
+	#
+	def export_tsv(self):
+
+		exporters_trt.export_tab_delimited(self.list_trts.model(), "out.tsv")
