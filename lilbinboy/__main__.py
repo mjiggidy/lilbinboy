@@ -27,16 +27,16 @@ wnd_main.sig_resized.connect(lambda rect: app_settings.setValue("main/window_geo
 wnd_main.show()
 
 for name, panel in lbb_features.features.items():
-	wnd_main.centralWidget().addTab(panel(), str(name))
-	wnd_main.centralWidget().setTabIcon(wnd_main.centralWidget().count()-1, QtGui.QIcon(panel.PATH_ICON))
+	wnd_main.tabs.addTab(panel(), str(name))
+	wnd_main.tabs.setTabIcon(wnd_main.tabs.count()-1, QtGui.QIcon(panel.PATH_ICON))
 
 wnd_main.menuBar().addMenu("&File")
 wnd_main.menuBar().addMenu("&Edit")
 wnd_main.menuBar().addMenu("&Tools")
 wnd_main.menuBar().addMenu("&Help")
-wnd_main.centralWidget().addTab(QtWidgets.QWidget(), str("Binlocker"))
-wnd_main.centralWidget().addTab(QtWidgets.QWidget(), str("Continuity Maker"))
-wnd_main.centralWidget().addTab(QtWidgets.QWidget(), str("Bin Config"))
+wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Binlocker"))
+wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Continuity Maker"))
+wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Bin Config"))
 
 
 app.exec()

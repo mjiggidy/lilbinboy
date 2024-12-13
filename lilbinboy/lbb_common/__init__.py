@@ -29,7 +29,30 @@ class LBMainWindow(QtWidgets.QMainWindow):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
-		self.setCentralWidget(LBMainTabs())
+		self.tabs = LBMainTabs()
+
+		self.setCentralWidget(QtWidgets.QWidget())
+		self.centralWidget().setLayout(QtWidgets.QVBoxLayout())
+		self.centralWidget().layout().setContentsMargins(3,3,3,3)
+		self.centralWidget().layout().addWidget(self.tabs)
+
+		lay_id = QtWidgets.QHBoxLayout()
+
+		self.fnt_lbb = QtGui.QFont()
+		#self.fnt_lbb.setPixelSize(32)
+		self.fnt_lbb.setItalic(True)
+		self.fnt_lbb.setBold(True)
+
+		self.lbl_lbb = QtWidgets.QLabel("Lil' Bin Boy - Pre Alpha Nightmare v0.1")
+		self.lbl_lbb.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignBottom)
+		self.lbl_lbb.setFont(self.fnt_lbb)
+
+		self.lbl_lbbicon = QtWidgets.QLabel()
+		self.lbl_lbbicon.setPixmap(QtGui.QPixmap("lilbinboy/logos/256x256.png").scaledToHeight(48))
+
+		lay_id.addWidget(self.lbl_lbbicon)
+		lay_id.addWidget(self.lbl_lbb)
+		self.centralWidget().layout().addLayout(lay_id)
 
 	def moveEvent(self, event):
 		super().moveEvent(event)
