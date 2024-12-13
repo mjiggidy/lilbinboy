@@ -17,16 +17,30 @@ class ClipColorPicker(QtWidgets.QWidget):
 		self._max_colors_per_row = 8
 
 		self._color_background = QtGui.QColor(0,0,0)
-		self._border_width = 1
+		self._border_common_width = 1
+		self._border_hover_width = 1
+		self._border_selected_width = 2
 
 		self._hovered_index = None
 		self._selected_index = None
 
-	def setBorderWidth(self, width:int):
-		self._border_width = width
+	def borderCommonWidth(self) -> int:
+		return self._border_common_width
 	
-	def borderWidth(self) -> int:
-		return self._border_width
+	def setBorderCommonWidth(self, width:int):
+		self._border_common_width = width
+
+	def borderHoverWidth(self) -> int:
+		return self._border_hover_width
+	
+	def setBorderHoverWidth(self, width:int):
+		self._border_hover_width = width
+		
+	def borderSelectedWidth(self) -> int:
+		return self._border_selected_width
+	
+	def setBorderSelectedWidth(self, width:int) -> int:
+		self._border_selected_width = width
 	
 	def colorSize(self) -> QtCore.QSize:
 		"""Calculate color size"""
@@ -63,8 +77,8 @@ class ClipColorPicker(QtWidgets.QWidget):
 
 	def sizeHint(self) -> QtCore.QSize:
 		color_count = len(self.colors())
-		width = self.maxColorsPerRow() * 24 + self.borderWidth()
-		height = color_count // self.maxColorsPerRow() * 18 +  + self.borderWidth()
+		width = self.maxColorsPerRow() * 24 + self.borderHoverWidth()
+		height = color_count // self.maxColorsPerRow() * 18 +  + self.borderHoverWidth()
 
 		return QtCore.QSize(width, height)
 	
@@ -96,7 +110,7 @@ class ClipColorPicker(QtWidgets.QWidget):
 		pen.setColor(self._color_background)
 		pen.setJoinStyle(QtGui.Qt.PenJoinStyle.MiterJoin)
 		pen.setStyle(QtGui.Qt.PenStyle.SolidLine)
-		pen.setWidth(self.borderWidth())
+		pen.setWidth(self.borderCommonWidth())
 		painter.setPen(pen)
 
 		painter.drawRect(rect_widget_bounds)
@@ -108,25 +122,51 @@ class ClipColorPicker(QtWidgets.QWidget):
 			painter.setBrush(brush)
 			painter.drawRect(self.colorRect(idx))
 		
-		# Highlight selected index
-		selected_index = self.hoveredIndex()
-		if selected_index is not None:
-			pen.setWidth(2 * self.borderWidth())
+		# Highlight things
+		hovered_index = self.hoveredIndex()
+		selected_index = self.selectedIndex()
+
+		# First anything hovered
+		if hovered_index is not None and hovered_index != selected_index:
+
+			border_offset = self.borderHoverWidth() // 2
+			hovered_rect = self.colorRect(hovered_index).adjusted(border_offset+self.borderCommonWidth(), border_offset+self.borderCommonWidth(), -border_offset-self.borderCommonWidth(), -border_offset-self.borderCommonWidth())
+
+			brush.setStyle(QtGui.Qt.BrushStyle.NoBrush)
+			painter.setBrush(brush)
+			pen.setColor(QtGui.QColor("Black"))
+			pen.setWidth(self.borderHoverWidth() + 2 * self.borderCommonWidth())
+			painter.setPen(pen)
+			painter.drawRect(hovered_rect)
+
+			pen.setWidth(self.borderHoverWidth())
 			pen.setColor(QtGui.QColor("White"))
 			pen.setStyle(QtGui.Qt.PenStyle.SolidLine)
 			painter.setPen(pen)
+			painter.drawRect(hovered_rect)
+
+		if selected_index is not None:
+			border_offset = self.borderSelectedWidth() // 2
+			selected_rect = self.colorRect(selected_index).adjusted(border_offset+self.borderCommonWidth(), border_offset+self.borderCommonWidth(), -border_offset, -border_offset)
+
 			brush.setStyle(QtGui.Qt.BrushStyle.NoBrush)
 			painter.setBrush(brush)
-
-			painter.drawRect(self.colorRect(selected_index))
-			
 			pen.setColor(QtGui.QColor("Black"))
-			pen.setWidth(self.borderWidth())
+			pen.setWidth(self.borderSelectedWidth() + 2)
 			painter.setPen(pen)
-			
-			painter.drawRect(self.colorRect(selected_index).adjusted(pen.width(), pen.width(), -pen.width(), -pen.width()))
-			painter.drawRect(self.colorRect(selected_index).adjusted(-pen.width(), -pen.width(), pen.width(), pen.width()))
+			painter.drawRect(selected_rect)
 
+			pen.setWidth(self.borderSelectedWidth())
+			pen.setColor(QtGui.QColor("White"))
+			pen.setStyle(QtGui.Qt.PenStyle.SolidLine)
+			painter.setPen(pen)
+			painter.drawRect(selected_rect)
+		
+		painter.end()
+
+			
+			
+			
 	def colorIndexFromCoords(self, coordinates:QtCore.QPoint) -> int|None:
 
 		if not QtCore.QRect(self.calculatedPadding(), self.calculatedPaletteSize()).contains(coordinates):
@@ -180,7 +220,8 @@ class ClipColorPicker(QtWidgets.QWidget):
 	def event(self, event:QtCore.QEvent) -> bool:
 
 		if event.type() == QtCore.QEvent.Type.MouseMove:
-			self.setHoveredIndex(self.colorIndexFromCoords(event.position().toPoint()))
+			index = self.colorIndexFromCoords(event.position().toPoint())
+			self.setHoveredIndex(index)
 			return True
 		
 		elif event.type() == QtCore.QEvent.Type.HoverLeave:
