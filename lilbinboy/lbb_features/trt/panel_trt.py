@@ -435,7 +435,7 @@ class LBTRTCalculator(LBUtilityTab):
 	@QtCore.Slot()
 	def showSequenceSelectionSettings(self):
 
-		wnd_sss = dlg_sequence_selection.TRTSequenceSelection()
+		wnd_sss = dlg_sequence_selection.TRTSequenceSelection(self)
 		wnd_sss.exec()
 
 	#
