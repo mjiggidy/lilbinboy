@@ -523,21 +523,37 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 		super().__init__(*args, **kwargs)
 		self._rate = 24
 		self._allow_negative = False
-		self.valueChanged.connect(lambda: self.sig_timecode_changed.emit(self.timecode()))
+
+		self._updateTimecodeExtents()
+		self.editingFinished.connect(lambda: self.sig_timecode_changed.emit(self.timecode()))
+		
 	
-	@QtCore.Slot()
+	@QtCore.Slot(int)
 	def setRate(self, rate:int):
 		#self.blockSignals(True)
-		self._rate = rate
-		self.updateMaximumTC()
+
+		if rate == self.rate():
+			return
+
+		# Resample TC to new rate
+		old_timecode = self.timecode()
+		new_timecode = old_timecode.resample(rate=rate)
+		
+		self._rate = int(rate)
+		self._updateTimecodeExtents()
+
+		self.setTimecode(new_timecode)
 		#self.sig_timecode_changed.emit(self.timecode())
 
 	@QtCore.Slot()
-	def updateMaximumTC(self):
+	def _updateTimecodeExtents(self):
+		"""Set min/max ranges based on rate"""
 		self.setMaximum(Timecode("100:00:00:00", rate=self.rate()).frame_number)
-		self.setMinimum(Timecode("-100:00:00:00", rate=self.rate()).frame_number if self.allowNegative() else Timecode(0, rate=self.rate()).frame_number)
+		self.setMinimum(Timecode("-100:00:00:00", rate=self.rate()).frame_number if self.allowNegative()
+			else Timecode(0, rate=self.rate()).frame_number)
 
 	def validate(self, input:str, pos:int) -> bool:
+		print("Validate")
 
 		# Allow for one '-' if negative is allowed, by stripping it off for validation
 		if self.allowNegative() and input.startswith("-"):
@@ -558,10 +574,12 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 		self.setRate(timecode.rate)
 		self.setValue(timecode.frame_number)
 	
+	@QtCore.Slot(bool)
 	def setAllowNegative(self, allow:bool):
 		if allow != self.allowNegative():
 			self._allow_negative = allow
-			self.updateMaximumTC()
+			self._updateTimecodeExtents()
+		self.setTimecode(self.timecode())
 
 	def allowNegative(self) -> bool:
 		return self._allow_negative
@@ -577,7 +595,18 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 		return prepend + str(Timecode(val, rate=self.rate()))
 	
 	def valueFromText(self, text:str) -> int:
-		return Timecode(text, rate=self.rate()).frame_number
+		
+		text = text.strip()
+		is_negative = text.startswith("-")
+		text = text.lstrip("-+")
+		
+		if not text.isnumeric():
+			return Timecode(("-" if is_negative else "") + text, rate=self.rate()).frame_number
+		
+		text_reversed = text[::-1]
+		processed = ":".join([text_reversed[idx:idx+2] for idx in range(0, len(text), 2)])
+		final = ("-" if is_negative else "") + processed[::-1]
+		return Timecode(final, rate=self.rate()).frame_number
 
 class LBBClipColorPickerButtonDeprecated(QtWidgets.QWidget):
 	"""Clip color picker widget"""
