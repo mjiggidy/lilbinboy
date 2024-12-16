@@ -553,10 +553,11 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 			else Timecode(0, rate=self.rate()).frame_number)
 
 	def validate(self, input:str, pos:int) -> bool:
-		print("Validate")
 
 		# Allow for one '-' if negative is allowed, by stripping it off for validation
 		if self.allowNegative() and input.startswith("-"):
+			input = input[1:]
+		elif input.startswith("+"):
 			input = input[1:]
 
 		if self.__class__.PAT_VALID_TEXT.match(input):
