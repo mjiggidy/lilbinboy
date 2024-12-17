@@ -342,9 +342,9 @@ class TRTDataModel(QtCore.QObject):
 
 			if marker_preset.color is not None and marker_info.color.value != marker_preset.color:
 				continue
-			if marker_preset.comment is not None and marker_info.comment != marker_preset.comment:
+			if marker_preset.comment is not None and marker_preset.comment not in marker_info.comment:
 				continue
-			if marker_preset.author is not None and marker_info.user != marker_preset.author:
+			if marker_preset.author is not None and marker_preset.author not in marker_info.user:
 				continue
 
 			return marker_info

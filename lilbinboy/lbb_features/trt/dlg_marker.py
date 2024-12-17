@@ -109,11 +109,11 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.grp_edit.layout().addWidget(QtWidgets.QLabel("Match Color"), 0, 0)
 		self.grp_edit.layout().addWidget(self.cmb_marker_color, 1, 0)
 
-		self.grp_edit.layout().addWidget(QtWidgets.QLabel("Match Comment"), 0, 1)
+		self.grp_edit.layout().addWidget(QtWidgets.QLabel("Comment Contains"), 0, 1)
 		self.txt_marker_comment.setPlaceholderText("(Any)")
 		self.grp_edit.layout().addWidget(self.txt_marker_comment, 1,1)
 
-		self.grp_edit.layout().addWidget(QtWidgets.QLabel("Match Author"), 0, 2)
+		self.grp_edit.layout().addWidget(QtWidgets.QLabel("Author Contains"), 0, 2)
 		self.txt_marker_author.setPlaceholderText("(Any)")
 		self.grp_edit.layout().addWidget(self.txt_marker_author, 1, 2)
 
