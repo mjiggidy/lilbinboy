@@ -55,7 +55,7 @@ class TRTPathItem(TRTAbstractItem):
 			QtCore.Qt.ItemDataRole.DisplayRole:				self._data.fileName(),
 			QtCore.Qt.ItemDataRole.InitialSortOrderRole: 	avbutils.human_sort(self._data.fileName()),
 			QtCore.Qt.ItemDataRole.DecorationRole:			QtWidgets.QFileIconProvider().icon(self._data),
-			QtCore.Qt.ItemDataRole.ToolTipRole:				self._data.absoluteFilePath(),
+			QtCore.Qt.ItemDataRole.ToolTipRole:				QtCore.QDir.toNativeSeparators(self._data.absoluteFilePath()),
 		})
 
 class TRTTimecodeItem(TRTAbstractItem):

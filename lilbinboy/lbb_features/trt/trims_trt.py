@@ -71,6 +71,8 @@ class TRTControlsTrims(QtWidgets.QWidget):
 		
 		self.layout().addWidget(grp_head_trims)
 
+		self.layout().addStretch()
+
 		# Total Running Adjustments
 		
 		grp_total_trims = QtWidgets.QGroupBox("Total Running Adjustment")
@@ -91,6 +93,8 @@ class TRTControlsTrims(QtWidgets.QWidget):
 		grp_total_trims.layout().addWidget(self._lbl_total_note)
 
 		self.layout().addWidget(grp_total_trims)
+
+		self.layout().addStretch()
 
 		# Trim from Tail / Duration
 

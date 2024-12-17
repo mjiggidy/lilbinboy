@@ -36,7 +36,7 @@ def get_timelines_from_bin(bin_path:str) -> list[TimelineInfo]:
 	timeline_info = []
 
 	# Check for  lock first, why not
-	bin_lock = avbutils.LockInfo(pathlib.Path(bin_path).with_suffix(".lck")) if pathlib.Path(bin_path).with_suffix(".lck").is_file() else None
+	bin_lock = avbutils.LockInfo.from_lockfile(pathlib.Path(bin_path).with_suffix(".lck")) if pathlib.Path(bin_path).with_suffix(".lck").is_file() else None
 
 	with avb.open(bin_path) as bin_handle:
 

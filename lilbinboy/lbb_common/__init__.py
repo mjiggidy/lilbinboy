@@ -38,14 +38,8 @@ class LBMainWindow(QtWidgets.QMainWindow):
 
 		lay_id = QtWidgets.QHBoxLayout()
 
-		self.fnt_lbb = QtGui.QFont()
-		#self.fnt_lbb.setPixelSize(32)
-		self.fnt_lbb.setItalic(True)
-		self.fnt_lbb.setBold(True)
-
-		self.lbl_lbb = QtWidgets.QLabel("Lil' Bin Boy - Pre Alpha Nightmare v0.1")
-		self.lbl_lbb.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignBottom)
-		self.lbl_lbb.setFont(self.fnt_lbb)
+		self.lbl_lbb = QtWidgets.QLabel("<strong>Lil' Bin Boy</strong><br/>Pre Alpha Nightmare v0.1<br/>Report good and bad things to <a href=\"mailto:michael@glowingpixel.com\">michael@glowingpixel.com</a>")
+		self.lbl_lbb.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
 
 		self.lbl_lbbicon = QtWidgets.QLabel()
 		self.lbl_lbbicon.setPixmap(QtGui.QPixmap("lilbinboy/logos/256x256.png").scaledToHeight(48))
