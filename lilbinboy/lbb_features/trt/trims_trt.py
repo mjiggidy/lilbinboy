@@ -1,14 +1,13 @@
 import pathlib
 from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
-from ...lbb_common import LBSpinBoxTC
+from ...lbb_common import LBSpinBoxTC, resources
 from . import markers_trt
 
 class TRTControlsTrims(QtWidgets.QWidget):
 
-	# TODO: Better
-	PATH_MARK_IN = str(pathlib.Path(__file__+"../../../../res/icon_mark_in.svg").resolve())
-	PATH_MARK_OUT = str(pathlib.Path(__file__+"../../../../res/icon_mark_out.svg").resolve())
+	PATH_MARK_IN  = ":/trt/icons/icon_mark_in.svg"
+	PATH_MARK_OUT = ":/trt/icons/icon_mark_out.svg"
 
 	sig_head_trim_changed = QtCore.Signal(Timecode)
 	"""Timcode trim from head changed"""

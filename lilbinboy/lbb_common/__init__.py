@@ -2,6 +2,7 @@ import re, math, random
 import avbutils
 from PySide6 import QtWidgets, QtCore, QtGui
 from timecode import Timecode
+from . import resources
 
 class LBErrorLogWindow(QtWidgets.QWidget):
 
@@ -92,7 +93,7 @@ class LBMainWindow(QtWidgets.QMainWindow):
 		self.lbl_lbb.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
 
 		self.lbl_lbbicon = QtWidgets.QLabel()
-		self.lbl_lbbicon.setPixmap(QtGui.QPixmap("lilbinboy/logos/256x256.png").scaledToHeight(48))
+		self.lbl_lbbicon.setPixmap(QtGui.QPixmap(":/app/logo.png").scaledToHeight(48))
 
 		self.btn_errorlog = QtWidgets.QPushButton("Show Error Log")
 		self.btn_errorlog.clicked.connect(self.errorLogRequested)

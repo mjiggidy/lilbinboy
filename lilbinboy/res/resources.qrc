@@ -1,0 +1,15 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+	<qresource prefix="app">
+		<file alias="logo.png">app/256x256.png</file>
+	</qresource>
+	<qresource prefix="app/icons">
+		<file alias="icon_256.png">app/256x256.png</file>
+	</qresource>
+	<qresource prefix="trt"/>
+	<qresource prefix="trt/icons">
+		<file alias="icon_mark_in.svg">trt/icon_mark_in.svg</file>
+		<file alias="icon_mark_out.svg">trt/icon_mark_out.svg</file>
+		<file alias="icon_tab.png">trt/icon_trt.png</file>
+	</qresource>
+</RCC>
