@@ -76,7 +76,6 @@ class TRTControlsTrims(QtWidgets.QWidget):
 		
 		grp_total_trims = QtWidgets.QGroupBox("Total Running Adjustment")
 		grp_total_trims.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
-		grp_total_trims.setSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, grp_total_trims.sizePolicy().verticalPolicy())
 		grp_total_trims.setLayout(QtWidgets.QGridLayout())
 
 		self._from_total.setAllowNegative(True)
