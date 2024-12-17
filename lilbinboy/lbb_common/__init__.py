@@ -4,6 +4,42 @@ from PySide6 import QtWidgets, QtCore, QtGui
 from timecode import Timecode
 from . import resources
 
+class LBAboutWindow(QtWidgets.QDialog):
+
+	PATH_ABOUT_TEXT = "/Users/mjordan/dev/lilbinboy/about.html"
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		self.setWindowTitle("About")
+		self.setLayout(QtWidgets.QGridLayout())
+
+		boy_icon = QtGui.QIcon()
+		boy_icon.addFile(":/app/icons/icon_48.png")
+
+		self._boy_icon = QtWidgets.QLabel()
+		self._boy_icon.setPixmap(boy_icon.pixmap(48))
+		self._boy_icon.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+
+		self.layout().addWidget(self._boy_icon, 0,0)
+
+		self._big_box = QtWidgets.QLabel()
+		self._big_box.setWordWrap(True)
+		self._big_box.setTextFormat(QtCore.Qt.TextFormat.RichText)
+		
+		about_file = QtCore.QFile(self.PATH_ABOUT_TEXT)
+		if about_file.open(QtCore.QIODevice.OpenModeFlag.ReadOnly | QtCore.QIODevice.OpenModeFlag.Text):
+			self._big_box.setText(about_file.readAll().toStdString())
+			about_file.close()
+
+		self.layout().addWidget(self._big_box, 0, 1)
+
+		self._btnbox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok)
+		self._btnbox.accepted.connect(self.accept)
+		self.layout().addWidget(self._btnbox, 1, 1)
+
+		
+
 class LBErrorLogWindow(QtWidgets.QWidget):
 
 	def __init__(self, *args, **kwargs):
