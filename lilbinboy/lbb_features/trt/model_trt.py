@@ -468,6 +468,29 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		return self._headers
 	
 class TRTViewSortModel(QtCore.QSortFilterProxyModel):
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		self._hidden_fields = set()
+	
+	def hiddenFields(self) -> set[str]:
+		"""Field names which are hidden"""
+		return self._hidden_fields
+	
+	def setHiddenFields(self, fields:list[str]):
+		self._hidden_fields = set(fields)
+		self.invalidateColumnsFilter()
+	
+	# Probably don't need these two
+	def addHiddenField(self, field:str):
+		self._hidden_fields.add(field)
+		self.invalidateColumnsFilter()
+	
+	def removeHiddenField(self, field:str):
+		if field in self._hidden_fields():
+			self._hidden_fields.remove(field)
+			self.invalidateColumnsFilter()
 	
 	def lessThan(self, left_idx:QtCore.QModelIndex, right_idx:QtCore.QModelIndex) -> bool:
 		"""Reimplemented sort function to use InitialSortOrderRole"""
@@ -483,3 +506,9 @@ class TRTViewSortModel(QtCore.QSortFilterProxyModel):
 			col = self.mapToSource(self.index(0, idx, QtCore.QModelIndex())).column()
 			headers.append(source_headers[col])
 		return headers
+	
+	def filterAcceptsColumn(self, source_column:int, source_parent:QtCore.QModelIndex):
+		header = self.sourceModel().headers()[source_column]
+		return header.field() not in self.hiddenFields()
+
+

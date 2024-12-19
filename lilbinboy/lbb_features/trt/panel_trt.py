@@ -613,7 +613,7 @@ class LBTRTCalculator(LBUtilityTab):
 		wnd_choosecolumns = dlg_choose_columns.TRTChooseColumnsDialog(self.list_trts)
 		
 		for idx, header in enumerate(self._treeview_model.headers()):
-			wnd_choosecolumns.addColumn(header, is_hidden=self.list_trts.header().isSectionHidden(idx))
+			wnd_choosecolumns.addColumn(header, is_hidden=not self.list_trts.model().filterAcceptsColumn(idx, QtCore.QModelIndex()))
 		wnd_choosecolumns.sig_columns_chosen.connect(self.setColumnsVisible)
 		wnd_choosecolumns.exec()
 	
@@ -623,8 +623,14 @@ class LBTRTCalculator(LBUtilityTab):
 		# Somtimes the indexes come in as strings ugh
 		idx_visible = [int(x) for x in list(idx_visible)]
 		
-		for idx in range(self._treeview_model.columnCount()):
-			self.list_trts.setColumnHidden(idx, idx not in idx_visible)
+		fields_hidden = []
+
+		for idx, header in enumerate(self._treeview_model.headers()):
+			if idx not in idx_visible:
+				fields_hidden.append(header.field())
+		
+		self.list_trts.model().setHiddenFields(fields_hidden)
+		
 		QtCore.QSettings().setValue("trt/columns_visible", idx_visible)
 
 

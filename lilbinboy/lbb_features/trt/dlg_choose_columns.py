@@ -56,7 +56,7 @@ class TRTChooseColumnsDialog(QtWidgets.QDialog):
 		self.selectionChanged()
 	
 	def addColumn(self, header, is_hidden:bool):
-		item = QtWidgets.QListWidgetItem(header.name() or header.field().title())
+		item = QtWidgets.QListWidgetItem(header.name() or header.field().title(), )
 		self.list_headers.addItem(item)
 		item.setSelected(not is_hidden)
 
