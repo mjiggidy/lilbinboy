@@ -53,4 +53,8 @@ First, we'll need to sort the sequences into some sort of order, and then choose
 		self.layout().addWidget(grp_criteria_clipcolor)
 
 		btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok|QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+		
+		btns.accepted.connect(self.accept)
+		btns.rejected.connect(self.reject)
+		
 		self.layout().addWidget(btns)
