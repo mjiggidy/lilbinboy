@@ -384,16 +384,16 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		self.setHeaderItems([
 			treeview_trt.TRTTreeViewHeaderItem("","sequence_color", display_delegate=treeview_trt.TRTClipColorDisplayDelegate()),
 			treeview_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
-			treeview_trt.TRTTreeViewHeaderItem("Full Duration","duration_total"),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (TC)","duration_trimmed"),
+			treeview_trt.TRTTreeViewHeaderItem("Full Duration","duration_total", is_numeric=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (TC)","duration_trimmed", is_numeric=True),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (F+F)","duration_trimmed_ff"),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head", "head_trimmed"),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail", "tail_trimmed"),
-			treeview_trt.TRTTreeViewHeaderItem("Sequence Start", "sequence_start_tc"),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head", "head_trimmed", is_numeric=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail", "tail_trimmed", is_numeric=True),
+			treeview_trt.TRTTreeViewHeaderItem("Sequence Start", "sequence_start_tc", is_numeric=True),
 			treeview_trt.TRTTreeViewHeaderItem("FFOA (F+F)", "ffoa_ff"),
-			treeview_trt.TRTTreeViewHeaderItem("FFOA (TC)", "ffoa_tc"),
+			treeview_trt.TRTTreeViewHeaderItem("FFOA (TC)", "ffoa_tc", is_numeric=True),
 			treeview_trt.TRTTreeViewHeaderItem("LFOA (F+F)", "lfoa_ff"),
-			treeview_trt.TRTTreeViewHeaderItem("LFOA (TC)", "lfoa_tc"),
+			treeview_trt.TRTTreeViewHeaderItem("LFOA (TC)", "lfoa_tc", is_numeric=True),
 			treeview_trt.TRTTreeViewHeaderItem("Date Created","date_created"),
 			treeview_trt.TRTTreeViewHeaderItem("Date Modified","date_modified"),
 			treeview_trt.TRTTreeViewHeaderItem("From Bin","bin_path"),
@@ -472,3 +472,14 @@ class TRTViewSortModel(QtCore.QSortFilterProxyModel):
 	def lessThan(self, left_idx:QtCore.QModelIndex, right_idx:QtCore.QModelIndex) -> bool:
 		"""Reimplemented sort function to use InitialSortOrderRole"""
 		return left_idx.data(QtCore.Qt.ItemDataRole.InitialSortOrderRole) < right_idx.data(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
+	
+	def headers(self) -> list:
+		"""Header items"""
+		headers = []
+		
+		source_headers = self.sourceModel().headers()
+
+		for idx in range(self.columnCount(QtCore.QModelIndex())):
+			col = self.mapToSource(self.index(0, idx, QtCore.QModelIndex())).column()
+			headers.append(source_headers[col])
+		return headers

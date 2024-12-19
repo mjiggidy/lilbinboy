@@ -136,13 +136,14 @@ class TRTBinLockItem(TRTAbstractItem):
 
 class TRTTreeViewHeaderItem(QtCore.QObject):
 
-	def __init__(self, text:str, key:str, display_delegate:QtWidgets.QStyledItemDelegate|None=None):
+	def __init__(self, text:str, key:str, is_numeric:bool=False, display_delegate:QtWidgets.QStyledItemDelegate|None=None):
 
 		super().__init__()
 
 		self._text = str(text)
 		self._key  = str(key)
 		self._display_delegate = display_delegate
+		self._is_numeric = bool(is_numeric)
 
 	def header_data(self, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole):
 
@@ -163,6 +164,10 @@ class TRTTreeViewHeaderItem(QtCore.QObject):
 	def displayDelegate(self) -> QtWidgets.QStyledItemDelegate|None:
 		"""Get the display delegate assigned to this header"""
 		return self._display_delegate
+	
+	def isNumeric(self) -> bool:
+		"""Does UserData contain data that can be summed"""
+		return self._is_numeric
 	
 
 
