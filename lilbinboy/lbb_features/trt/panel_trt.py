@@ -306,7 +306,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().set_active_head_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_head"))
 		self.model().set_active_tail_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_tail"))
 
-		self.setColumnsVisible(QtCore.QSettings().value("trt/columns_visible", range(self._treeview_model.columnCount())))
+		self.setColumnsHidden(QtCore.QSettings().value("trt/columns_hidden", []))
 		
 		self.add_bins_from_paths(QtCore.QSettings().value("trt/bin_paths",[]))
 
@@ -614,11 +614,17 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		for idx, header in enumerate(self._treeview_model.headers()):
 			wnd_choosecolumns.addColumn(header, is_hidden=not self.list_trts.model().filterAcceptsColumn(idx, QtCore.QModelIndex()))
-		wnd_choosecolumns.sig_columns_chosen.connect(self.setColumnsVisible)
+		wnd_choosecolumns.sig_columns_chosen.connect(self.processColumnChooserSelection)
 		wnd_choosecolumns.exec()
 	
 	@QtCore.Slot(list)
-	def setColumnsVisible(self, idx_visible:list[int]):
+	def processColumnChooserSelection(self, idx_visible:list[int]):
+		"""Columns hidden/shown were chosen"""
+
+		# Boy this is really backwards, but basically,
+		# Getting SELECTED column indexes, and then taking
+		# the field names of the inverse of that
+		# Note to self: Sorry, self.
 
 		# Somtimes the indexes come in as strings ugh
 		idx_visible = [int(x) for x in list(idx_visible)]
@@ -629,11 +635,14 @@ class LBTRTCalculator(LBUtilityTab):
 			if idx not in idx_visible:
 				fields_hidden.append(header.field())
 		
-		self.list_trts.model().setHiddenFields(fields_hidden)
+		self.setColumnsHidden(fields_hidden)
 		
-		QtCore.QSettings().setValue("trt/columns_visible", idx_visible)
-
-
+	
+	@QtCore.Slot(list)
+	def setColumnsHidden(self, fields:list[str]):
+		"""Set hidden columns in proxy view, by field name"""
+		self.list_trts.model().setHiddenFields(fields)
+		QtCore.QSettings().setValue("trt/columns_hidden", fields)
 	
 	def choose_folder(self):
 		last_bin_path = QtCore.QSettings().value("trt/last_bin")
