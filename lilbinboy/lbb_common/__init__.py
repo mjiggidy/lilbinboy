@@ -14,11 +14,10 @@ class LBAboutWindow(QtWidgets.QDialog):
 		self.setWindowTitle("About")
 		self.setLayout(QtWidgets.QGridLayout())
 
-		boy_icon = QtGui.QIcon()
-		boy_icon.addFile(":/app/icons/icon_48.png")
+		boy_icon = QtGui.QIcon(":/app/icons/icon_64.png")
 
 		self._boy_icon = QtWidgets.QLabel()
-		self._boy_icon.setPixmap(boy_icon.pixmap(48))
+		self._boy_icon.setPixmap(boy_icon.pixmap(64))
 		self._boy_icon.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
 		self.layout().addWidget(self._boy_icon, 0,0)

@@ -13,10 +13,18 @@ def main():
 	#QtGui.QSurfaceFormat.setDefaultFormat(surface_format)
 	#wnd_main.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
+	main_icon = QtGui.QIcon()
+	main_icon.addFile(":/app/icons/icon_16.png", QtCore.QSize(16,16))
+	main_icon.addFile(":/app/icons/icon_24.png", QtCore.QSize(24,24))
+	main_icon.addFile(":/app/icons/icon_32.png", QtCore.QSize(32,32))
+	main_icon.addFile(":/app/icons/icon_64.png", QtCore.QSize(64,64))
+	main_icon.addFile(":/app/icons/icon_128.png", QtCore.QSize(128,128))
+	main_icon.addFile(":/app/icons/icon_256.png", QtCore.QSize(256,256))
+
 	app.setOrganizationName(Config.ORG_NAME)
 	app.setOrganizationDomain(Config.ORG_DOMAIN)
 	app.setApplicationName(Config.APP_NAME)
-	app.setWindowIcon(QtGui.QPixmap(":/app/icons/icon_256.png"))
+	app.setWindowIcon(main_icon)
 	app_settings = QtCore.QSettings()
 
 	# Setup main window
