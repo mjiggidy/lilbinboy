@@ -356,10 +356,15 @@ class LBClipColorPicker(QtWidgets.QWidget):
 		
 		self.update()
 	
-	def selectedColor(self, color:QtGui.QColor|None):
+	def selectedColor(self) -> QtGui.QColor|None:
 		if self.selectedIndex() is not None:
 			return self.colors()[self.selectedIndex()]
 		return None
+	
+	def setSelectedColor(self, color:QtGui.QColor):
+		if color not in self.colors():
+			raise ValueError("Color is not in the current pallette")
+		self.setSelectedIndex(self.colors().index(color))
 	
 	def toolTipForIndex(self, index:int):
 		if index is not None and index < len(self.colors()):
