@@ -12,7 +12,7 @@ class TimelineInfo:
 	timeline_tc_range:TimecodeRange
 	"""Start TC of sequence"""
 
-	timeline_color:tuple[int,int,int]|None
+	timeline_color:avbutils.ClipColor|None
 	"""16-bit RGB triad chosen for the sequence color label"""
 
 	date_created:datetime.datetime
