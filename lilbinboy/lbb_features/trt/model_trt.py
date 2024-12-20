@@ -28,7 +28,6 @@ class SingleSequenceSelectionProcess:
 		"""Sequence name contains..."""
 		def __init__(self, name:str):
 			# TODO: Maybe list of names, and AND or OR
-			super.__init__()
 			self._name = str(name)
 		
 		def name(self) -> str:

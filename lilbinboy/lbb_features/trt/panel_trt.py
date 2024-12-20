@@ -437,7 +437,11 @@ class LBTRTCalculator(LBUtilityTab):
 
 		wnd_sss = dlg_sequence_selection.TRTSequenceSelection(self)
 		wnd_sss.setInitialSortProcess(self.model().sequenceSelectionProcess())
+		wnd_sss.sig_process_chosen.connect(self.setSequenceSelectionProcess)
 		wnd_sss.exec()
+	
+	def setSequenceSelectionProcess(self, process:model_trt.SingleSequenceSelectionProcess):
+		self.model().setSequenceSelectionProcess(process)
 
 	#
 	# Marker matching presets methods

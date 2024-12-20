@@ -1,8 +1,12 @@
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtWidgets, QtGui
 from ...lbb_common import LBClipColorPicker
 from .model_trt import SingleSequenceSelectionProcess
+import avbutils
 
 class TRTSequenceSelection(QtWidgets.QDialog):
+
+	sig_process_chosen = QtCore.Signal(SingleSequenceSelectionProcess)
+	"""Process has been chosen"""
 
 	def __init__(self, *args, **kwargs):
 
@@ -79,8 +83,33 @@ class TRTSequenceSelection(QtWidgets.QDialog):
 			if isinstance(sequence_filter, SingleSequenceSelectionProcess.ClipColorFilter):
 				self.chk_colors.setChecked(True)
 				for color in sequence_filter.colors():
-					self.color_picker.selectedColor(color)
+					self.color_picker.setSelectedColor(color)
 			
 			elif isinstance(sequence_filter, SingleSequenceSelectionProcess.NameContainsFilter):
 				self.chk_name.setChecked(True)
 				self.txt_name.setText(sequence_filter.name())
+	
+	def buildSelectionProcess(self) -> SingleSequenceSelectionProcess:
+		"""Build a process from the options selected"""
+
+		sort_column_name = self.cmb_sort_column_name.currentText()
+		sort_column_direction = self.cmb_sort_column_direction.currentText()
+		
+		filters = []
+		if self.chk_name.isChecked() and self.txt_name.text():
+			filters.append(SingleSequenceSelectionProcess.NameContainsFilter(self.txt_name.text()))
+		
+		if self.chk_colors.isChecked() and self.color_picker.selectedColor():
+			color = self.color_picker.selectedColor()
+			filters.append(SingleSequenceSelectionProcess.ClipColorFilter([color]))
+
+		process = SingleSequenceSelectionProcess()
+		process.setSortColumn(sort_column_name)
+		process.setSortDirection(sort_column_direction)
+		process.setFilters(filters)
+
+		return process
+	
+	def accept(self):
+		self.sig_process_chosen.emit(self.buildSelectionProcess())
+		return super().accept()
