@@ -1,5 +1,5 @@
 
-import enum
+import enum, dataclasses
 import avbutils
 from datetime import datetime
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -15,6 +15,70 @@ class SequenceSelectionMode(enum.Enum):
 	ALL_SEQUENCES_PER_BIN = 1
 	"""Select all sequences from a given bin"""
 
+
+class SingleSequenceSelectionProcess:
+	"""Data for selecting a single sequence"""
+
+	class AbstractSequenceFilter:
+		def validate(self, timeline_info:logic_trt.TimelineInfo) -> bool:
+			"""Test the timeline against the filter"""
+			pass
+
+	class NameContainsFilter(AbstractSequenceFilter):
+		"""Sequence name contains..."""
+		def __init__(self, name:str):
+			# TODO: Maybe list of names, and AND or OR
+			super.__init__()
+			self._name = str(name)
+		
+		def name(self) -> str:
+			return self._name
+		
+		def validate(self, timeline_info:logic_trt.TimelineInfo) -> bool:
+			return self._name.lower() in timeline_info.timeline_name.lower()
+	
+	class ClipColorFilter(AbstractSequenceFilter):
+		"""Clip color is set to..."""
+		def __init__(self, colors:list[avbutils.ClipColor]):
+			self._colors = colors
+		
+		def colors(self) -> list[avbutils.ClipColor]:
+			return self._colors
+		
+		def validate(self, timeline_info:logic_trt.TimelineInfo) -> bool:
+			return timeline_info.timeline_color in self._colors
+		
+
+	SORT_COLUMNS = ["Name", "Start Timecode", "Comment"]
+	SORT_DIRECTIONS = ["Ascending", "Descending"]
+
+	def __init__(self):
+		self._sort_column:str = "Name"
+		self._sort_direction:str = "Descending"
+		self._filters:list["AbstractSequenceFilter"] = []
+
+	def sortColumn(self) -> str:
+		return self._sort_column
+	
+	def setSortColumn(self, column:str):
+		if column not in self.SORT_COLUMNS:
+			raise ValueError(f"Column {column} is not a valid column")
+		self._sort_column = str(column)
+	
+	def sortDirection(self) -> str:
+		return self._sort_direction
+	
+	def setSortDirection(self, direction:str):
+		if direction not in self.SORT_DIRECTIONS:
+			raise ValueError(f"{direction} is not a valid direction")
+		self._sort_direction = str(direction)
+
+	def filters(self) -> list[AbstractSequenceFilter]:
+		"For now, filters will just b"
+		return self._filters
+	
+	def setFilters(self, filters:list[AbstractSequenceFilter]):
+		self._filters = filters
 
 class TRTDataModel(QtCore.QObject):
 
@@ -36,6 +100,7 @@ class TRTDataModel(QtCore.QObject):
 	sig_trims_changed = QtCore.Signal()
 
 	sig_sequence_selection_mode_changed = QtCore.Signal(SequenceSelectionMode)
+	sig_sequence_selection_process_changed = QtCore.Signal(SingleSequenceSelectionProcess)
 
 	sig_marker_presets_model_changed = QtCore.Signal(dict)
 	sig_head_marker_preset_changed   = QtCore.Signal(str)
@@ -75,6 +140,7 @@ class TRTDataModel(QtCore.QObject):
 
 		# Settings
 		self._sequence_selection_mode = SequenceSelectionMode.ONE_SEQUENCE_PER_BIN
+		self._sequence_selection_process = SingleSequenceSelectionProcess()
 
 		# Marker presets
 		self._head_marker_preset_name = None
@@ -88,6 +154,18 @@ class TRTDataModel(QtCore.QObject):
 		self._sequence_selection_mode = mode
 		print(mode)
 		self.sig_sequence_selection_mode_changed.emit(mode)
+	
+	def sequenceSelectionProcess(self) -> SingleSequenceSelectionProcess:
+		"""Process for selecting a single sequence from a bin"""
+		return self._sequence_selection_process
+	
+	def setSequenceSelectionProcess(self, process:SingleSequenceSelectionProcess):
+		"""Set the psrocess for selecting a single sequence from a bin"""
+		if not isinstance(process, SingleSequenceSelectionProcess):
+			raise TypeError("Not a valid Sequence Selection Process")
+		self._sequence_selection_process = process
+		
+		self.sig_sequence_selection_process_changed.emit(self.sequenceSelectionProcess())
 	
 	def bin_count(self) -> int:
 		"""Number of individual bins involved in this"""

@@ -436,6 +436,7 @@ class LBTRTCalculator(LBUtilityTab):
 	def showSequenceSelectionSettings(self):
 
 		wnd_sss = dlg_sequence_selection.TRTSequenceSelection(self)
+		wnd_sss.setInitialSortProcess(self.model().sequenceSelectionProcess())
 		wnd_sss.exec()
 
 	#
