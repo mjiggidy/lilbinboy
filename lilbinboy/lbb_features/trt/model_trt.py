@@ -38,17 +38,17 @@ class SingleSequenceSelectionProcess:
 	
 	class ClipColorFilter(AbstractSequenceFilter):
 		"""Clip color is set to..."""
-		def __init__(self, colors:list[avbutils.ClipColor]):
+		def __init__(self, colors:list[QtGui.QColor]):
 			self._colors = colors
 		
-		def colors(self) -> list[avbutils.ClipColor]:
+		def colors(self) -> list[QtGui.QColor]:
 			return self._colors
 		
 		def validate(self, timeline_info:logic_trt.TimelineInfo) -> bool:
-			return timeline_info.timeline_color in self._colors
+			return QtGui.QColor.fromRgba64(*timeline_info.timeline_color.as_rgba16()) in self._colors if timeline_info.timeline_color else False
 		
 
-	SORT_COLUMNS = ["Name", "Start Timecode", "Comment"]
+	SORT_COLUMNS = ["Name", "Start Timecode", "Creation Date", "Modified Date"]
 	SORT_DIRECTIONS = ["Ascending", "Descending"]
 
 	def __init__(self):
@@ -78,6 +78,35 @@ class SingleSequenceSelectionProcess:
 	
 	def setFilters(self, filters:list[AbstractSequenceFilter]):
 		self._filters = filters
+	
+	def getSingleSequence(self, timelines:list[logic_trt.TimelineInfo]) -> logic_trt.TimelineInfo|None:
+		"""Get a seequence based on this process"""
+
+		# Sort first
+		sort_reversed = self.sortDirection() == "Descending"
+		
+		if self.sortColumn() == "Name":
+			timelines_sorted = sorted(timelines, reverse=sort_reversed, key=lambda t: avbutils.human_sort(t.timeline_name))
+		elif self.sortColumn() == "Start Timecode":
+			timelines_sorted = sorted(timelines, reverse=sort_reversed, key=lambda t: t.timeline_tc_range.start)
+		elif self.sortColumn() == "Creation Date":
+			timelines_sorted = sorted(timelines, reverse=sort_reversed, key=lambda t: t.date_created)
+		elif self.sortColumn() == "Modified Date":
+			timelines_sorted = sorted(timelines, reverse=sort_reversed, key=lambda t: t.date_modified)
+		else:
+			raise KeyError(f"No sort method defined for ", self.sortColumn())
+		
+		#if not self.filters():
+		#	return timelines_sorted[0]
+		
+		# Do filters
+		for t in timelines_sorted:
+			if all(f.validate(t) for f in self.filters()):
+				return t
+		
+		return None
+		
+
 
 class TRTDataModel(QtCore.QObject):
 
@@ -324,7 +353,10 @@ class TRTDataModel(QtCore.QObject):
 				self.add_sequence(timeline_info)
 		
 		else:
-			self.add_sequence(sorted(bin_info, key=lambda timeline: timeline.date_modified, reverse=True)[0])
+			filtered_sequence = self.sequenceSelectionProcess().getSingleSequence(bin_info)
+			if not filtered_sequence:
+				return
+			self.add_sequence(filtered_sequence)
 			
 
 	def add_sequence(self, sequence_info:logic_trt.TimelineInfo):
