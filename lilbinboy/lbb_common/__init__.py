@@ -125,10 +125,13 @@ class LBMainWindow(QtWidgets.QMainWindow):
 		lay_id = QtWidgets.QHBoxLayout()
 
 		self.lbl_lbb = QtWidgets.QLabel("<strong>Lil' Bin Boy</strong><br/>Pre Alpha Nightmare v0.1<br/>Report good and bad things to <a href=\"mailto:michael@glowingpixel.com\">michael@glowingpixel.com</a>")
+		font = self.lbl_lbb.font()
+		font.setPointSizeF(font.pointSize() * 0.8)
+		self.lbl_lbb.setFont(font)
 		self.lbl_lbb.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
 
 		self.lbl_lbbicon = QtWidgets.QLabel()
-		self.lbl_lbbicon.setPixmap(QtGui.QPixmap(":/app/logo.png").scaledToHeight(48))
+		self.lbl_lbbicon.setPixmap(QtWidgets.QApplication.instance().windowIcon().pixmap(32))
 
 		self.btn_errorlog = QtWidgets.QPushButton("Show Error Log")
 		self.btn_errorlog.clicked.connect(self.errorLogRequested)
