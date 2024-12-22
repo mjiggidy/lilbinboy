@@ -2,6 +2,8 @@
 <RCC version="1.0">
 	<qresource prefix="app">
 		<file alias="logo.png">app/256x256.png</file>
+		<file alias="dance_64.gif">app/dance_64.gif</file>
+		<file alias="dance_64@2x.gif">app/dance_64@2x.gif</file>
 	</qresource>
 	<qresource prefix="app/icons">
 		<!-- Face Only -->
