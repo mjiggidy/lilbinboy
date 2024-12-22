@@ -8,7 +8,7 @@ setup(
 	long_description_content_type="text/markdown",
 	author="Michael Jordan",
 	author_email="michael@glowingpixel.com",
-	url="https://github.com/mjiggidy/lilbinboy",  # Replace with your repository URL
+	url="https://github.com/mjiggidy/lilbinboy",
 	packages=find_packages(include=["lilbinboy", "lilbinboy.*"]),
 	install_requires=[
 		"avbutils @ git+https://github.com/mjiggidy/avbutils.git#egg=avbutils",
@@ -18,7 +18,7 @@ setup(
 	],
 	classifiers=[
 		"Programming Language :: Python :: 3",
-		"License :: OSI Approved :: MIT License",  # Update if using a different license
+		"License :: OSI Approved :: MIT License",
 		"Operating System :: OS Independent",
 	],
 	python_requires=">=3.7",
