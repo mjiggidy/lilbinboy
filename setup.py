@@ -10,7 +10,12 @@ setup(
 	author_email="michael@glowingpixel.com",
 	url="https://github.com/mjiggidy/lilbinboy",  # Replace with your repository URL
 	packages=find_packages(include=["lilbinboy", "lilbinboy.*"]),
-	install_requires=[],
+	install_requires=[
+		"avbutils @ git+https://github.com/mjiggidy/avbutils.git#egg=avbutils",
+		"timecode @ git+https://github.com/mjiggidy/timecode.git#egg=timecode",
+		"pyavb",
+		"PySide6"
+	],
 	classifiers=[
 		"Programming Language :: Python :: 3",
 		"License :: OSI Approved :: MIT License",  # Update if using a different license
