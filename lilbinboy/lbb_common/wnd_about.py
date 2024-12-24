@@ -9,6 +9,7 @@ class LBAboutWindow(QtWidgets.QDialog):
 
 		self.setWindowTitle("About")
 		self.setLayout(QtWidgets.QHBoxLayout())
+		self.layout().setSizeConstraint(QtWidgets.QLayout.SizeConstraint.SetFixedSize)
 
 		# Such a good dancer!
 		layout_logo = QtWidgets.QVBoxLayout()
