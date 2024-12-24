@@ -2,163 +2,16 @@ import re, math, random
 import avbutils
 from PySide6 import QtWidgets, QtCore, QtGui
 from timecode import Timecode
-from . import resources
+from . import resources, wnd_about, wnd_main, dlg_errorlog
 
-class LBAboutWindow(QtWidgets.QDialog):
 
-	PATH_ABOUT_TEXT = "/Users/mjordan/dev/lilbinboy/about.html"
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
-		self.setWindowTitle("About")
-		self.setLayout(QtWidgets.QGridLayout())
-
-		#boy_icon = QtGui.QIcon(":/app/icons/icon_64.png")
-		boy_dance = QtGui.QMovie(":/app/dance_64.gif")
-
-		self._boy_icon = QtWidgets.QLabel()
-		#self._boy_icon.setPixmap(boy_icon.pixmap(64))
-		self._boy_icon.setMovie(boy_dance)
-		boy_dance.start()
-		self._boy_icon.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
-
-		self.layout().addWidget(self._boy_icon, 0,0)
-
-		self._big_box = QtWidgets.QLabel()
-		self._big_box.setWordWrap(True)
-		self._big_box.setTextFormat(QtCore.Qt.TextFormat.RichText)
-		
-		about_file = QtCore.QFile(self.PATH_ABOUT_TEXT)
-		if about_file.open(QtCore.QIODevice.OpenModeFlag.ReadOnly | QtCore.QIODevice.OpenModeFlag.Text):
-			self._big_box.setText(about_file.readAll().toStdString())
-			about_file.close()
-
-		self.layout().addWidget(self._big_box, 0, 1)
-
-		self._btnbox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok)
-		self._btnbox.accepted.connect(self.accept)
-		self.layout().addWidget(self._btnbox, 1, 1)
 
 		
 
-class LBErrorLogWindow(QtWidgets.QWidget):
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.setWindowFlag(QtGui.Qt.WindowType.Tool)
-		self.setWindowTitle("Difficulties")
-		self.resize(400,260)
-
-
-		self.setLayout(QtWidgets.QVBoxLayout())
-		self.table_errors = LBErrorLogTableView()
-		self.layout().addWidget(self.table_errors)
-
-
-		self.error_detail = QtWidgets.QTextEdit()
-		self.error_detail.setReadOnly(True)
-		
-		
-		self.widgetmapper = QtWidgets.QDataWidgetMapper()
-		self.widgetmapper.setModel(self.table_errors.model())
-		self.widgetmapper.addMapping(self.error_detail, 2)
-		self.table_errors.selectionModel().currentRowChanged.connect(self.widgetmapper.setCurrentModelIndex)
-		#self.widgetmapper.toFirst()
-
-
-		self.layout().addWidget(self.error_detail)
 
 class LBUtilityTab(QtWidgets.QWidget):
 	"""Lil' Utility Container Boy"""
-
-
-
-class LBMainTabs(QtWidgets.QTabWidget):
-	"""Lil' Tab Manager Boy"""
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
-		#self.addTab(LBTRTCalculator(), "TRT Calculator")
-		#self.addTab(LBUtilityTab(), "Continuity Generator")
-		#self.addTab(LBUtilityTab(), "Lock Jockey")
-		#self.addTab(LBUtilityTab(), "Batch Bin Boy")
-
-class LBErrorLogTableView(QtWidgets.QTreeWidget):
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.setSelectionBehavior(QtWidgets.QTreeWidget.SelectionBehavior.SelectRows)
-		self.setSortingEnabled(True)
-		self.setIndentation(0)
-		self.setUniformRowHeights(True)
-		self.setAlternatingRowColors(True)
-		self.setHeaderLabels([
-			"Module",
-			"Datetime",
-			"Error Message"
-		])
-
-		self.addTopLevelItems([
-			QtWidgets.QTreeWidgetItem(["TRT Calculator", "Today", "Oh boy I don't even know where to get started"]),
-			QtWidgets.QTreeWidgetItem(["TRT Calculator", "Today", "There were markers I didn't know how to read"]),
-			QtWidgets.QTreeWidgetItem(["TRT Calculator", "Today", "That bin was just too scary to be honest"]),
-		])
-
-		for col in range(0, self.columnCount()):
-			self.resizeColumnToContents(col)
-
-
-class LBMainWindow(QtWidgets.QMainWindow):
-	"""Lil' Main Window Boy"""
-
-	sig_resized = QtCore.Signal(QtCore.QRect)
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
-		self.tabs = LBMainTabs()
-
-		self.setCentralWidget(QtWidgets.QWidget())
-		self.centralWidget().setLayout(QtWidgets.QVBoxLayout())
-		self.centralWidget().layout().setContentsMargins(3,3,3,3)
-		self.centralWidget().layout().addWidget(self.tabs)
-
-		lay_id = QtWidgets.QHBoxLayout()
-
-		self.lbl_lbb = QtWidgets.QLabel("<strong>Lil' Bin Boy</strong><br/>Pre Alpha Nightmare v0.1<br/>Report good and bad things to <a href=\"mailto:michael@glowingpixel.com\">michael@glowingpixel.com</a>")
-		font = self.lbl_lbb.font()
-		font.setPointSizeF(font.pointSize() * 0.8)
-		self.lbl_lbb.setFont(font)
-		self.lbl_lbb.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
-
-		self.lbl_lbbicon = QtWidgets.QLabel()
-		self.lbl_lbbicon.setPixmap(QtWidgets.QApplication.instance().windowIcon().pixmap(32))
-
-		self.btn_errorlog = QtWidgets.QPushButton("Show Error Log")
-		self.btn_errorlog.clicked.connect(self.errorLogRequested)
-
-		lay_id.addWidget(self.lbl_lbbicon)
-		lay_id.addWidget(self.btn_errorlog)
-		lay_id.addStretch()
-		lay_id.addWidget(self.lbl_lbb)
-		self.centralWidget().layout().addLayout(lay_id)
-	
-	@QtCore.Slot()
-	def errorLogRequested(self):
-		wnd_errors = LBErrorLogWindow(self)
-		
-		wnd_errors.show()
-
-	def moveEvent(self, event):
-		super().moveEvent(event)
-		self.sig_resized.emit(self.geometry())
-
-
-	def resizeEvent(self, event):
-		super().resizeEvent(event)
-		self.sig_resized.emit(self.geometry())
 
 class LBClipColorPicker(QtWidgets.QWidget):
 	"""A picker of Avid clip colors for you"""

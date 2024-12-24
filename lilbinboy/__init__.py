@@ -32,7 +32,7 @@ def main():
 	app_settings = QtCore.QSettings()
 
 	# Setup main window
-	wnd_main = lbb_common.LBMainWindow()
+	wnd_main = lbb_common.wnd_main.LBMainWindow()
 	wnd_main.setWindowTitle(app.applicationName())
 	wnd_main.setGeometry(app_settings.value("main/window_geometry", QtCore.QRect()))
 	wnd_main.sig_resized.connect(lambda rect: app_settings.setValue("main/window_geometry", rect))
@@ -47,7 +47,7 @@ def main():
 	mnu_help = QtWidgets.QMenu("&Help")
 	act_aboutbox = QtGui.QAction("About Lil' Bin Boy...")
 	act_aboutbox.setMenuRole(QtGui.QAction.MenuRole.AboutRole)
-	act_aboutbox.triggered.connect(lambda: lbb_common.LBAboutWindow(wnd_main).exec())
+	act_aboutbox.triggered.connect(lambda: lbb_common.wnd_about.LBAboutWindow(wnd_main).exec())
 	mnu_help.addAction(act_aboutbox)
 	
 	wnd_main.menuBar().addMenu(mnu_help)

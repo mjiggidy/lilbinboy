@@ -1,10 +1,8 @@
 from PySide6 import QtCore, QtGui, QtWidgets
-from lilbinboy.lbb_common import LBAboutWindow
-
-QtCore.QCoreApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_EnableHighDpiScaling)
-QtCore.QCoreApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_UseHighDpiPixmaps)
+from lilbinboy.lbb_common.wnd_about import LBAboutWindow
 
 app = QtWidgets.QApplication()
+app.setApplicationVersion("0.0.1a-pre-alpha-nightmare")
 app.setStyle("Fusion")
 
 wnd = LBAboutWindow()
