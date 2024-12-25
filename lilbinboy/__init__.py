@@ -1,9 +1,12 @@
 from PySide6 import QtWidgets, QtGui, QtCore
 from . import lbb_common, lbb_features
 
+__version__ = "0.0.1-pre-alpha-nightmare"
+
 class Config:
 	APP_NAME   = "Lil' Bin Boy"
 	APP_STYLE  = "Fusion"
+	APP_VERSION = __version__
 	ORG_NAME   = "GlowingPixel"
 	ORG_DOMAIN = "glowingpixel.com"
 
@@ -28,6 +31,7 @@ def main():
 	app.setOrganizationName(Config.ORG_NAME)
 	app.setOrganizationDomain(Config.ORG_DOMAIN)
 	app.setApplicationName(Config.APP_NAME)
+	app.setApplicationVersion(Config.APP_VERSION)
 	app.setWindowIcon(main_icon)
 	app_settings = QtCore.QSettings()
 
