@@ -307,6 +307,25 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().set_active_tail_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_tail"))
 
 		self.setColumnsHidden(QtCore.QSettings().value("trt/columns_hidden", []))
+
+		sequenceSelectionSettings = model_trt.SingleSequenceSelectionProcess()
+		sequenceSelectionSettings.setSortColumn(QtCore.QSettings().value("trt/sequence_selection/sort_column/name","Name"))
+		sequenceSelectionSettings.setSortDirection(QtCore.QSettings().value("trt/sequence_selection/sort_column/direction", "Descending"))
+		sequenceSelectionFilters = []
+		for filter in QtCore.QSettings().value("trt/sequence_selection/filters", []):
+			if filter.get("kind") == "name_contains":
+				sequenceSelectionFilters.append(
+					model_trt.SingleSequenceSelectionProcess.NameContainsFilter(filter.get("string",""))
+				)
+			elif filter.get("kind") == "clip_color":
+				sequenceSelectionFilters.append(
+					model_trt.SingleSequenceSelectionProcess.ClipColorFilter([QtGui.QColor.fromRgba64(*c) for c in filter.get("colors")])
+				)
+			else:
+				print("Unknown filter:", str(filter))
+		sequenceSelectionSettings.setFilters(sequenceSelectionFilters)
+		self.model().setSequenceSelectionProcess(sequenceSelectionSettings)
+			
 		
 		self.add_bins_from_paths(QtCore.QSettings().value("trt/bin_paths",[]))
 
@@ -370,7 +389,8 @@ class LBTRTCalculator(LBUtilityTab):
 
 		# Bin/sequence loading mode
 		self.model().sig_data_changed.connect(self.update_summary)
-		self.model().sig_sequence_selection_mode_changed.connect(self.sequenceSelectionModeChanged)
+		self.model().sig_sequence_selection_mode_changed.connect(self.sequenceSelectionModeChanged)	# Single sequence vs all sequences
+		self.model().sig_sequence_selection_process_changed.connect(self.singleSequenceSelectionProcessChanged) # Single sequence selection filters
 
 		# Data model has changed
 		self.model().sig_data_changed.connect(self.update_control_buttons)
@@ -398,6 +418,8 @@ class LBTRTCalculator(LBUtilityTab):
 		self.prog_loading.sig_progress_completed.connect(lambda: self.stack_bin_loading.setCurrentWidget(self.bin_mode))
 		self.bin_mode.sig_sequence_selection_mode_changed.connect(self.model().setSequenceSelectionMode)
 		self.bin_mode.sig_sequence_selection_settings_requested.connect(self.showSequenceSelectionSettings)
+
+
 		
 		# Treeview requests for add/remove bins (drag and drop or selection delete)
 		self.list_trts.sig_bins_dragged_dropped.connect(self.add_bins_from_paths)
@@ -441,7 +463,37 @@ class LBTRTCalculator(LBUtilityTab):
 		wnd_sss.exec()
 	
 	def setSequenceSelectionProcess(self, process:model_trt.SingleSequenceSelectionProcess):
+		"""Dialog was closed with changes -- tell the model"""
 		self.model().setSequenceSelectionProcess(process)
+	
+	def singleSequenceSelectionProcessChanged(self, process:model_trt.SingleSequenceSelectionProcess):
+		"""Model has changed the selection process"""
+
+		QtCore.QSettings().setValue("trt/sequence_selection/sort_column/name", process.sortColumn())
+		QtCore.QSettings().setValue("trt/sequence_selection/sort_column/direction", process.sortDirection())
+
+		filter_settings = []
+		for filter in process.filters():
+			
+			if isinstance(filter, model_trt.SingleSequenceSelectionProcess.NameContainsFilter):
+				filter_settings.append({
+					"kind": "name_contains",
+					"string": filter.name()
+				})
+			elif isinstance(filter, model_trt.SingleSequenceSelectionProcess.ClipColorFilter):
+				filter_settings.append({
+					"kind": "clip_color",
+					"colors": [tuple([color.rgba64().red(), color.rgba64().green(), color.rgba64().blue(), color.rgba64().alpha()]) for color in filter.colors()]
+				})
+			else:
+				print("Unknown filter: ", str(filter))
+
+		QtCore.QSettings().setValue("trt/sequence_selection/filters", filter_settings)
+		
+
+		# Save the settings
+		
+
 
 	#
 	# Marker matching presets methods
