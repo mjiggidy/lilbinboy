@@ -69,7 +69,7 @@ class LBAboutWindow(QtWidgets.QDialog):
 		layout_links.addWidget(lbl_github, 0, 1)
 		
 		layout_links.addWidget(QtWidgets.QLabel("Contact:"), 1, 0)
-		lbl_contact = QtWidgets.QLabel("<a href=\"mailto:michael@glowingpixel.com?subject=Lil'+Bin+Boy+Ruined+My+Life\">michael@glowingpixel.com</a>")
+		lbl_contact = QtWidgets.QLabel("<a href=\"mailto:michael@glowingpixel.com?subject=Lil'%20Bin%20Boy%20Ruined%20My%20Life\">michael@glowingpixel.com</a>")
 		lbl_contact.setTextInteractionFlags(QtGui.Qt.TextInteractionFlag.LinksAccessibleByKeyboard|QtGui.Qt.TextInteractionFlag.LinksAccessibleByMouse)
 		lbl_contact.setOpenExternalLinks(True)
 		layout_links.addWidget(lbl_contact, 1, 1)
