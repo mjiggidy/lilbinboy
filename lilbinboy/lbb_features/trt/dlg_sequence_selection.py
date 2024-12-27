@@ -1,7 +1,6 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 from ...lbb_common import LBClipColorPicker
 from .model_trt import SingleSequenceSelectionProcess
-import avbutils
 
 class TRTSequenceSelection(QtWidgets.QDialog):
 
@@ -46,6 +45,7 @@ class TRTSequenceSelection(QtWidgets.QDialog):
 		grp_criteria_name.layout().addWidget(self.chk_name)
 		grp_criteria_name.layout().addStretch()
 		self.txt_name = QtWidgets.QLineEdit()
+		self.txt_name.textChanged.connect(lambda txt: self.chk_name.setChecked(bool(txt)))
 		grp_criteria_name.layout().addWidget(self.txt_name)
 
 		self.layout().addWidget(grp_criteria_name)
@@ -57,7 +57,8 @@ class TRTSequenceSelection(QtWidgets.QDialog):
 		grp_criteria_clipcolor.layout().addStretch()
 		self.color_picker = LBClipColorPicker()
 		self.color_picker.setSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum,QtWidgets.QSizePolicy.Policy.Maximum)
-		self.color_picker.setFixedSize(98,42)
+		self.color_picker.setFixedSize(8*12+2, 4*9+2)
+		self.color_picker.sig_selected_color_changed.connect(lambda c: self.chk_colors.setChecked(c.isValid()))
 		grp_criteria_clipcolor.layout().addWidget(self.color_picker)
 
 		self.layout().addWidget(grp_criteria_clipcolor)

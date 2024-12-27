@@ -23,6 +23,8 @@ class LBClipColorPicker(QtWidgets.QWidget):
 		self._hovered_index = None
 		self._selected_index = None
 
+		self._allow_deselect = True
+
 	def borderCommonWidth(self) -> int:
 		return self._border_common_width
 	
@@ -40,6 +42,12 @@ class LBClipColorPicker(QtWidgets.QWidget):
 	
 	def setBorderSelectedWidth(self, width:int) -> int:
 		self._border_selected_width = width
+
+	def setAllowDeselect(self, allow:bool):
+		self._allow_deselect = bool(allow)
+	
+	def deselectAllowed(self) -> bool:
+		return self._allow_deselect
 	
 	def colorSize(self) -> QtCore.QSize:
 		"""Calculate color size"""
@@ -195,12 +203,13 @@ class LBClipColorPicker(QtWidgets.QWidget):
 		return self._selected_index
 
 	@QtCore.Slot(int)
-	def setSelectedIndex(self, index:int):
+	def setSelectedIndex(self, index:int|None):
 		if index is not None and index < len(self.colors()):
 			self._selected_index = index
 			self.sig_selected_color_changed.emit(self.colors()[index])
 		else:
 			self._selected_index = None
+			self.sig_selected_color_changed.emit(None)
 		
 		self.update()
 	
@@ -223,7 +232,11 @@ class LBClipColorPicker(QtWidgets.QWidget):
 	def mousePressEvent(self, event:QtGui.QMouseEvent) -> bool:
 		if event.button() == QtCore.Qt.MouseButton.LeftButton:
 			index = self.colorIndexFromCoords(event.position().toPoint())
-			self.setSelectedIndex(index)
+			
+			if self.deselectAllowed() and index == self.selectedIndex():
+				self.setSelectedIndex(None)
+			else:
+				self.setSelectedIndex(index)
 
 		return super().mousePressEvent(event)
 	
