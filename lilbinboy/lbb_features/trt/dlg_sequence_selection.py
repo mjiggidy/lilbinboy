@@ -57,7 +57,7 @@ class TRTSequenceSelection(QtWidgets.QDialog):
 		grp_criteria_clipcolor.layout().addStretch()
 		self.color_picker = LBClipColorPicker()
 		self.color_picker.setSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum,QtWidgets.QSizePolicy.Policy.Maximum)
-		self.color_picker.setFixedSize(80,32)
+		self.color_picker.setFixedSize(98,42)
 		grp_criteria_clipcolor.layout().addWidget(self.color_picker)
 
 		self.layout().addWidget(grp_criteria_clipcolor)

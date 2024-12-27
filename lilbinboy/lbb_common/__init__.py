@@ -107,8 +107,10 @@ class LBClipColorPicker(QtWidgets.QWidget):
 	def paintEvent(self, e:QtGui.QPaintEvent):
 
 		super().paintEvent(e)
+
 		
 		painter = QtGui.QPainter(self)
+		painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, False)
 		rect_widget_bounds = QtCore.QRect(0, 0, painter.device().width(), painter.device().height())
 
 		# Background
