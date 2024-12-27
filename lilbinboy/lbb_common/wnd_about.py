@@ -57,6 +57,7 @@ class LBAboutWindow(QtWidgets.QDialog):
 		layout_info.addWidget(self._about_slogan)
 		layout_info.addSpacing(10)
 		layout_info.addWidget(self._about_me)
+		layout_info.addSpacing(10)
 
 		# Lankz
 		layout_links = QtWidgets.QGridLayout()
@@ -72,6 +73,13 @@ class LBAboutWindow(QtWidgets.QDialog):
 		lbl_contact.setTextInteractionFlags(QtGui.Qt.TextInteractionFlag.LinksAccessibleByKeyboard|QtGui.Qt.TextInteractionFlag.LinksAccessibleByMouse)
 		lbl_contact.setOpenExternalLinks(True)
 		layout_links.addWidget(lbl_contact, 1, 1)
+
+		layout_links.addWidget(QtWidgets.QLabel("Donations:"), 2, 0)
+		lbl_kofi = QtWidgets.QLabel("<a href=\"https://ko-fi.com/lilbinboy\">https://ko-fi.com/lilbinboy</a>")
+		lbl_kofi.setToolTip("Oh boy!!  Thank you!!")
+		lbl_kofi.setTextInteractionFlags(QtGui.Qt.TextInteractionFlag.LinksAccessibleByKeyboard|QtGui.Qt.TextInteractionFlag.LinksAccessibleByMouse)
+		lbl_kofi.setOpenExternalLinks(True)
+		layout_links.addWidget(lbl_kofi, 2, 1)
 		
 		layout_info.addLayout(layout_links)
 		layout_info.addSpacing(10)
