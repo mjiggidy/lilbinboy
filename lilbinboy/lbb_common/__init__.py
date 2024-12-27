@@ -30,7 +30,7 @@ class LBClipColorPicker(QtWidgets.QWidget):
 		self._color_background = QtGui.QColor(0,0,0)
 		self._border_common_width = 1
 		self._border_hover_width = 1
-		self._border_selected_width = 2
+		self._border_selected_width = 1
 
 		self._hovered_index = None
 		self._selected_index = None
@@ -158,7 +158,7 @@ class LBClipColorPicker(QtWidgets.QWidget):
 
 		if selected_index is not None:
 			border_offset = self.borderSelectedWidth() // 2
-			selected_rect = self.colorRect(selected_index).adjusted(border_offset+self.borderCommonWidth(), border_offset+self.borderCommonWidth(), -border_offset, -border_offset)
+			selected_rect = self.colorRect(selected_index).adjusted(border_offset+self.borderCommonWidth(), border_offset+self.borderCommonWidth(), -border_offset-self.borderCommonWidth(), -border_offset-self.borderCommonWidth())
 
 			brush.setStyle(QtGui.Qt.BrushStyle.NoBrush)
 			painter.setBrush(brush)
