@@ -308,6 +308,10 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self.setColumnsHidden(QtCore.QSettings().value("trt/columns_hidden", []))
 		self.setFieldOrder(QtCore.QSettings().value("trt/column_field_order", []))
+		self.setSorting(
+			sort_field = QtCore.QSettings().value("trt/sort_column", "sequence_name"),
+			sort_order = QtCore.QSettings().value("trt/sort_order", QtCore.Qt.SortOrder.AscendingOrder)
+		)
 
 		sequenceSelectionSettings = model_trt.SingleSequenceSelectionProcess()
 		sequenceSelectionSettings.setSortColumn(QtCore.QSettings().value("trt/sequence_selection/sort_column/name","Name"))
@@ -426,6 +430,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.list_trts.sig_bins_dragged_dropped.connect(self.add_bins_from_paths)
 		self.list_trts.sig_remove_rows_requested.connect(self.remove_bins)
 		self.list_trts.sig_field_order_changed.connect(self.saveFieldOrder)
+		self.list_trts.sig_sorting_changed.connect(self.saveSorting)
 
 		# Hook in to the sort/filter model to update the LP timeline view
 		self.list_trts.model().layoutChanged.connect(self.update_lp_layout)
@@ -725,6 +730,15 @@ class LBTRTCalculator(LBUtilityTab):
 			return
 		
 		self.add_bins_from_paths(files)
+	
+	@QtCore.Slot(str, QtCore.Qt.SortOrder)
+	def saveSorting(self, sort_field:str, sort_order:QtCore.Qt.SortOrder):
+		QtCore.QSettings().setValue("trt/sort_column", sort_field)
+		QtCore.QSettings().setValue("trt/sort_order", sort_order)
+	
+	@QtCore.Slot(str, QtCore.Qt.SortOrder)
+	def setSorting(self, sort_field:str, sort_order:QtCore.Qt.SortOrder):
+		self.list_trts.setSorting(sort_field, sort_order)
 
 	@QtCore.Slot()
 	def update_summary(self):

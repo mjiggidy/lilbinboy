@@ -226,7 +226,8 @@ class TRTTreeView(QtWidgets.QTreeView):
 
 	sig_remove_rows_requested = QtCore.Signal(list)
 	sig_bins_dragged_dropped  = QtCore.Signal(list)
-	sig_field_order_changed     = QtCore.Signal(list)
+	sig_field_order_changed   = QtCore.Signal(list)
+	sig_sorting_changed       = QtCore.Signal(str,QtCore.Qt.SortOrder)
 
 	def __init__(self, *args, **kwargs):
 
@@ -249,11 +250,30 @@ class TRTTreeView(QtWidgets.QTreeView):
 
 		self.model().headerDataChanged.connect(self.headerDataChanged)
 		self.header().sectionMoved.connect(self.sectionMoved)
+		self.header().sortIndicatorChanged.connect(self.sortingChanged)
 #		print(self.dragDropMode())
 
 	def setModel(self, model:QtCore.QAbstractItemModel):
 		# Overriding to always set to the proxy model
 		self.model().setSourceModel(model)
+
+	@QtCore.Slot(int, QtCore.Qt.SortOrder)
+	def sortingChanged(self, idx_logical:int, order:QtCore.Qt.SortOrder):
+		"""Sorting column or direction has changed"""
+
+		field = self.model().headerData(idx_logical, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole)
+		self.sig_sorting_changed.emit(field, order)
+
+	@QtCore.Slot(str, QtCore.Qt.SortOrder)
+	def setSorting(self, sort_field:str, sort_order:QtCore.Qt.SortOrder):
+		
+		fields_logical = [self.model().headerData(col, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole) for col in range(self.model().columnCount())]
+
+		if sort_field not in fields_logical:
+			return
+		
+		self.header().setSortIndicator(fields_logical.index(sort_field), sort_order)
+		print("Set to ", sort_field, sort_order)
 	
 	@QtCore.Slot(int, int, int)
 	def sectionMoved(self, idx_logical:int, idx_visual_old:int, idx_visual_new:int):
