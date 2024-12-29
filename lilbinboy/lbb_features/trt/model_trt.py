@@ -381,7 +381,7 @@ class TRTDataModel(QtCore.QObject):
 		for _ in range(len(self.data())):
 			self.remove_sequence(0)
 	
-	def data(self):
+	def data(self) -> list[logic_trt.TimelineInfo]:
 		return self._data
 	
 	#
