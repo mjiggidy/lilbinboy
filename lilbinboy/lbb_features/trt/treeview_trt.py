@@ -226,6 +226,7 @@ class TRTTreeView(QtWidgets.QTreeView):
 
 	sig_remove_rows_requested = QtCore.Signal(list)
 	sig_bins_dragged_dropped  = QtCore.Signal(list)
+	sig_field_order_changed     = QtCore.Signal(list)
 
 	def __init__(self, *args, **kwargs):
 
@@ -247,11 +248,41 @@ class TRTTreeView(QtWidgets.QTreeView):
 		self.setDropIndicatorShown(True)
 
 		self.model().headerDataChanged.connect(self.headerDataChanged)
+		self.header().sectionMoved.connect(self.sectionMoved)
 #		print(self.dragDropMode())
 
 	def setModel(self, model:QtCore.QAbstractItemModel):
 		# Overriding to always set to the proxy model
 		self.model().setSourceModel(model)
+	
+	@QtCore.Slot(int, int, int)
+	def sectionMoved(self, idx_logical:int, idx_visual_old:int, idx_visual_new:int):
+		"""A header column was moved"""
+		self.sig_field_order_changed.emit(self.displayedFields())
+	
+	def displayedFields(self) -> list[str]:
+		"""Returns a list of visible fields in the order they are displayed"""
+
+		field_order = []
+
+		# Iterate over visual indexes to look up the field name at the corresponding logical index
+		for idx_visual in range(self.header().count()):
+			idx_logical = self.header().logicalIndex(idx_visual)
+			field_name = self.model().headerData(idx_logical, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole)
+			field_order.append(field_name)
+
+		return field_order
+	
+	@QtCore.Slot(list)
+	def setFieldOrder(self, field_order:list[str]):
+		"""Arrange columns based on an ordered list of fields"""
+
+		for idx_visual_new, field_name in enumerate(field_order):
+			if field_name not in self.displayedFields():
+				continue
+
+			idx_visual_old = self.displayedFields().index(field_name)
+			self.header().moveSection(idx_visual_old, idx_visual_new)
 	
 	def fit_headers(self):
 		for i in range(self.model().columnCount()):
