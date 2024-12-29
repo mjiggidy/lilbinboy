@@ -439,7 +439,7 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		# Top control buttons
 		self.btn_add_bins.clicked.connect(self.choose_folder)
-		self.btn_refresh_bins.clicked.connect(self.refresh_bins)
+		self.btn_refresh_bins.clicked.connect(lambda: self.refresh_bins(self.list_trts.selectedRows()))
 		self.btn_clear_bins.clicked.connect(lambda: self.remove_bins(self.list_trts.selectedRows()))
 
 		# Trim timecode spinners
@@ -642,10 +642,40 @@ class LBTRTCalculator(LBUtilityTab):
 			view_item = self.model().item_to_dict(bin_info)
 			self._treeview_model.updateSequenceInfo(idx, view_item)
 	
-	def refresh_bins(self):
-		pass
+	@QtCore.Slot(list)
+	def refresh_bins(self, selected:list[int]):
+		
+		if not selected and not QtWidgets.QMessageBox.warning(self,
+			"Reloading All Bins",
+			"This will clear all of the existing sequences and reload their bins.  Are you sure?",
+			QtWidgets.QMessageBox.StandardButton.Ok, QtWidgets.QMessageBox.StandardButton.Cancel) == QtWidgets.QMessageBox.StandardButton.Ok:
 
+			return
+		
+		selected = selected or list(range(self.model().sequence_count()))
+
+		# Gather bin paths based on selection
+		bin_paths = set()
+		data = self.model().data()
+		for idx in selected:
+			bin_paths.add(data[idx].bin_path)
+		
+		# Add any others that have the same bin paths
+		reload_indexes = []
+		for idx, timeline_info in enumerate(data):
+			if timeline_info.bin_path in bin_paths:
+				reload_indexes.append(idx)
+		
+		# Remove existing
+		self.remove_bins(reload_indexes)
+
+		# Add the bin paths again
+		self.add_bins_from_paths(list(bin_paths))
+
+	@QtCore.Slot(list)
 	def remove_bins(self, selected:list[int]):
+
+		selected.sort(reverse=True)
 
 		# Remove selection
 		if selected:
