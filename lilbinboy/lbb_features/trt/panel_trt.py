@@ -156,8 +156,6 @@ class TRTModeSelection(QtWidgets.QGroupBox):
 	
 	@QtCore.Slot(model_trt.SequenceSelectionMode)
 	def setSequenceSelectionMode(self, mode:model_trt.SequenceSelectionMode):
-
-		print("Setting to ", mode)
 		
 		if mode is model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN:
 			self._rdo_one_sequence.setChecked(True)
@@ -296,6 +294,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().setRate(int(QtCore.QSettings().value("trt/rate", 24)))
 
 		self.model().setSequenceSelectionMode(QtCore.QSettings().value("trt/sequence_selection_mode", model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN))
+		self.bin_mode.setSequenceSelectionMode(self.model().sequenceSelectionMode())
 		
 		self.model().set_marker_presets(QtCore.QSettings().value("lbb/marker_presets", dict()))
 
@@ -498,7 +497,16 @@ class LBTRTCalculator(LBUtilityTab):
 		QtCore.QSettings().setValue("trt/sequence_selection/filters", filter_settings)
 		
 
-		# Save the settings
+		# Prompt for reload
+		if not self.model().sequence_count() or not self.model().sequenceSelectionMode() is model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN:
+			return
+		
+		if QtWidgets.QMessageBox.question(self,
+			"Sequence Selection Settings Changed",
+			"Would you like to reload the existing bins with these new settings?") == QtWidgets.QMessageBox.StandardButton.Yes:
+
+			# Getting the selection count here so refresh_bins() doesn't prompt about a "refresh-all"
+			self.refresh_bins(list(range(self.model().sequence_count())))
 		
 
 
@@ -785,8 +793,18 @@ class LBTRTCalculator(LBUtilityTab):
 	
 	@QtCore.Slot(model_trt.SequenceSelectionMode)
 	def sequenceSelectionModeChanged(self, mode:model_trt.SequenceSelectionMode):
+		
 		self.bin_mode.setSequenceSelectionMode(mode)
 		QtCore.QSettings().setValue("trt/sequence_selection_mode", mode)
+
+		if not self.model().sequence_count():
+			return
+
+		if QtWidgets.QMessageBox.question(self,
+			"Sequence Selection Settings Changed",
+			"Would you like to reload the existing bins with these new settings?") == QtWidgets.QMessageBox.StandardButton.Yes:
+
+			self.refresh_bins(list(range(self.model().sequence_count())))
 
 	@QtCore.Slot()
 	def update_lp_layout(self):

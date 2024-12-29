@@ -178,9 +178,15 @@ class TRTDataModel(QtCore.QObject):
 		"""Number of sequences being considered"""
 		return len(self._data)
 	
+	def sequenceSelectionMode(self) -> SequenceSelectionMode:
+		return self._sequence_selection_mode
+
 	def setSequenceSelectionMode(self, mode:SequenceSelectionMode):
+		
+		if mode is self.sequenceSelectionMode():
+			return
+		
 		self._sequence_selection_mode = mode
-		print(mode)
 		self.sig_sequence_selection_mode_changed.emit(mode)
 	
 	def sequenceSelectionProcess(self) -> SingleSequenceSelectionProcess:
