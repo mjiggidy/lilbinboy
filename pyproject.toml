@@ -1,0 +1,40 @@
+# 
+# 
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lilbinboy"
+dynamic = ["version"]
+authors = [
+	{ name="Michael Jordan", email="michael@glowingpixel.com"},
+]
+dependencies = [
+	"avbutils @ git+https://github.com/mjiggidy/avbutils.git#egg=avbutils",
+	"timecode @ git+https://github.com/mjiggidy/timecode.git#egg=timecode",
+	"pyavb",
+	"PySide6"
+]
+description = "Lil' tools for big jobs!"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.9"
+classifiers = [
+	"Programming Language :: Python :: 3",
+	"License :: Other/Proprietary License",
+	"Operating System :: OS Independent",
+]
+keywords = ["avid", "media composer", "feature film", "television", "editorial", "post production", "nle", "avb"]
+
+[project.urls]
+Repository = "https://github.com/mjiggidy/lilbinboy"
+
+[tool.setuptools]
+packages = ["lilbinboy"]
+
+[tool.setuptools_scm]
+
+[project.scripts]
+lilbinboy = "lilbinboy.__main__:main"

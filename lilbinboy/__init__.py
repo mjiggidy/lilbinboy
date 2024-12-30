@@ -1,7 +1,11 @@
 from PySide6 import QtWidgets, QtGui, QtCore
+import importlib.metadata
 from . import lbb_common, lbb_features
 
-__version__ = "0.0.1-pre-alpha-nightmare"
+try:
+	__version__ =importlib.metadata.version("lilbinboy")
+except importlib.metadata.PackageNotFoundError:
+	__version__ = "Mystery!"
 
 class Config:
 	APP_NAME   = "Lil' Bin Boy"
