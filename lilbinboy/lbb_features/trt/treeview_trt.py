@@ -2,7 +2,7 @@ import pathlib, typing
 import avbutils
 from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
-from . import model_trt
+from lilbinboy.lbb_features.trt import model_trt
 
 #
 # Cell items

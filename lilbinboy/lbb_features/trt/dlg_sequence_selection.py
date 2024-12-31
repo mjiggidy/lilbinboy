@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtWidgets, QtGui
-from ...lbb_common import LBClipColorPicker
-from .model_trt import SingleSequenceSelectionProcess
+from lilbinboy.lbb_common import LBClipColorPicker
+from lilbinboy.lbb_features.trt.model_trt import SingleSequenceSelectionProcess
 
 class TRTSequenceSelection(QtWidgets.QDialog):
 

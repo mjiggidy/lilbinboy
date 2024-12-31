@@ -1,10 +1,10 @@
 
-import enum, dataclasses
+import enum
 import avbutils
 from datetime import datetime
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui
 from timecode import Timecode
-from . import logic_trt, treeview_trt, markers_trt
+from lilbinboy.lbb_features.trt import logic_trt, treeview_trt, markers_trt
 
 class SequenceSelectionMode(enum.Enum):
 	"""Modes for choosing sequences from a bin"""

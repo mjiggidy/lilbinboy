@@ -1,5 +1,4 @@
 from PySide6 import QtWidgets, QtGui, QtCore
-#from . import treeview_trt
 
 class TRTChooseColumnsList(QtWidgets.QListWidget):
 

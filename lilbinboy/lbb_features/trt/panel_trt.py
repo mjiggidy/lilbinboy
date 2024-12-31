@@ -1,9 +1,9 @@
-import dataclasses, pathlib, re
+import dataclasses
 from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
 from concurrent import futures
-from ...lbb_common import LBUtilityTab, LBSpinBoxTC, LBTimelineView
-from . import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt
+from lilbinboy.lbb_common import LBUtilityTab, LBSpinBoxTC, LBTimelineView
+from lilbinboy.lbb_features.trt import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 

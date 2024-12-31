@@ -1,6 +1,6 @@
 import enum
 from PySide6 import QtWidgets, QtCore, QtGui
-from . import markers_trt
+from lilbinboy.lbb_features.trt import markers_trt
 
 class TRTMarkerMaker(QtWidgets.QDialog):
 

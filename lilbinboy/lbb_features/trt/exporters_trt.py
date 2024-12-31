@@ -1,5 +1,5 @@
 from PySide6 import QtCore
-from .treeview_trt import TRTTreeViewHeaderItem
+from lilbinboy.lbb_features.trt.treeview_trt import TRTTreeViewHeaderItem
 
 def export_tab_delimited(model:QtCore.QAbstractItemModel, path:str):
 

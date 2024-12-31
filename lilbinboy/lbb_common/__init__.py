@@ -2,8 +2,8 @@ import re, math, random
 import avbutils
 from PySide6 import QtWidgets, QtCore, QtGui
 from timecode import Timecode
-from . import resources, wnd_about, wnd_main, dlg_errorlog
-from .wdg_clipcolorpicker import LBClipColorPicker
+from lilbinboy.lbb_common import resources, wnd_about, wnd_main, dlg_errorlog
+from lilbinboy.lbb_common.wdg_clipcolorpicker import LBClipColorPicker
 
 
 class LBUtilityTab(QtWidgets.QWidget):
