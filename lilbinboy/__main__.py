@@ -1,5 +1,5 @@
 from PySide6 import QtWidgets, QtCore, QtGui
-from . import lbb_common, lbb_features, Config, main
+from lilbinboy import lbb_common, lbb_features, Config, main
 #from .lbb_common import resources
 import pathlib
 
