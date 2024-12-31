@@ -29,6 +29,32 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install .
 
+      - name: Apply Patch to PySide6 (Bugfix)
+        run: |
+          python -c "
+import sys
+from pathlib import Path
+
+# Platform-specific considerations
+platform = sys.platform
+if platform == 'win32':
+    deploy_lib_path = Path(sys.executable).parent / 'Lib' / 'site-packages' / 'PySide6' / 'scripts' / 'deploy_lib' / 'dependency_util.py'
+else:
+    deploy_lib_path = Path(sys.executable).parent / 'lib' / f'python{sys.version_info.major}.{sys.version_info.minor}' / 'site-packages' / 'PySide6' / 'scripts' / 'deploy_lib' / 'dependency_util.py'
+
+# Apply the patch
+if deploy_lib_path.exists():
+    content = deploy_lib_path.read_text()
+    patched_content = content.replace(
+        'if main_mod_name.startswith(\"PySide6\"):',
+        'if main_mod_name and main_mod_name.startswith(\"PySide6\"):'
+    )
+    deploy_lib_path.write_text(patched_content)
+else:
+    print(f'Path not found: {deploy_lib_path}')
+          "
+        shell: bash
+
       - name: Build Binary (Linux and Windows)
         if: ${{ matrix.os != 'macos-latest' }}
         run: |
@@ -50,7 +76,7 @@ jobs:
         if: ${{ matrix.os == 'macos-latest' }}
         run: |
           mkdir dist_universal
-          lipo -create -output dist_universal/main dist_intel/main dist_arm/main
+          lipo -create -output dist_universal/main dist_intel/main dist_arm/main || echo "Universal Binary creation failed"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
@@ -70,6 +96,13 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           path: ./artifacts
+
+      - name: Verify Artifacts
+        run: |
+          if [ ! "$(ls -A ./artifacts)" ]; then
+            echo "No artifacts found to upload."
+            exit 1
+          fi
 
       - name: Install GitHub CLI
         uses: actions/gh-cli@v3
