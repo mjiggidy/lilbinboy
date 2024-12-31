@@ -27,6 +27,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
+          python -m pip install .
 
       - name: Build Binary (Linux and Windows)
         if: ${{ matrix.os != 'macos-latest' }}
