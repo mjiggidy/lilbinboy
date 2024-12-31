@@ -29,10 +29,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install .
 
-      - name: Apply Patch to PySide6 (Bugfix)
-        run: |
-          python temp_patch.py
-
       - name: Build Binary (Linux and Windows)
         if: ${{ matrix.os != 'macos-latest' }}
         run: |
