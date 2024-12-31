@@ -32,19 +32,23 @@ jobs:
       - name: Build Binary (Linux and Windows)
         if: ${{ matrix.os != 'macos-latest' }}
         run: |
-          pyside6-deploy --force -c pysidedeploy.spec
+          pyside6-deploy --force main.py
+          mkdir dist
+          mv main.* dist/
 
       - name: Build Binary (macOS Intel)
         if: ${{ matrix.os == 'macos-latest' }}
         run: |
-          arch -x86_64 pyside6-deploy --force -c pysidedeploy.spec
-          mv dist dist_intel
+          arch -x86_64 pyside6-deploy --force main.py
+          mkdir dist_intel
+          mv main.app dist_intel/
 
       - name: Build Binary (macOS ARM)
         if: ${{ matrix.os == 'macos-latest' }}
         run: |
-          arch -arm64 pyside6-deploy --force -c pysidedeploy.spec
-          mv dist dist_arm
+          arch -arm64 pyside6-deploy --force main.py
+          mkdir dist_arm
+          mv main.app dist_arm/
 
       - name: Combine macOS Binaries (manual step required for Universal Binary)
         if: ${{ matrix.os == 'macos-latest' }}
