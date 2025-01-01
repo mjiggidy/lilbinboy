@@ -28,8 +28,8 @@
 # ---
 # nuitka-project: --company-name="GlowingPixel"
 # nuitka-project: --product-name="lilbinboy"
-# nuitka-project: --product-version=
-# nuitka-project: --file-version=
+# nuitka-project: --product-version=0.0.0.1
+# nuitka-project: --file-version=0.0.0.1
 # nuitka-project: --copyright="(c) Copyright Michael Jordan 2025"
 # ---
 
