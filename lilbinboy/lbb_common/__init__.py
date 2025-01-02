@@ -245,6 +245,7 @@ class LBSpinBoxTC(QtWidgets.QSpinBox):
 		self.valueChanged.connect(lambda: self.sig_timecode_changed.emit(self.timecode()))
 		
 		self.setKeyboardTracking(False)
+		self.lineEdit().setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
 		self._update_range()
 
 	def _update_range(self):
