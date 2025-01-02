@@ -57,6 +57,7 @@ class TRTThreadedMulticoreAbomination(QtCore.QRunnable):
 	class TRTThreadedSignals(QtCore.QObject):
 		sig_got_bin_info = QtCore.Signal(list)
 		sig_had_error    = QtCore.Signal(str, Exception)
+		sig_complete     = QtCore.Signal(bool)
 	
 	def __init__(self, bin_paths:list[str]):
 		super().__init__()
@@ -67,6 +68,7 @@ class TRTThreadedMulticoreAbomination(QtCore.QRunnable):
 		return self._signals
 	
 	def run(self):
+		errors:list[Exception] = []
 		with futures.ProcessPoolExecutor(max_workers=6) as executor:
 			bin_futures = {executor.submit(logic_trt.get_timelines_from_bin, bin_path) : bin_path for bin_path in self._bin_paths}
 			for bin_future in futures.as_completed(bin_futures):
@@ -75,7 +77,9 @@ class TRTThreadedMulticoreAbomination(QtCore.QRunnable):
 					self.signals().sig_got_bin_info.emit(timeline_info_list)
 				except Exception as e:
 					print("Didn't load " + bin_futures[bin_future] + ": " + str(e))
+					errors.append(e)
 					self.signals().sig_had_error.emit(bin_futures[bin_future], e)
+		self.signals().sig_complete.emit(bool(errors))
 
 
 class TRTThreadedBinGetter(QtCore.QRunnable):
@@ -624,9 +628,18 @@ class LBTRTCalculator(LBUtilityTab):
 	@QtCore.Slot(int)
 	def sequenceRemoved(self, idx:int):
 		self._treeview_model.removeSequenceInfo(idx)
+
+		# NOTE: I also have this in the treeview's `rowsRemoved` slot, but it doesn't seem to be called...
+		if not self.model().sequence_count():
+			self.list_trts.setStatus(self.list_trts.TRTTreeViewDisplayStatus.EMPTY)
 	
 	def add_bins_from_paths(self, paths:list[str]):
-
+		"""Load in sequences from a list of Avid bin file paths"""
+		if not paths:
+			return 
+		
+		# Update Treeview status
+		self.list_trts.beginLoadingSequences()
 		
 		last_bin = paths[-1] if paths else []
 
@@ -634,6 +647,7 @@ class LBTRTCalculator(LBUtilityTab):
 		thread.signals().sig_got_bin_info.connect(self.model().add_timelines_from_bin)
 		thread.signals().sig_got_bin_info.connect(self.prog_loading.step_complete)
 		thread.signals().sig_had_error.connect(self.prog_loading.step_complete)
+		thread.signals().sig_complete.connect(self.bin_loading_complete)
 
 		for _ in range(len(paths)):
 			self.prog_loading.step_added()
@@ -643,6 +657,11 @@ class LBTRTCalculator(LBUtilityTab):
 		# Save last bin path if it's a good 'un
 		if last_bin:
 			QtCore.QSettings().setValue("trt/last_bin", last_bin)
+	
+	@QtCore.Slot(bool)
+	def bin_loading_complete(self, had_errors:bool):
+		"""Done loading bins"""
+		self.list_trts.doneLoadingSequences()
 	
 	def updateSequenceInfo(self):
 

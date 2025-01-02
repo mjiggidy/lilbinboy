@@ -1,4 +1,4 @@
-import pathlib, typing
+import typing, enum
 import avbutils
 from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
@@ -45,7 +45,7 @@ class TRTStringItem(TRTAbstractItem):
 class TRTPathItem(TRTAbstractItem):
 	"""A file path"""
 
-	def __init__(self, raw_data:str|pathlib.Path):
+	def __init__(self, raw_data:str):
 		super().__init__(QtCore.QFileInfo(raw_data))
 	
 	def _prepare_data(self):
@@ -224,6 +224,35 @@ class TRTClipColorDisplayDelegate(QtWidgets.QStyledItemDelegate):
 class TRTTreeView(QtWidgets.QTreeView):
 	"""TRT Readout"""
 
+	class TRTTreeViewDisplayStatus(enum.Enum):
+		"""The status of the data currently being displayed in the TreeView"""
+
+		EMPTY           = enum.auto()
+		"""TreeView is currently empty and inactive"""
+		INITIAL_LOADING = enum.auto()
+		"""TreeView is currently empty, but loading"""
+		NO_ITEMS_FOUND  = enum.auto()
+		"""TreeView is currently empty, after no sequences were found in the bins"""
+		POPULATED       = enum.auto()
+		"""TreeView is displaying data"""
+
+		def message(self) -> str:
+			"""Get the display message for a given status"""
+			
+			if self is self.EMPTY:
+				return  "Add Bins To Begin\nTo load in sequences from your Avid bins, click the \"Add From Bins...\" button above, or drag-and-drop Avid bin (.avb) files here."
+			
+			if self is self.INITIAL_LOADING:
+				return "Now Loading...\nSequences will begin to appear here shortly."
+			
+			if self is self.NO_ITEMS_FOUND:
+				return "No Sequences Found\nNo sequences were found that matched the criteria."
+			
+			return ""
+			
+				
+
+
 	sig_remove_rows_requested = QtCore.Signal(list)
 	sig_bins_dragged_dropped  = QtCore.Signal(list)
 	sig_field_order_changed   = QtCore.Signal(list)
@@ -232,8 +261,10 @@ class TRTTreeView(QtWidgets.QTreeView):
 	def __init__(self, *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
-
 		super().setModel(model_trt.TRTViewSortModel())
+
+		self._status = self.TRTTreeViewDisplayStatus.EMPTY
+
 		self.model().setSortRole(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
 
 		#self.setColumnWidth(0, 24)
@@ -247,11 +278,21 @@ class TRTTreeView(QtWidgets.QTreeView):
 		self.setSelectionMode(QtWidgets.QTreeView.SelectionMode.ExtendedSelection)
 		self.setAcceptDrops(True)
 		self.setDropIndicatorShown(True)
-
+		self.setTextElideMode(QtCore.Qt.TextElideMode.ElideMiddle)
 		self.model().headerDataChanged.connect(self.headerDataChanged)
 		self.header().sectionMoved.connect(self.sectionMoved)
 		self.header().sortIndicatorChanged.connect(self.sortingChanged)
+
 #		print(self.dragDropMode())
+
+	def status(self) -> TRTTreeViewDisplayStatus:
+		"""The state of the data being displayed in the TreeView"""
+		return self._status
+	
+	def setStatus(self, status:TRTTreeViewDisplayStatus):
+		"""Set the display status of the treeview"""
+		self._status = self.TRTTreeViewDisplayStatus(status)
+		self.viewport().update()
 
 	def setModel(self, model:QtCore.QAbstractItemModel):
 		# Overriding to always set to the proxy model
@@ -349,3 +390,53 @@ class TRTTreeView(QtWidgets.QTreeView):
 			header = self.model().sourceModel().headers()[idx_header]
 			if header.displayDelegate():
 				self.setItemDelegateForColumn(idx_header, header.displayDelegate())
+
+	@QtCore.Slot(QtCore.QModelIndex, int, int)
+	def rowsInserted(self, parent:QtCore.QModelIndex, start:int, end:int):
+		self.setStatus(self.TRTTreeViewDisplayStatus.POPULATED)
+		return super().rowsInserted(parent, start, end)
+	
+	@QtCore.Slot(QtCore.QModelIndex, int, int)
+	def rowsRemoved(self, parent, first, last):
+		
+		# TODO: This doesn't seem to be called/connected from the model...?
+		if not self.model().rowCount():
+			self.setStatus(self.TRTTreeViewDisplayStatus.EMPTY)
+
+		return super().rowsRemoved(parent, first, last)
+	
+	@QtCore.Slot()
+	def beginLoadingSequences(self):
+		"""Program is starting to load in new sequences"""
+		if not self.model().rowCount():
+			self.setStatus(self.TRTTreeViewDisplayStatus.INITIAL_LOADING)
+	
+	@QtCore.Slot()
+	def doneLoadingSequences(self):
+		"""Program finished loading for now"""
+		if not self.model().rowCount():
+			self.setStatus(self.TRTTreeViewDisplayStatus.NO_ITEMS_FOUND)
+	
+	# Status Messages
+	def paintEvent(self, event:QtGui.QPaintEvent):
+		"""Draw any relevant status messages up in there"""
+
+		super().paintEvent(event)
+
+		if self.status().message():
+
+			painter = QtGui.QPainter(self.viewport())
+			painter.save()
+			
+			rect_viewport = QtCore.QRectF(0, 0, painter.device().width(), painter.device().height())
+
+			status_message = self.status().message()
+			text_options = QtGui.QTextOption()
+			text_options.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+
+			painter.drawText(rect_viewport.adjusted(50, 0, -50, 0), status_message, text_options)
+
+			painter.restore()
+
+		return event
+	
