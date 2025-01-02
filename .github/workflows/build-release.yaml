@@ -32,9 +32,9 @@ jobs:
         uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: main
-          product-version: ${{ github.ref_name }}
-          file-version: ${{ github.ref_name }}
-          macos-app-version: ${{ github.ref_name }}
+          product-version: ${{ github.ref_name[1:] }}
+          file-version: ${{ github.ref_name[1:] }}
+          macos-app-version: ${{ github.ref_name[1:] }}
           output-dir: build
           script-name: main.py
           mode: app
