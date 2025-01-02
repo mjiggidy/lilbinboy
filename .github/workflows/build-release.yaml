@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - "main"
 
 jobs:
   build:
@@ -26,13 +28,18 @@ jobs:
         run: |
           pip install .
 
+      - name: Remove 'v' from version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: main
-          product-version: ${{ github.ref_name[1:] }}
-          file-version: ${{ github.ref_name[1:] }}
-          macos-app-version: ${{ github.ref_name[1:] }}
+          product-version: $VERSION
+          file-version: $VERSION
+          macos-app-version: $VERSION
           output-dir: build
           script-name: main.py
           mode: app
