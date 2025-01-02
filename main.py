@@ -1,14 +1,20 @@
 # Compilation configuration for Nuitka
 # ---
-# nuitka-project: --standalone
+# nuitka-project: --mode=app
+# nuitka-project: --onefile-tempdir-spec="{CACHE_DIR}/{COMPANY}/{PRODUCT}/{VERSION}"
 # nuitka-project: --deployment
-# nuitka-project: --plugin-enable=pyside6
-# nuitka-project: --disable-ccache
 # nuitka-project: --output-filename="lilbinboy"
 # nuitka-project: --output-dir="dist/"
 # nuitka-project: --remove-output
-# nuitka-project: --assume-yes-for-downloads
+# nuitka-project: --plugin-enable=pyside6
 # nuitka-project: --noinclude-setuptools-mode="nofollow"
+# ---
+
+# Addtional flags for local builds
+# (Probably not needed for Github Actions)
+# ---
+# nuitka-project: --disable-ccache
+# nuitka-project: --assume-yes-for-downloads
 # ---
 
 # Winders Stuff
@@ -18,7 +24,6 @@
 
 # macOS Stuff
 # ---
-# nuitka-project: --macos-create-app-bundle
 # nuitka-project: --macos-app-name="Lil' Bin Boy"
 # nuitka-project: --macos-app-version=
 # nuitka-project: --macos-signed-app-name="com.glowingpixel.lilbinboy"
