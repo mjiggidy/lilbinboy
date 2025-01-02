@@ -3,9 +3,9 @@ name: Build and Publish Binaries
 on:
   push:
     tags:
-      - 'v*'
+      - '*'
     branches:
-      - "main"
+      - main
 
 jobs:
   build:
@@ -28,18 +28,13 @@ jobs:
         run: |
           pip install .
 
-      - name: Remove 'v' from version
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: main
-          product-version: $VERSION
-          file-version: $VERSION
-          macos-app-version: $VERSION
+          product-version: ${{ github.ref_name }}
+          file-version: ${{ github.ref_name }}
+          macos-app-version: ${{ github.ref_name }}
           output-dir: build
           script-name: main.py
           mode: app
