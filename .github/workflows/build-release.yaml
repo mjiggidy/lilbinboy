@@ -5,10 +5,11 @@ on:
     tags:
       - '*'
   workflow_dispatch:
-    version:
+    version_number:
       required: true
       default: "0.0.1"
       description: "Version number for this release"
+      type: string
 
 jobs:
   build:
@@ -35,9 +36,9 @@ jobs:
         uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: main
-          product-version: ${{ github.ref_name }}
-          file-version: ${{ github.ref_name }}
-          macos-app-version: ${{ github.ref_name }}
+          product-version: ${{ github.event.inputs.version_number }}
+          file-version: ${{ github.version_number }}
+          macos-app-version: ${{ github.version_number }}
           output-dir: build
           script-name: main.py
           mode: app
