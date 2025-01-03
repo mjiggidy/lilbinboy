@@ -4,8 +4,11 @@ on:
   push:
     tags:
       - '*'
-    branches:
-      - main
+  workflow_dispatch:
+    version:
+      required: true
+      default: 0.0.1
+      description: Version number for this release
 
 jobs:
   build:
