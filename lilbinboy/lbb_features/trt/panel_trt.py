@@ -249,6 +249,7 @@ class LBTRTCalculator(LBUtilityTab):
 	PATH_ICON = __file__+"../../../../res/icon_trt.png"
 
 	sig_modelchanged = QtCore.Signal()
+	sig_export_requested = QtCore.Signal(str, str)
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -282,6 +283,10 @@ class LBTRTCalculator(LBUtilityTab):
 		# Declare trims
 		self.trt_trims = trims_trt.TRTControlsTrims()
 		self.trim_total = LBSpinBoxTC()
+
+		# Export TSV/CSV/JSON
+		self.actn_export_data = QtGui.QAction(self)
+		self.btn_export_data = QtWidgets.QPushButton()
 
 
 
@@ -340,6 +345,19 @@ class LBTRTCalculator(LBUtilityTab):
 	def _setupWidgets(self):
 		"""Setup the widgets and add them to the layout"""
 
+		# Actions!
+		# NOTE: I dunno if this is really the way to go buuut like....
+		self.actn_export_data.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSaveAs))
+		self.actn_export_data.setText("Export as...")
+		self.actn_export_data.triggered.connect(self.promptForExport)
+		self.actn_export_data.setShortcut(QtGui.QKeySequence.StandardKey.Save)
+		#self.addAction(self.actn_export_data)
+
+		self.btn_export_data.setText(self.actn_export_data.text())
+		self.btn_export_data.setIcon(self.actn_export_data.icon())
+		self.btn_export_data.clicked.connect(self.actn_export_data.triggered)
+		self.btn_export_data.setShortcut(self.actn_export_data.shortcut())
+
 		# Setup top controls
 		ctrl_layout = QtWidgets.QHBoxLayout()
 
@@ -389,7 +407,7 @@ class LBTRTCalculator(LBUtilityTab):
 		# Set up sequence trim controls
 		self.layout().addWidget(self.trt_trims)
 
-		self.layout().addWidget(QtWidgets.QPushButton("Export TSV", clicked=self.export_tsv))
+		self.layout().addWidget(self.btn_export_data)
 
 	
 	def _setupSignals(self):
@@ -454,6 +472,9 @@ class LBTRTCalculator(LBUtilityTab):
 		self.trt_trims.sig_head_trim_marker_preset_chosen.connect(self.model().set_active_head_marker_preset_name)
 		self.trt_trims.sig_tail_trim_marker_preset_chosen.connect(self.model().set_active_tail_marker_preset_name)
 		self.trt_trims.sig_marker_preset_editor_requested.connect(self.show_marker_maker_dialog)
+
+		# Exports
+		self.sig_export_requested.connect(self.exportData)
 		
 		# Total adjustment spinner
 		#self.trim_total.sig_timecode_changed.connect(self.save_trims)
@@ -851,6 +872,49 @@ class LBTRTCalculator(LBUtilityTab):
 	#
 	# Exporters
 	#
-	def export_tsv(self):
 
-		exporters_trt.export_tab_delimited(self.list_trts.model(), "out.tsv")
+	@QtCore.Slot()
+	def promptForExport(self):
+		"""Prompt user for data export settings"""
+
+		formats = {
+			"tsv" : "Tab Separated Values",
+			"csv" : "Comma Separated Values",
+			"json": "JSON Data",
+		}
+
+		available_filters = ";;".join([
+			f"{desc} (*.{ext})" for ext, desc in formats.items()
+		])
+
+		last_export_path = QtCore.QFileInfo(QtCore.QSettings().value("trt/last_export_path", "."))
+		path_file, filter = QtWidgets.QFileDialog.getSaveFileName(
+			caption="Export data as...", 
+			dir=last_export_path.filePath(),
+			filter=available_filters
+		)
+
+		# Nevermind
+		if not path_file:
+			return
+		
+		# If user specified a known suffix in the filename, go with it
+		print("Got ", QtCore.QFileInfo(path_file).suffix())
+		if QtCore.QFileInfo(path_file).suffix().lower() in formats.keys():
+			self.sig_export_requested.emit(path_file, QtCore.QFileInfo(path_file).suffix())
+			return
+
+		# If they're doing something silly, check which filter they selected
+		for format_suffix in formats:
+			if format_suffix in filter:
+				self.sig_export_requested.emit(path_file, format_suffix)
+				return
+
+	@QtCore.Slot(str,str)
+	def exportData(self, path_file:str, format:str):
+		
+		try:
+			if format in ["tsv","csv"]:
+				exporters_trt.export_delimited(self.list_trts.model(), path_file, format)
+		except Exception as e:
+			print("Prolem:",str(e))

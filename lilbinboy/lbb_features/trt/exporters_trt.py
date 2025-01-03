@@ -1,14 +1,10 @@
 from PySide6 import QtCore
 from lilbinboy.lbb_features.trt.treeview_trt import TRTTreeViewHeaderItem
 
-def export_tab_delimited(model:QtCore.QAbstractItemModel, path:str):
+def export_delimited(model:QtCore.QAbstractItemModel, path:str, format:str):
 
 	import csv
 	headeritems:list[TRTTreeViewHeaderItem] = model.headers()
-	
-	for item in headeritems:
-		print(item.name())
-
 	headers:list[str] = [model.headerData(idx, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.DisplayRole) for idx in range(model.columnCount(QtCore.QModelIndex()))]
 
 	rows:list[dict[str,str]] = []
@@ -38,9 +34,7 @@ def export_tab_delimited(model:QtCore.QAbstractItemModel, path:str):
 
 	with open(path, "w", newline="") as tsv_file:
 
-		writer = csv.DictWriter(tsv_file, fieldnames=headers, delimiter="\t")
+		writer = csv.DictWriter(tsv_file, fieldnames=headers, delimiter="\t" if format=="tsv" else ",")
 		writer.writeheader()
 		for row in rows:
 			writer.writerow(row)
-
-	print(rows)
