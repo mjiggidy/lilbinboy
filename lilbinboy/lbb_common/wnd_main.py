@@ -18,7 +18,8 @@ class LBMainWindow(QtWidgets.QMainWindow):
 
 		lay_id = QtWidgets.QHBoxLayout()
 
-		self.lbl_lbb = QtWidgets.QLabel("<strong>Lil' Bin Boy</strong><br/>Pre Alpha Nightmare v0.1<br/>Report good and bad things to <a href=\"mailto:michael@glowingpixel.com\">michael@glowingpixel.com</a>")
+		self.lbl_lbb = QtWidgets.QLabel(f"<strong>Lil' Bin Boy</strong><br/>Pre Alpha Nightmare v{QtWidgets.QApplication.instance().applicationVersion()}<br/>Report good and bad things to <a href=\"mailto:michael@glowingpixel.com\">michael@glowingpixel.com</a>")
+		self.lbl_lbb.setOpenExternalLinks(True)
 		font = self.lbl_lbb.font()
 		font.setPointSizeF(font.pointSize() * 0.8)
 		self.lbl_lbb.setFont(font)
