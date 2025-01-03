@@ -5,11 +5,12 @@ on:
     tags:
       - '*'
   workflow_dispatch:
-    version_number:
-      required: true
-      default: "0.0.1"
-      description: "Version number for this release"
-      type: string
+    inputs:
+      version_number:
+        required: true
+        default: "0.0.1"
+        description: "Version number for this release"
+        type: string
 
 jobs:
   build:
