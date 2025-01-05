@@ -34,5 +34,5 @@ create-dmg \
 	--skip-jenkins \
 	--no-internet-enable \
 	--eula "EULA"\
-	"dist/lilbinboy_macos_${arch}_v${version_number}.dmg" \
+	"dist/lilbinboy_macos_${version_number}_${arch}.dmg" \
 	"build/"
