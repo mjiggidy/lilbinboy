@@ -10,8 +10,11 @@ on:
         type: string
 
 jobs:
-  build:
+  build-windows-x64:
     runs-on: "windows-latest"
+
+    permissions:
+      contents: write
 
     steps:
 
@@ -19,7 +22,7 @@ jobs:
         run: |
           echo "currently running ${{ runner.os }} ${{ runner.arch }}"
           echo "github ref is currently ${{ github.ref }}"
-          echo "github.version_number is currently ${{ inputs.version_number }}"
+          echo "inputs.version_number is currently ${{ inputs.version_number }}"
 
       - name: Check-out repository
         uses: actions/checkout@v4
@@ -48,7 +51,7 @@ jobs:
       - name: Move Dist Files Into Place
         run: |
           mkdir dist
-          move build/lilbinboy.exe dist/lilbinboy_${{ runner.os }}_${{ runner.arch }}_${{ inputs.version_number}}.exe
+          move build/lilbinboy.exe dist/lilbinboy_${{ toLower(runner.os) }}_${{ toLower(runner.arch) }}_${{ toLower(inputs.version_number) }}.exe
           dir dist
 
       - name: GH Release
