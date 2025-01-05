@@ -18,8 +18,8 @@ jobs:
       - name: Gettin' Started
         run: |
           echo "currently running ${{ runner.os }} ${{ runner.arch }}"
-          echo "github ref is currently ${{ github.ref }}""
-          echo "github.version_number is currently ${{ github.version_number }}""
+          echo "github ref is currently ${{ github.ref }}"
+          echo "github.version_number is currently ${{ inputs.version_number }}"
 
       - name: Check-out repository
         uses: actions/checkout@v4
@@ -38,9 +38,9 @@ jobs:
         uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: main
-          product-version: ${{ github.event.inputs.version_number }}
-          file-version: ${{ github.version_number }}
-          macos-app-version: ${{ github.version_number }}
+          product-version: ${{ inputs.version_number }}
+          file-version: ${{ inputs.version_number }}
+          macos-app-version: ${{ inputs.version_number }}
           output-dir: build
           script-name: main.py
           mode: app
@@ -48,7 +48,8 @@ jobs:
       - name: Move Dist Files Into Place
         run: |
           mkdir dist
-          move build/lilbinboy.exe dist/lilbinboy_${{ runner.os }}_${{ runner.arch }}_${{ github.version_number}}.exe 
+          move build/lilbinboy.exe dist/lilbinboy_${{ runner.os }}_${{ runner.arch }}_${{ inputs.version_number}}.exe
+          dir dist
 
       - name: GH Release
         uses: softprops/action-gh-release@v2.2.0
