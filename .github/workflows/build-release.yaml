@@ -1,9 +1,6 @@
 name: Build and Publish Binaries
 
 on:
-  push:
-    tags:
-      - '*'
   workflow_dispatch:
     inputs:
       version_number:
@@ -13,22 +10,29 @@ on:
         type: string
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+  build-windows-x64:
+    runs-on: "windows-latest"
 
-    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
 
     steps:
+
+      - name: Gettin' Started
+        run: |
+          echo "currently running ${{ runner.os }} ${{ runner.arch }}"
+          echo "github ref is currently ${{ github.ref }}"
+          echo "inputs.version_number is currently ${{ inputs.version_number }}"
+
       - name: Check-out repository
         uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          python-version: '3.12'
 
+      # Installing lilbinboy itself, for dependencies and to bake in version info from setuptools-scm
       - name: Install Dependencies
         run: |
           pip install .
@@ -37,19 +41,22 @@ jobs:
         uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: main
-          product-version: ${{ github.event.inputs.version_number }}
-          file-version: ${{ github.version_number }}
-          macos-app-version: ${{ github.version_number }}
+          product-version: ${{ inputs.version_number }}
+          file-version: ${{ inputs.version_number }}
+          macos-app-version: ${{ inputs.version_number }}
           output-dir: build
           script-name: main.py
           mode: app
+      
+      - name: Move Dist Files Into Place
+        run: |
+          mkdir dist
+          move build/lilbinboy.exe dist/lilbinboy_${{ runner.os }}_${{ runner.arch }}_${{ inputs.version_number}}.exe
+          dir dist
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+      - name: GH Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: ${{ runner.os }} Build
-          path: | 
-            build/*.exe
-            build/*.bin
-            build/*.app/**/*
-          include-hidden-files: true
+          tag_name: "v${{ inputs.version_number }}"
+          files: |
+            dist/*
