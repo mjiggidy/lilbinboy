@@ -54,5 +54,6 @@ jobs:
       - name: GH Release
         uses: softprops/action-gh-release@v2.2.0
         with:
+          tag_name: "v${{ inputs.version_number }}"
           files: |
             dist/*
