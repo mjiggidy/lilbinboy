@@ -156,7 +156,7 @@ jobs:
       
       - name: Package to DMG
         run: |
-          arch -x86_64 bash build_tools/mac_create_dmg.sh "x86-64" "${{ inputs.version_number }}"
+          bash build_tools/mac_create_dmg.sh "x86-64" "${{ inputs.version_number }}"
 
       - name: GH Release
         uses: softprops/action-gh-release@v2
