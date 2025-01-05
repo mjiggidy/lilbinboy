@@ -51,7 +51,7 @@ jobs:
       - name: Move Dist Files Into Place
         run: |
           mkdir dist
-          move build/lilbinboy.exe dist/lilbinboy_${{ runner.os }}_${{ runner.arch }}_${{ inputs.version_number}}.exe
+          move build/lilbinboy.exe dist/lilbinboy_windows_${{ inputs.version_number}}_${{ runner.arch }}.exe
           dir dist
 
       - name: GH Release
@@ -104,6 +104,59 @@ jobs:
       - name: Package to DMG
         run: |
           bash build_tools/mac_create_dmg.sh "${{ runner.arch }}" "${{ inputs.version_number }}"
+
+      - name: GH Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ inputs.version_number }}"
+          files: |
+            dist/*
+
+
+
+  build-macos-intel:
+    runs-on: "macos-latest"
+
+    permissions:
+      contents: write
+
+    steps:
+
+      - name: Gettin' Started
+        run: |
+          echo "currently running ${{ runner.os }} ${{ runner.arch }} (x64 emulation)"
+          echo "github ref is currently ${{ github.ref }}"
+          echo "inputs.version_number is currently ${{ inputs.version_number }}"
+
+      - name: Check-out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+
+      # Installing lilbinboy itself, for dependencies and to bake in version info from setuptools-scm
+      - name: Install Dependencies
+        run: |
+          arch -x86_64 pip install .
+
+      - name: Build Executable
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: main
+          product-version: ${{ inputs.version_number }}
+          file-version: ${{ inputs.version_number }}
+          macos-app-version: ${{ inputs.version_number }}
+          macos-target-arch: x86_64
+          output-dir: build
+          script-name: main.py
+          mode: app
+      
+      - name: Package to DMG
+        run: |
+          arch -x86_64 bash build_tools/mac_create_dmg.sh "x86-64" "${{ inputs.version_number }}"
 
       - name: GH Release
         uses: softprops/action-gh-release@v2
