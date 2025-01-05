@@ -51,7 +51,7 @@ jobs:
       - name: Move Dist Files Into Place
         run: |
           mkdir dist
-          move build/lilbinboy.exe dist/lilbinboy_${{ toLower(runner.os) }}_${{ toLower(runner.arch) }}_${{ toLower(inputs.version_number) }}.exe
+          move build/lilbinboy.exe dist/lilbinboy_${{ runner.os }}_${{ runner.arch }}_${{ inputs.version_number}}.exe
           dir dist
 
       - name: GH Release
