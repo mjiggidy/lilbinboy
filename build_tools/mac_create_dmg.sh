@@ -25,5 +25,5 @@ mkdir dist
 # Investigate format=UDZO or UDBZ
 dmgbuild \
 	"Lil' Bin Boy" \
-	"lilbinboy_macos_${version_number}_${arch}.dmg" \
+	"dist/lilbinboy_macos_${version_number}_${arch}.dmg" \
 	-s build_tools/mac_dmgbuild_settings.py
