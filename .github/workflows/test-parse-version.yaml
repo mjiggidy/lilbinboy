@@ -1,0 +1,35 @@
+on:
+  workflow_dispatch:
+    inputs:
+      version_number:
+        required: true
+        default: "v0.0.1"
+        description: "Version number for this release"
+        type: string
+
+jobs:
+
+  # Interpret semver tag info (v1.0.2-pre-release.001) for Windows versioning
+  version-info:
+    runs-on: ubuntu-latest
+
+    outputs:
+      semver:  ${{ steps.regex-match.outputs.group1 }}
+      classic: ${{ steps.regex-match.outputs.group2 }}
+      build_name: ${{ steps.regex-match.outputs.group3 }}
+      full_version: ${{ steps.regex-match.outputs.match }}
+
+    steps:
+      - name: Parse semver with regex
+        uses: actions-ecosystem/action-regex-match@v2
+        id: regex-match
+        with:
+          text: ${{ github.event.inputs.version_number }}
+          regex: "^v(((\d+\.)*(\d+))-?(.*))"
+
+      - name: Results
+        run: |
+          echo "Semver:       ${{ steps.regex-match.outputs.group1 }}"
+          echo "Classic:      ${{ steps.regex-match.outputs.group2 }}"
+          echo "Build Name:   ${{ steps.regex-match.outputs.group3 }}"
+          echo "Full Version: ${{ steps.regex-match.outputs.match }}"
