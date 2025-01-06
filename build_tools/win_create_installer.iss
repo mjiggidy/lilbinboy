@@ -8,6 +8,7 @@ OutputBaseFilename=lilbinboy_win
 Compression=lzma
 SolidCompression=yes
 SourceDir=..\build
+LicenseFile=..\EULA
 
 [Files]
 Source: "lilbinboy.exe"; DestDir: "{app}"; Flags: ignoreversion
