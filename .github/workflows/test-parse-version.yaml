@@ -35,6 +35,7 @@ jobs:
           else
             echo "Version number not provided and not triggered by release." >&2
             exit 1
+          fi
 
       - name: Parse semver with regex
         uses: actions-ecosystem/action-regex-match@v2
