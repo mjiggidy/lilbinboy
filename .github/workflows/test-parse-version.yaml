@@ -7,6 +7,10 @@ on:
         description: "Version number for this release"
         type: string
 
+  release:
+    types:
+      - created
+
 jobs:
 
   # Interpret semver tag info (v1.0.2-pre-release.001) for Windows versioning
@@ -20,12 +24,24 @@ jobs:
       full_version: ${{ steps.regex-match.outputs.match }}
 
     steps:
+
+      - name: Determine version source
+        id: determine-version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.version_number }}" != "" ]; then
+            echo "version=${{ github.event.inputs.version_number }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "Version number not provided and not triggered by release." >&2
+            exit 1
+
       - name: Parse semver with regex
         uses: actions-ecosystem/action-regex-match@v2
         id: regex-match
         with:
-          text: ${{ github.event.inputs.version_number }}
-          regex: "^v(((\\d+\\.)*\\d+)-?(.*))"
+          text: ${{ steps.determine-version.outputs.version }}
+          regex: "^v(((?:[0-9]+\\.)*(?:[0-9]+))-?(.*))$"
 
       - name: Results
         run: |
