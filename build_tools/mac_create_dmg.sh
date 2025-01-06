@@ -4,14 +4,16 @@ arch=$1
 version_number=$2
 
 # Install dependencies
+echo "Installing dependencies..."
 brew install imagemagick
 pip install "dmgbuild[badge_icons]"
 
 # Name the app
 mv build/main.app "build/Lil' Bin Boy.app"
+ls -l build
 
 # Bake the app info into the DMG background image
-magick build_tools/bkgs/macos_dmg_bkg_src.png -gravity southeast -pointsize 24 -fill black -annotate +20+20 "Lil' Bin Boy  |  macOS ${1}  |  Version ${2}" build_tools/bkgs/macos_dmg_bkg@2x.png
+magick build_tools/bkgs/macos_dmg_bkg_src.png -gravity southeast -pointsize 24 -fill black -annotate +20+20 "Lil' Bin Boy  |  macOS ${arch}  |  Version ${version_number}" build_tools/bkgs/macos_dmg_bkg@2x.png
 magick build_tools/bkgs/macos_dmg_bkg@2x.png -resize 50% build_tools/bkgs/macos_dmg_bkg.png
 
 # Make the hi-dpi background image
