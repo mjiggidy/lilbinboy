@@ -27,9 +27,9 @@ jobs:
           text: ${{ github.event.inputs.version_number }}
           regex: "^v(((\d+\.)*(\d+))-?(.*))"
 
-        - name: Results
-          run: |
-            echo "Semver:       ${{ steps.regex-match.outputs.group1 }}"
-            echo "Classic:      ${{ steps.regex-match.outputs.group2 }}"
-            echo "Build Name:   ${{ steps.regex-match.outputs.group3 }}"
-            echo "Full Version: ${{ steps.regex-match.outputs.match }}"
+      - name: Results
+        run: |
+          echo "Semver:       ${{ steps.regex-match.outputs.group1 }}"
+          echo "Classic:      ${{ steps.regex-match.outputs.group2 }}"
+          echo "Build Name:   ${{ steps.regex-match.outputs.group3 }}"
+          echo "Full Version: ${{ steps.regex-match.outputs.match }}"
