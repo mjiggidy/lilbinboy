@@ -51,7 +51,7 @@ jobs:
       - name: Build Installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.5
         with:
-          path: build_tools/wincreate_installer.iss
+          path: build_tools/win_create_installer.iss
           options: /F"lilbinboy_windows_${{ inputs.version_number }}_x86-64"
 
 
