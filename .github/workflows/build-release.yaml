@@ -48,11 +48,12 @@ jobs:
           script-name: main.py
           mode: app
       
-      - name: Move Dist Files Into Place
-        run: |
-          mkdir dist
-          move build/lilbinboy.exe dist/lilbinboy_windows_${{ inputs.version_number}}_${{ runner.arch }}.exe
-          dir dist
+      - name: Build Installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.5
+          with:
+            path: build_tools/wincreate_installer.iss
+            options: /F"lilbinboy_windows_${{ inputs.version_number }}_x86-64"
+
 
       - name: GH Release
         uses: softprops/action-gh-release@v2
