@@ -19,7 +19,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 
 		super().__init__(*args, **kwargs)
 		
-		self.setWindowTitle("Match Marker Criteria")
+		self.setWindowTitle("Match Marker By Criteria Presets")
 		self.setLayout(QtWidgets.QVBoxLayout())
 
 		self._marker_presets = dict()
@@ -90,7 +90,6 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.btn_delete_preset.setToolTip("Delete Preset")
 
 		self.stack_page_update.layout().addStretch()
-		self.stack_page_update.layout().addWidget(self.btn_update_preset)
 		self.stack_page_update.layout().addWidget(self.btn_duplicate_preset)
 		self.stack_page_update.layout().addWidget(self.btn_delete_preset)
 
@@ -119,8 +118,13 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 
 		self.layout().addWidget(self.grp_edit)
 
+		lay_btns = QtWidgets.QHBoxLayout()
+		
+		lay_btns.addWidget(self.btn_update_preset)
 		self.btn_box.setStandardButtons(QtWidgets.QDialogButtonBox.StandardButton.Close)
-		self.layout().addWidget(self.btn_box)
+		lay_btns.addWidget(self.btn_box)
+
+		self.layout().addLayout(lay_btns)
 
 	def _setupSignals(self):
 
