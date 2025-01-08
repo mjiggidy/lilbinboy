@@ -19,7 +19,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 
 		super().__init__(*args, **kwargs)
 		
-		self.setWindowTitle("Match Marker By Criteria Presets")
+		self.setWindowTitle("Match Marker By Criteria Presets[*]")
 		self.setLayout(QtWidgets.QVBoxLayout())
 
 		self._current_marker_preset_name = None
