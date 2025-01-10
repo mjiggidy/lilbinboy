@@ -1,6 +1,7 @@
 import enum
 from PySide6 import QtWidgets, QtCore, QtGui
 from lilbinboy.lbb_features.trt import markers_trt
+from lilbinboy.lbb_common import make_unique_name
 
 class TRTMarkerMaker(QtWidgets.QDialog):
 
@@ -51,6 +52,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	
 		self.setMinimumWidth(500)
 		self.setFixedHeight(self.sizeHint().height())
+		#self.btn_box.button(QtWidgets.QDialogButtonBox.StandardButton.Close).setDefault(True)
 
 	def _setupWidgets(self):
 
@@ -130,8 +132,9 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.cmb_marker_presets.sig_marker_preset_editor_requested.connect(self.createNewPreset)
 
 		# Preset buttons
-		self.btn_update_preset.clicked.connect(self.makeMarkerPreset)
+		self.btn_update_preset.clicked.connect(lambda: self.sig_save_preset.emit(self.txt_preset_name.text(), self.buildMarkerPresetFromCurrent()))
 		self.btn_delete_preset.clicked.connect(lambda: self.sig_delete_preset.emit(self.cmb_marker_presets.currentText()))
+		self.btn_duplicate_preset.clicked.connect(self.duplicateMarkerRequested)
 		
 		self.txt_preset_name.textChanged.connect(self.presetNameChanged)
 		self.cmb_marker_color.currentIndexChanged.connect(self.presetCriteriaModified)
@@ -141,7 +144,28 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		# Dialog close button signals `reject``, I guess
 		self.btn_box.rejected.connect(self.reject)
 
+	@QtCore.Slot()
+	def reject(self):
+		if self.isSafeToChange():
+			return super().reject()
 	
+	def isSafeToChange(self) -> bool:
+		"""If it's cool to switch marker presets"""
+
+		return not self.isWindowModified() or QtWidgets.QMessageBox.warning(self, "Current Preset Not Saved", "You have unsaved changes to the current preset.  Continue?", buttons=QtWidgets.QMessageBox.StandardButton.Yes|QtWidgets.QMessageBox.StandardButton.No) == QtWidgets.QMessageBox.StandardButton.Yes
+
+	@QtCore.Slot()
+	def duplicateMarkerRequested(self):
+		"""Duplicate the current marker match preset"""
+
+		if not self.isSafeToChange():
+			return
+
+		preset_name = self.txt_preset_name.text() or None
+		preset_info = self.buildMarkerPresetFromCurrent()
+
+		self.createNewPreset(preset_name=preset_name, preset_info=preset_info)
+
 	def addMarkerColor(self, marker:markers_trt.LBMarkerIcon):
 		"""Add marker color to marker color combo box"""
 		self.cmb_marker_color.addItem(marker, marker.name() or "(Any)", marker.name() or None)
@@ -151,14 +175,14 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		return self._marker_presets.get(self.currentMarkerPresetName(), None)
 	
 	@QtCore.Slot()
-	def makeMarkerPreset(self) -> markers_trt.LBMarkerPreset:
+	def buildMarkerPresetFromCurrent(self) -> markers_trt.LBMarkerPreset:
 		"""Create a marker preset from the current settings"""
 
-		self.sig_save_preset.emit(self.txt_preset_name.text(), markers_trt.LBMarkerPreset(
+		return markers_trt.LBMarkerPreset(
 			color   = self.cmb_marker_color.currentData(),	# None indicates "Any" marker
 			comment = self.txt_marker_comment.text() or None,
 			author  = self.txt_marker_author.text() or None
-		))
+		)
 	
 	@QtCore.Slot(dict)
 	def setMarkerPresets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
@@ -181,7 +205,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	@QtCore.Slot(str)
 	def setCurrentMarkerPresetName(self, marker_preset_name:str|None):
 		"""Set the currently active marker by preset name"""
-
+		
 		self._current_marker_preset_name = marker_preset_name
 
 		self.setEditingMode(self.EditingMode.EDIT_EXISTING)
@@ -238,8 +262,14 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 			(self.txt_marker_author.text() or None) != marker_preset.author
 		])
 	
+	def getUniquePresetName(self, name:str|None=None) -> str:
+		"""If a marker match preset already exists, make it unique"""
+
+		return make_unique_name(name if name is not None else self._default_preset_name, list(self._marker_presets.keys()))
+		
+	
 	@QtCore.Slot()
-	def createNewPreset(self):
+	def createNewPreset(self, preset_name:str|None=None, preset_info:markers_trt.LBMarkerPreset|None=None):
 		"""We makin a newy"""
 
 		self.setEditingMode(self.EditingMode.CREATE_NEW)
@@ -250,12 +280,19 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		
 		self.stack_name_editor.setCurrentWidget(self.stack_page_addnew)
 
+		self.txt_preset_name.setText(self.getUniquePresetName(preset_name or self._default_preset_name))
 		self.cmb_marker_presets.setCurrentMarkerPresetName(None)
-		self.txt_preset_name.setText(self._default_preset_name)
 		self.txt_preset_name.setVisible(True)
-		self.cmb_marker_color.setCurrentIndex(0)
-		self.txt_marker_comment.clear()
-		self.txt_marker_author.clear()
+		
+		if preset_info:
+			self.cmb_marker_color.setCurrentText(preset_info.color or "(Any)")
+			self.txt_marker_comment.setText(preset_info.comment)
+			self.txt_marker_author.setText(preset_info.author)
+
+		else:
+			self.cmb_marker_color.setCurrentIndex(0)
+			self.txt_marker_comment.clear()
+			self.txt_marker_author.clear()
 
 		self.txt_preset_name.selectAll()
 		self.txt_preset_name.setFocus()
@@ -272,7 +309,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		
 		self.btn_update_preset.setEnabled(all([
 			self.vld_preset_name.validate(preset_name, len(preset_name)) is self.vld_preset_name.State.Acceptable,
-			preset_name != self._default_preset_name,
+			#preset_name != self._default_preset_name,
 			#preset_name not in self._marker_presets
 		]))
 	
