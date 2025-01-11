@@ -158,7 +158,9 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 #	---
 	@QtCore.Slot()
 	def reject(self):
+		print("Request reject")
 		if self.switchPresetsAllowed():
+			print("Reject allowed")
 			return super().reject()
 	
 
@@ -220,12 +222,14 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	def createPresetRequested(self):
 		"""User requested new preset"""
 
+		print("Create page requested")
+
 		if not self.switchPresetsAllowed():
 			return
 		
 		
 		self.setEditingMode(self.EditingMode.CREATE_NEW)
-		self.setIsDirty(False)
+#		self.setIsDirty(False)
 		self.setCriteriaEditorData(preset_name=self.getUniquePresetName(self.defaultMarkerPresetName()), preset_info=self.defaultMarkerPreset())
 		
 		self.setIsDirty(True)
@@ -242,7 +246,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		
 
 		self.setEditingMode(self.EditingMode.CREATE_NEW)
-		self.setIsDirty(False)
+#		self.setIsDirty(False)
 		self.setCriteriaEditorData(preset_name=self.getUniquePresetName(preset_name), preset_info=preset_info)
 
 		self.setIsDirty(True)
@@ -251,11 +255,13 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	def editPresetRequested(self, marker_preset_name:str):
 		"""Allow user to edit the criteria for a particular marker preset name"""
 
+		print("Edit page requested for ", marker_preset_name)
+
 		if not self.switchPresetsAllowed():
 			return
 		
 		self.setEditingMode(self.EditingMode.EDIT_EXISTING)
-		self.setIsDirty(False)
+#		self.setIsDirty(False)
 		try:
 			marker_preset = self._marker_presets[marker_preset_name]
 		except Exception as e:
@@ -267,6 +273,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		"""Save the current preset"""
 
 		self.setIsDirty(False)
+		print("Save")
 		self.sig_save_preset.emit(self.txt_preset_name.text(), self.buildMarkerPresetFromCurrent())
 
 
@@ -287,9 +294,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.txt_marker_comment.setText(preset_info.comment)
 		self.txt_marker_author.setText(preset_info.author)
 
-		if self.editingMode() is self.EditingMode.CREATE_NEW:
-			self.txt_preset_name.selectAll()
-			self.txt_preset_name.setFocus()
+
 	
 #	---
 #	Input validators & processors
@@ -354,6 +359,10 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 
 			# Show Preset Name Textbox
 			self.stack_name_editor.setCurrentWidget(self.stack_page_addnew)
+		
+			# Select preset name box
+			self.txt_preset_name.selectAll()
+			self.txt_preset_name.setFocus()
 			
 			# Start off as "dirty" ;)
 			self.setIsDirty(True)
@@ -407,9 +416,12 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	def switchPresetsAllowed(self) -> bool:
 		"""If it's cool to switch to editing another marker preset criteria"""
 		if not self.isDirty():
+			print("Ain't dirty")
 			return True
 		
-		btn_chosen = QtWidgets.QMessageBox.warning(self, "Current Preset Not Saved", "You have unsaved changes to the current preset.", buttons=QtWidgets.QMessageBox.StandardButton.Save|QtWidgets.QMessageBox.StandardButton.Discard|QtWidgets.QMessageBox.StandardButton.Cancel)
+		print("Deemed dirty (dd)")
+		
+		btn_chosen = QtWidgets.QMessageBox.warning(self, "Current Preset Not Saved", "You have unsaved changes to the current preset.", buttons=QtWidgets.QMessageBox.StandardButton.Discard|QtWidgets.QMessageBox.StandardButton.Cancel)
 
 		if btn_chosen  == QtWidgets.QMessageBox.StandardButton.Cancel:
 			return False
