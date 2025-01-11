@@ -85,8 +85,8 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.stack_page_update.layout().setContentsMargins(0,0,0,0)
 
 		self.btn_save_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave))
-		self.btn_save_preset.setText("Update")
-		self.btn_save_preset.setToolTip("Update Preset")
+		self.btn_save_preset.setText("Save")
+		self.btn_save_preset.setToolTip("Save Preset")
 		self.btn_save_preset.setShortcut(QtGui.QKeySequence.StandardKey.Save)
 
 		self.btn_duplicate_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditCopy))
