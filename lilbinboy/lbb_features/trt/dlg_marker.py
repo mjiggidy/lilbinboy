@@ -158,10 +158,12 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 #	---
 	@QtCore.Slot()
 	def reject(self):
-		print("Request reject")
-		if self.switchPresetsAllowed():
-			print("Reject allowed")
-			return super().reject()
+		"""Window has been asked to close"""
+		
+		#if not self.switchPresetsAllowed():
+		#	return
+		
+		return super().reject()
 	
 
 #	---
@@ -222,46 +224,36 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	def createPresetRequested(self):
 		"""User requested new preset"""
 
-		print("Create page requested")
-
-		if not self.switchPresetsAllowed():
-			return
+		#if not self.switchPresetsAllowed():
+		#	return
 		
 		
 		self.setEditingMode(self.EditingMode.CREATE_NEW)
-#		self.setIsDirty(False)
 		self.setCriteriaEditorData(preset_name=self.getUniquePresetName(self.defaultMarkerPresetName()), preset_info=self.defaultMarkerPreset())
-		
-		self.setIsDirty(True)
 
 	@QtCore.Slot()
 	def duplicatePresetRequested(self):
 		"""Duplicate the current marker match preset"""
 
-		if not self.switchPresetsAllowed():
-			return
+		#if not self.switchPresetsAllowed():
+		#	return
 
 		preset_name = self.txt_preset_name.text() or None
 		preset_info = self.buildMarkerPresetFromCurrent()
 		
 
 		self.setEditingMode(self.EditingMode.CREATE_NEW)
-#		self.setIsDirty(False)
 		self.setCriteriaEditorData(preset_name=self.getUniquePresetName(preset_name), preset_info=preset_info)
-
-		self.setIsDirty(True)
 
 	@QtCore.Slot(str)
 	def editPresetRequested(self, marker_preset_name:str):
 		"""Allow user to edit the criteria for a particular marker preset name"""
 
-		print("Edit page requested for ", marker_preset_name)
-
-		if not self.switchPresetsAllowed():
-			return
+		#if not self.switchPresetsAllowed():
+		#	return
 		
 		self.setEditingMode(self.EditingMode.EDIT_EXISTING)
-#		self.setIsDirty(False)
+
 		try:
 			marker_preset = self._marker_presets[marker_preset_name]
 		except Exception as e:
@@ -273,7 +265,6 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		"""Save the current preset"""
 
 		self.setIsDirty(False)
-		print("Save")
 		self.sig_save_preset.emit(self.txt_preset_name.text(), self.buildMarkerPresetFromCurrent())
 
 
