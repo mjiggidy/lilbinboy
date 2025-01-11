@@ -30,7 +30,7 @@ class LBMarkerPreset:
 class LBMarkerPresetNameValidator(QtGui.QValidator):
 	"""Validate marker preset names"""
 
-	pat_valid_preset_name = re.compile("^[a-z0-9\-_\.](?:[a-z0-9\-_\. ]*[a-z0-9\-_\.])?$", re.I)
+	pat_valid_preset_name = re.compile(r"^[a-z0-9\-_\.](?:[a-z0-9\-_\. ]*[a-z0-9\-_\.])?$", re.I)
 
 	@QtCore.Slot(str, int)
 	def validate(self, preset_name:str, pos:int) -> QtGui.QValidator.State:
