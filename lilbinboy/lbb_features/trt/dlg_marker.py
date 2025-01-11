@@ -60,7 +60,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.setFixedHeight(self.sizeHint().height())
 
 		self.setEditingMode(self.EditingMode.EDIT_EXISTING)
-
+ 
 		#self.btn_box.button(QtWidgets.QDialogButtonBox.StandardButton.Close).setDefault(True)
 
 	def _setupWidgets(self):
@@ -87,10 +87,12 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.btn_save_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave))
 		self.btn_save_preset.setText("Update")
 		self.btn_save_preset.setToolTip("Update Preset")
+		self.btn_save_preset.setShortcut(QtGui.QKeySequence.StandardKey.Save)
 
 		self.btn_duplicate_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditCopy))
 		self.btn_duplicate_preset.setText("Duplicate")
 		self.btn_duplicate_preset.setToolTip("Duplicate Preset")
+		self.btn_duplicate_preset.setShortcut(QtGui.QKeySequence(QtGui.Qt.KeyboardModifier.ControlModifier| QtGui.Qt.Key.Key_D))
 
 		self.btn_delete_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListRemove))
 		self.btn_delete_preset.setText("Delete")
@@ -293,7 +295,14 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	@QtCore.Slot(str)
 	def presetNameInputChanged(self, preset_name:str):
 		"""User is typing the preset name"""
+
+		if preset_name in self._marker_presets:
+			self.setSaveButtonDescription(self.EditingMode.EDIT_EXISTING)
+		else:
+			self.setSaveButtonDescription(self.EditingMode.CREATE_NEW)
 		
+		# Note: Could also just call `.validate` here and have `QValidator.changed` connected to the button enabled..ness...
+		# But this seems find lol I dunno
 		self.btn_save_preset.setEnabled(all([
 			self.vld_preset_name.validate(preset_name, len(preset_name)) is self.vld_preset_name.State.Acceptable,
 			#preset_name != self._default_preset_name,
@@ -318,6 +327,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		"""If a marker match preset already exists, make it unique"""
 
 		return make_unique_name(name if name is not None else self._default_preset_name, list(self._marker_presets.keys()))
+
 	
 #	---
 #	State tracking
@@ -330,11 +340,11 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		#	return
 		
 		self._editing_mode = mode
+		
+		self.setSaveButtonDescription(mode)
 
 		if mode is self.EditingMode.EDIT_EXISTING:
 			# Set button to "Update" verbage
-			self.btn_save_preset.setText("Update Preset Criteria")
-			self.btn_save_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave))	
 			
 			# Show "Update" tool stack
 			self.stack_name_editor.setCurrentWidget(self.stack_page_update)
@@ -345,8 +355,6 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		
 		elif mode is self.EditingMode.CREATE_NEW:
 			# Set button to "Save New" verbage
-			self.btn_save_preset.setText("Create New Preset")
-			self.btn_save_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentNew))
 
 			# Show Preset Name Textbox
 			self.stack_name_editor.setCurrentWidget(self.stack_page_addnew)
@@ -363,6 +371,23 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		"""The current editing mode"""
 		return self._editing_mode
 	
+
+	def setSaveButtonDescription(self, mode:EditingMode):
+		"""Set the Save Button verbiage depending on mode"""
+
+		if mode is self.EditingMode.CREATE_NEW:
+			self.btn_save_preset.setText("Create New Preset")
+			self.btn_save_preset.setToolTip("Save Criteria As New Preset")
+			self.btn_save_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentNew))
+		
+		elif mode is self.EditingMode.EDIT_EXISTING:
+			self.btn_save_preset.setText("Update Preset Criteria")
+			self.btn_save_preset.setToolTip("Update Existing Preset Criteria")
+			self.btn_save_preset.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave))	
+		
+		else:
+			# Yeah I dunno
+			pass
 	
 	@QtCore.Slot()
 	def criteriaInputChanged(self):
@@ -407,10 +432,10 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	def switchPresetsAllowed(self) -> bool:
 		"""If it's cool to switch to editing another marker preset criteria"""
 		if not self.isDirty():
-			print("Ain't dirty")
+		#	print("Ain't dirty")
 			return True
 		
-		print("Deemed dirty (dd)")
+		#print("Deemed dirty (dd)")
 		
 		btn_chosen = QtWidgets.QMessageBox.warning(self, "Current Preset Not Saved", "You have unsaved changes to the current preset.", buttons=QtWidgets.QMessageBox.StandardButton.Discard|QtWidgets.QMessageBox.StandardButton.Cancel)
 
