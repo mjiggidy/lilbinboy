@@ -51,12 +51,15 @@ class LBAboutWindow(QtWidgets.QDialog):
 		self._about_me = QtWidgets.QLabel("Written by Michael Jordan")
 		self._about_me.setToolTip("no not that one")
 
+		self._special_kissies = QtWidgets.QLabel("Extra special kissies to Joy Fu for her help and feedback")
+
 		layout_info.addWidget(self._about_title)
 		layout_info.addWidget(self._about_version)
 		layout_info.addSpacing(10)
 		layout_info.addWidget(self._about_slogan)
 		layout_info.addSpacing(10)
 		layout_info.addWidget(self._about_me)
+		layout_info.addWidget(self._special_kissies)
 		layout_info.addSpacing(10)
 
 		# Lankz
