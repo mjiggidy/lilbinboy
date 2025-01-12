@@ -66,7 +66,7 @@ class TRTControlsTrims(QtWidgets.QWidget):
 		self._use_head_marker.setCheckState(QtCore.Qt.CheckState.Checked) # Start checked to sync state with combo box
 		grp_head_trims.layout().addWidget(self._use_head_marker, 1, 0)
 		grp_head_trims.layout().addWidget(self._from_head_marker, 1, 1)
-		grp_head_trims.layout().addWidget(QtWidgets.QLabel("Or FFOA Locator", buddy=self._from_head), 1, 2)
+		grp_head_trims.layout().addWidget(QtWidgets.QLabel("Or FFOA Marker", buddy=self._from_head), 1, 2)
 		
 		self.layout().addWidget(grp_head_trims)
 
@@ -106,7 +106,7 @@ class TRTControlsTrims(QtWidgets.QWidget):
 		grp_tail_trims.layout().addWidget(self._icon_mark_out, 0, 6)
 
 		# Trim from Tail / Marker
-		grp_tail_trims.layout().addWidget(QtWidgets.QLabel("Or LFOA Locator", alignment=QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter), 1, 4)
+		grp_tail_trims.layout().addWidget(QtWidgets.QLabel("Or LFOA Marker", alignment=QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter), 1, 4)
 		grp_tail_trims.layout().addWidget(self._from_tail_marker, 1, 5)
 		grp_tail_trims.layout().addWidget(self._use_tail_marker, 1, 6)
 
