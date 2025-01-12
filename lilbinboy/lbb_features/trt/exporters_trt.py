@@ -16,7 +16,7 @@ def export_delimited(model:QtCore.QAbstractItemModel, path:str, format:str):
 			data = model.data(model.index(row, col, QtCore.QModelIndex()), QtCore.Qt.ItemDataRole.DisplayRole)
 			row_data[header.strip()] = str(data).strip() if data else ""
 
-			if headeritems[col].isNumeric():
+			if headeritems[col].includeTotal():
 				raw_data = model.data(model.index(row, col, QtCore.QModelIndex()), QtCore.Qt.ItemDataRole.UserRole)
 
 				if header.strip() not in row_total:

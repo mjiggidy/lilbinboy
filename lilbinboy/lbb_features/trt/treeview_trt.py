@@ -83,12 +83,19 @@ class TRTDurationItem(TRTTimecodeItem):
 			QtCore.Qt.ItemDataRole.DisplayRole:	str("-" if str(self._data).startswith("-") else "" + str(self._data).lstrip("-00:")).rjust(12),
 		})
 
-class TRTFeetFramesItem(TRTStringItem):
+class TRTFeetFramesItem(TRTAbstractItem):
+
+	def __init__(self, raw_data:int, *args, **kwargs):
+
+		if not isinstance(raw_data, int):
+			raise TypeError(f"Data must be an integer (not {type(raw_data)})")
+		super().__init__(raw_data, *args, **kwargs)
 
 	def _prepare_data(self):
 		super()._prepare_data()
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole:	str(self._data).rjust(9),
+			QtCore.Qt.ItemDataRole.DisplayRole:	str(str(self._data // 16) + "+" + str(self._data % 16).zfill(2)).rjust(9),
+			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data,
 			QtCore.Qt.ItemDataRole.FontRole: 	QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont),
 		})
 
@@ -136,14 +143,14 @@ class TRTBinLockItem(TRTAbstractItem):
 
 class TRTTreeViewHeaderItem(QtCore.QObject):
 
-	def __init__(self, text:str, key:str, is_numeric:bool=False, display_delegate:QtWidgets.QStyledItemDelegate|None=None):
+	def __init__(self, text:str, key:str, include_total:bool=False, display_delegate:QtWidgets.QStyledItemDelegate|None=None):
 
 		super().__init__()
 
 		self._text = str(text)
 		self._key  = str(key)
 		self._display_delegate = display_delegate
-		self._is_numeric = bool(is_numeric)
+		self._include_total = bool(include_total)
 
 	def header_data(self, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole):
 
@@ -165,9 +172,9 @@ class TRTTreeViewHeaderItem(QtCore.QObject):
 		"""Get the display delegate assigned to this header"""
 		return self._display_delegate
 	
-	def isNumeric(self) -> bool:
+	def includeTotal(self) -> bool:
 		"""Does UserData contain data that can be summed"""
-		return self._is_numeric
+		return self._include_total
 	
 
 
