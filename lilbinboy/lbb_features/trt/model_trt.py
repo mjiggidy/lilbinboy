@@ -210,7 +210,7 @@ class TRTDataModel(QtCore.QObject):
 		trt = Timecode(0, rate=self._fps)
 
 		for bin_info in self._data:
-			trt += self.getSequenceTrimmedDuration(bin_info)
+			trt += self.item_to_dict(bin_info)["duration_trimmed"].data(QtCore.Qt.ItemDataRole.UserRole)
 		
 		return max(Timecode(0, rate=self.rate()), trt + self.trimTotal())
 	
@@ -409,27 +409,25 @@ class TRTDataModel(QtCore.QObject):
 	def getSequenceTrimmedDuration(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
 		return max(Timecode(0, rate=self.rate()), self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromHead(sequence_info) - self.getSequenceTrimFromTail(sequence_info))
 	
-	def getSequenceTrimmedDurationFF(self, sequence_info:logic_trt.TimelineInfo) -> str:
-		return self.tc_to_lfoa(self.getSequenceTrimmedDuration(sequence_info))
+#	def getSequenceTrimmedDurationFF(self, sequence_info:logic_trt.TimelineInfo) -> str:
+#		return self.tc_to_lfoa(self.getSequenceTrimmedDuration(sequence_info))
 
 	
-	def getSequenceTrimFromHead(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
+	def getSequenceTrimFromHead(self, matched_marker:avbutils.MarkerInfo|None=None) -> Timecode:
+		"""Determine how much to trim from head"""
 		
-		if self.activeHeadMarkerPreset():
-			matched_marker = self.matchMarkersToPreset(self.activeHeadMarkerPreset(), sorted(sequence_info.markers, key=lambda m: m.frm_offset))
-			if matched_marker:
-				#print(sequence_info.timeline_name + ": Matched FFOA Marker: " + str(matched_marker))
-				return Timecode(matched_marker.frm_offset, rate=self.rate())
+		if matched_marker is not None:
+			#print(sequence_info.timeline_name + ": Matched FFOA Marker: " + str(matched_marker))
+			return Timecode(matched_marker.frm_offset, rate=self.rate())
 
 		return self.trimFromHead()
 	
-	def getSequenceTrimFromTail(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
+	def getSequenceTrimFromTail(self, sequence_info:logic_trt.TimelineInfo, matched_marker:avbutils.MarkerInfo) -> Timecode:
+		"""Determine how much to trim from tail"""
 		
-		if self.activeTailMarkerPreset():
-			matched_marker = self.matchMarkersToPreset(self.activeTailMarkerPreset(), sorted(sequence_info.markers, key=lambda m: m.frm_offset, reverse=True))
-			if matched_marker:
-				#print(sequence_info.timeline_name + ": Matched LFOA Marker: " + str(matched_marker))
-				return sequence_info.timeline_tc_range.duration - Timecode(matched_marker.frm_offset, rate=self.rate()) - 1
+		if matched_marker:
+			#print(sequence_info.timeline_name + ": Matched LFOA Marker: " + str(matched_marker))
+			return sequence_info.timeline_tc_range.duration - Timecode(matched_marker.frm_offset, rate=self.rate()) - 1
 		
 		return self.trimFromTail()
 	
@@ -439,11 +437,11 @@ class TRTDataModel(QtCore.QObject):
 	def getSequenceLFOATimecode(self, sequence_info:logic_trt.TimelineInfo) -> Timecode:
 		return self.getSequenceStartTimecode(sequence_info) + self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromTail(sequence_info) - 1
 	
-	def getSequenceFFOAFeetFrames(self, sequence_info:logic_trt.TimelineInfo) -> str:
-		return self.tc_to_lfoa(self.getSequenceTrimFromHead(sequence_info))
-	
-	def getSequenceLFOAFeetFrames(self, sequence_info:logic_trt.TimelineInfo) -> str:
-		return self.tc_to_lfoa(self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromTail(sequence_info) -1)
+#	def getSequenceFFOAFeetFrames(self, sequence_info:logic_trt.TimelineInfo) -> str:
+#		return self.tc_to_lfoa(self.getSequenceTrimFromHead(sequence_info))
+#	
+#	def getSequenceLFOAFeetFrames(self, sequence_info:logic_trt.TimelineInfo) -> str:
+#		return self.tc_to_lfoa(self.getSequenceTotalDuration(sequence_info) - self.getSequenceTrimFromTail(sequence_info) -1)
 	
 	def getSequenceDateModified(self, sequence_info:logic_trt.TimelineInfo) -> datetime:
 		return sequence_info.date_modified
@@ -451,6 +449,17 @@ class TRTDataModel(QtCore.QObject):
 	def getSequenceDateCreated(self, sequence_info:logic_trt.TimelineInfo) -> datetime:
 		return sequence_info.date_created
 	
+	def findHeadMarker(self, sequence_info:logic_trt.TimelineInfo) -> avbutils.MarkerInfo|None:
+		if self.activeHeadMarkerPreset():
+			return self.matchMarkersToPreset(self.activeHeadMarkerPreset(), sorted(sequence_info.markers, key=lambda m: m.frm_offset))
+		return None
+	
+	def findTailMarker(self, sequence_info:logic_trt.TimelineInfo) -> avbutils.MarkerInfo|None:
+		
+		if self.activeTailMarkerPreset():
+			return self.matchMarkersToPreset(self.activeTailMarkerPreset(), sorted(sequence_info.markers, key=lambda m: m.frm_offset, reverse=True))
+		return None
+
 	def matchMarkersToPreset(self, marker_preset:markers_trt.LBMarkerPreset, marker_list:list[avbutils.MarkerInfo]) -> avbutils.MarkerInfo:
 
 		for marker_info in marker_list:
@@ -467,23 +476,38 @@ class TRTDataModel(QtCore.QObject):
 	
 	def item_to_dict(self, timeline_info:logic_trt.TimelineInfo):
 
+		head_marker = self.findHeadMarker(timeline_info)
+		tail_marker = self.findTailMarker(timeline_info)
+
+		head_trim_tc = min(timeline_info.timeline_tc_range.duration, self.getSequenceTrimFromHead(head_marker))
+		tail_trim_tc = min(timeline_info.timeline_tc_range.duration-head_trim_tc, self.getSequenceTrimFromTail(timeline_info, tail_marker))
+
+		duration_total = self.getSequenceTotalDuration(timeline_info)
+		duration_trimmed = max(timeline_info.timeline_tc_range.duration - head_trim_tc - tail_trim_tc, Timecode(0, rate=self.rate()))
+		
+		ffoa_tc = timeline_info.timeline_tc_range.start + head_trim_tc
+		lfoa_tc = ffoa_tc + duration_trimmed
+		
+
 		return {
-			"sequence_name": 	treeview_trt.TRTStringItem(self.getSequenceName(timeline_info)),
-			"sequence_color": 	treeview_trt.TRTClipColorItem(self.getSequenceColor(timeline_info)),
-			"sequence_start_tc":treeview_trt.TRTTimecodeItem(self.getSequenceStartTimecode(timeline_info)),
-			"duration_total": 	treeview_trt.TRTDurationItem(self.getSequenceTotalDuration(timeline_info)),
-			"duration_trimmed": treeview_trt.TRTDurationItem(self.getSequenceTrimmedDuration(timeline_info)),
-			"duration_trimmed_ff": treeview_trt.TRTFeetFramesItem(self.getSequenceTrimmedDurationFF(timeline_info)),
-			"head_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromHead(timeline_info)),
-			"tail_trimmed": 	treeview_trt.TRTDurationItem(self.getSequenceTrimFromTail(timeline_info)),
-			"ffoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceFFOATimecode(timeline_info)),
-			"ffoa_ff":			treeview_trt.TRTFeetFramesItem(self.getSequenceFFOAFeetFrames(timeline_info)),
-			"lfoa_tc":			treeview_trt.TRTTimecodeItem(self.getSequenceLFOATimecode(timeline_info)),
-			"lfoa_ff": 			treeview_trt.TRTFeetFramesItem(self.getSequenceLFOAFeetFrames(timeline_info)), # TODO: Need a an AbstractItem type for this
-			"date_modified": 	treeview_trt.TRTStringItem(self.getSequenceDateModified(timeline_info)),	# TODO: Need an Item type fro this
-			"date_created":		treeview_trt.TRTStringItem(self.getSequenceDateCreated(timeline_info)),
-			"bin_path": 		treeview_trt.TRTPathItem(timeline_info.bin_path),
-			"bin_lock": 		treeview_trt.TRTBinLockItem(timeline_info.bin_lock)
+			"sequence_name":       treeview_trt.TRTStringItem(self.getSequenceName(timeline_info)),
+			"sequence_color":      treeview_trt.TRTClipColorItem(self.getSequenceColor(timeline_info)),
+			"sequence_start_tc":   treeview_trt.TRTTimecodeItem(self.getSequenceStartTimecode(timeline_info)),
+			"duration_total":      treeview_trt.TRTDurationItem(duration_total),
+			"duration_trimmed":    treeview_trt.TRTDurationItem(duration_trimmed),
+			"duration_trimmed_ff": treeview_trt.TRTFeetFramesItem(duration_trimmed.frame_number),
+			"head_trimmed_tc":     treeview_trt.TRTDurationItem(head_trim_tc),	# TODO: Make Trim Item w/Icon
+			"head_trimmed_ff":     treeview_trt.TRTFeetFramesItem(head_trim_tc.frame_number),	# TODO: Make Trim Item w/Icon
+			"tail_trimmed_tc":     treeview_trt.TRTDurationItem(tail_trim_tc),	# TODO: Make Trim Item w/Icon
+			"tail_trimmed_ff":     treeview_trt.TRTFeetFramesItem(tail_trim_tc.frame_number),	# TODO: Make Trim Item w/Icon
+			"ffoa_tc":             treeview_trt.TRTTimecodeItem(ffoa_tc),
+			"ffoa_ff":             treeview_trt.TRTFeetFramesItem(head_trim_tc.frame_number),
+			"lfoa_tc":             treeview_trt.TRTTimecodeItem(lfoa_tc),
+			"lfoa_ff":             treeview_trt.TRTFeetFramesItem((duration_total - tail_trim_tc - 1).frame_number),
+			"date_modified":       treeview_trt.TRTStringItem(self.getSequenceDateModified(timeline_info)),	# TODO: Need an Item type fro this
+			"date_created":        treeview_trt.TRTStringItem(self.getSequenceDateCreated(timeline_info)),
+			"bin_path":            treeview_trt.TRTPathItem(timeline_info.bin_path),
+			"bin_lock":            treeview_trt.TRTBinLockItem(timeline_info.bin_lock)
 		}
 	
 
@@ -499,16 +523,18 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		self.setHeaderItems([
 			treeview_trt.TRTTreeViewHeaderItem("","sequence_color", display_delegate=treeview_trt.TRTClipColorDisplayDelegate()),
 			treeview_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
-			treeview_trt.TRTTreeViewHeaderItem("Full Duration","duration_total", is_numeric=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (TC)","duration_trimmed", is_numeric=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (F+F)","duration_trimmed_ff"),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head", "head_trimmed", is_numeric=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail", "tail_trimmed", is_numeric=True),
-			treeview_trt.TRTTreeViewHeaderItem("Sequence Start", "sequence_start_tc", is_numeric=True),
+			treeview_trt.TRTTreeViewHeaderItem("Full Duration","duration_total", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (TC)","duration_trimmed", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (F+F)","duration_trimmed_ff", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (TC)", "head_trimmed_tc", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (F+F)", "head_trimmed_ff", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (TC)", "tail_trimmed_tc", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (F+F)", "tail_trimmed_ff", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Sequence Start", "sequence_start_tc"),
 			treeview_trt.TRTTreeViewHeaderItem("FFOA (F+F)", "ffoa_ff"),
-			treeview_trt.TRTTreeViewHeaderItem("FFOA (TC)", "ffoa_tc", is_numeric=True),
+			treeview_trt.TRTTreeViewHeaderItem("FFOA (TC)", "ffoa_tc"),
 			treeview_trt.TRTTreeViewHeaderItem("LFOA (F+F)", "lfoa_ff"),
-			treeview_trt.TRTTreeViewHeaderItem("LFOA (TC)", "lfoa_tc", is_numeric=True),
+			treeview_trt.TRTTreeViewHeaderItem("LFOA (TC)", "lfoa_tc"),
 			treeview_trt.TRTTreeViewHeaderItem("Date Created","date_created"),
 			treeview_trt.TRTTreeViewHeaderItem("Date Modified","date_modified"),
 			treeview_trt.TRTTreeViewHeaderItem("From Bin","bin_path"),
