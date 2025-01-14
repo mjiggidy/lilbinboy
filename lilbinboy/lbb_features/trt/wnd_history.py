@@ -1,5 +1,5 @@
 import random
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets, QtSql
 
 class TRTHistoryPanel(QtWidgets.QFrame):
 
@@ -59,12 +59,12 @@ class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 
 		datetime_str = QtCore.QDateTime.fromString(label_info.field("datetime_created").value(), QtCore.Qt.DateFormat.ISODate)
 		#print(datetime_str.toString(QtCore.Qt.DateFormat.TextDate))
-		painter.drawText(sub_rect, datetime_str.toString(QtCore.Qt.DateFormat.TextDate), QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignBottom)
+		painter.drawText(sub_rect, datetime_str.toString("dd MMM yyyy"), QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignBottom)
 
 		painter.restore()
 	
 	def sizeHint(self, option:QtWidgets.QStyleOptionViewItem, index:QtCore.QModelIndex) -> QtCore.QSizeF:
-		return QtCore.QSize(super().sizeHint(option, index).width(), 46)
+		return QtCore.QSize(super().sizeHint(option, index).width(), 44)
 
 
 
@@ -82,6 +82,8 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._lst_saved = QtWidgets.QListView()
 		self._scroll_panels = QtWidgets.QScrollArea()
 
+		self._tree_temp_sequences = QtWidgets.QTreeView()
+
 		self._setupWidgets()
 	
 	def _setupWidgets(self):
@@ -89,6 +91,10 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._lst_saved.setSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum, self.sizePolicy().verticalPolicy())
 		self._lst_saved.setItemDelegate(TRTHistorySnapshotLabelDelegate())
 		self._lst_saved.setAlternatingRowColors(True)
+		self._lst_saved.setModel(QtSql.QSqlQueryModel())
+		self._lst_saved.selectionModel().selectionChanged.connect(self.snapshotSelectionChanged)
+		self._lst_saved.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
+
 
 		self.layout().addWidget(self._lst_saved)
 
@@ -100,10 +106,39 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._scroll_area = QtWidgets.QWidget()
 		self._scroll_area.setLayout(QtWidgets.QVBoxLayout())
 
-		for _ in range(random.randrange(3,5)):
-			self._scroll_area.layout().addWidget(TRTHistoryPanel())
+		#for _ in range(random.randrange(3,5)):
+		#	self._scroll_area.layout().addWidget(TRTHistoryPanel())
+		self._scroll_area.layout().addWidget(self._tree_temp_sequences)
+		self._tree_temp_sequences.setModel(QtSql.QSqlQueryModel())
+
+
+		
 		self._scroll_area.layout().addStretch()
 
 		self._scroll_panels.setWidget(self._scroll_area)
 
 		self.layout().addWidget(self._scroll_panels)
+
+	@QtCore.Slot(QtCore.QItemSelection, QtCore.QItemSelection)
+	def snapshotSelectionChanged(self, selected:QtCore.QItemSelection, deselected:QtCore.QItemSelection):
+		
+		
+		model = self._lst_saved.model()
+		selected_indexes = self._lst_saved.selectionModel().selectedIndexes()
+		selected_snapshot_ids = [model.record(idx.row()).field("id_snapshot").value() for idx in selected_indexes]
+
+		self.updateTreeViewThing(selected_snapshot_ids)
+
+	def updateTreeViewThing(self, snapshot_ids:list[int]):
+
+		#query_sequences:QtSql.QSqlQuery = self._tree_temp_sequences.model().query()
+		query_sequences = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
+		print("Got", query_sequences)
+
+		query_placeholders = ",".join(["?"]*len(snapshot_ids))
+		formatted_query = f"SELECT * FROM trt_snapshot_sequences WHERE id_snapshot IN ({query_placeholders})"
+		print(formatted_query)
+		query_sequences.prepare(formatted_query)
+		for place, snapshot_id in enumerate(snapshot_ids):
+			query_sequences.bindValue(place, snapshot_id)
+		self._tree_temp_sequences.model().setQuery(query_placeholders)

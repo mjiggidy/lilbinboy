@@ -7,17 +7,20 @@ app.setStyle("Fusion")
 
 wnd_history = TRTHistoryViewer()
 
-db = QtSql.QSqlDatabase("QSQLITE")
+db = QtSql.QSqlDatabase.addDatabase("QSQLITE", "trt")
 db.setDatabaseName(sys.argv[1])
 db.open()
 
 if not db.open():
 	print("Nah lol", db.lastError().text())
 
-model = QtSql.QSqlQueryModel()
-model.setQuery("SELECT * FROM trt_snapshot_labels ORDER BY datetime_created DESC", db)
+query_labels = QtSql.QSqlQuery("SELECT * FROM trt_snapshot_labels ORDER BY datetime_created DESC", QtSql.QSqlDatabase.database("trt"))
+wnd_history._lst_saved.model().setQuery(query_labels)
 
-wnd_history._lst_saved.setModel(model)
+
+query_sequences = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
+wnd_history._tree_temp_sequences.model().setQuery(query_sequences)
+
 
 wnd_history.show()
 
