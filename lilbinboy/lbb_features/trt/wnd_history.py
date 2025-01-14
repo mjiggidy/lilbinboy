@@ -53,6 +53,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		for _ in range(random.randrange(3,5)):
 			self._scroll_area.layout().addWidget(TRTHistoryPanel())
+		self._scroll_area.layout().addStretch()
 
 		self._scroll_panels.setWidget(self._scroll_area)
 
