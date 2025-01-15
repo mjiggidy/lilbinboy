@@ -3,7 +3,7 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from timecode import Timecode
 from concurrent import futures
 from lilbinboy.lbb_common import LBUtilityTab, LBSpinBoxTC, LBTimelineView
-from lilbinboy.lbb_features.trt import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt
+from lilbinboy.lbb_features.trt import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt, wdg_summary
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 
@@ -99,16 +99,6 @@ class TRTThreadedBinGetter(QtCore.QRunnable):
 	def run(self):
 		self.signals().sig_got_bin_info.emit(logic_trt.get_timelines_from_bin(self._bin_path))
 
-@dataclasses.dataclass(frozen=True)
-class TRTSummaryItem():
-	"""Item to display in a `TRTSummary` bar"""
-
-	label:str
-	"""The label for this item"""
-
-	value:str
-	"""The value of this item"""
-
 class TRTModeSelection(QtWidgets.QGroupBox):
 	"""Select how sequences are chosen from bins"""
 
@@ -166,82 +156,6 @@ class TRTModeSelection(QtWidgets.QGroupBox):
 		elif mode is model_trt.SequenceSelectionMode.ALL_SEQUENCES_PER_BIN:
 			self._rdo_all_sequence.setChecked(True)
 
-class TRTSummary(QtWidgets.QWidget):
-
-	_fnt_label = QtGui.QFont()
-	_fnt_value = QtGui.QFont()
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
-		self._summary_items = dict()
-
-		self.__class__._fnt_label.setCapitalization(QtGui.QFont.Capitalization.AllUppercase)
-		self.__class__._fnt_label.setPointSizeF(8)
-
-		self.__class__._fnt_value.setBold(True)
-		self.__class__._fnt_value.setPointSizeF(18)
-
-		self.setLayout(QtWidgets.QGridLayout())
-		self.layout().setHorizontalSpacing(24)
-
-		self._add_initial_summary_items()
-
-	def _add_initial_summary_items(self):
-			"""Initial info for now"""
-
-			self.add_summary_item(TRTSummaryItem(
-				label="Sequences",
-				value="0"
-			))
-
-			self.add_summary_item(TRTSummaryItem(
-				label="Locked",
-				value="0"
-			))
-
-			self.add_summary_item(TRTSummaryItem(
-				label="FPS",
-				value="24"
-			))
-
-			self.layout().addItem(QtWidgets.QSpacerItem(1,1, QtWidgets.QSizePolicy.Policy.MinimumExpanding), 1, self.layout().columnCount())
-
-			self.add_summary_item(TRTSummaryItem(
-				label="Total Running Length",
-				value="0+00"
-			))
-
-			self.add_summary_item(TRTSummaryItem(
-				label="Total Running Time",
-				value="00:00:00:00"
-			))
-	
-	def add_summary_item(self, item:TRTSummaryItem):
-
-		if str(item.label) in self._summary_items:
-			label, value = self._summary_items[str(item.label)]
-			value.setText(str(item.value))
-		
-		else:
-			
-			lbl_value = QtWidgets.QLabel(str(item.value))
-			lbl_value.setFont(self.__class__._fnt_value)
-			lbl_value.setAlignment(QtGui.Qt.AlignmentFlag.AlignCenter)
-			lbl_value.setTextInteractionFlags(QtGui.Qt.TextInteractionFlag.TextSelectableByMouse|QtGui.Qt.TextInteractionFlag.TextSelectableByKeyboard)
-
-			lbl_label = QtWidgets.QLabel(str(item.label))
-			lbl_label.setFont(self.__class__._fnt_label)
-			lbl_label.setAlignment(QtGui.Qt.AlignmentFlag.AlignCenter)
-			lbl_label.setBuddy(lbl_value)
-
-			self._summary_items.update({
-				str(item.label): (lbl_label, lbl_value)
-			})
-			
-			self.layout().addWidget(lbl_value, 0, self.layout().columnCount())
-			self.layout().addWidget(lbl_label, 1, self.layout().columnCount()-1)
-
 
 class LBTRTCalculator(LBUtilityTab):
 	"""TRT Calculator"""
@@ -275,7 +189,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		# Declare main treeview
 		self.list_trts = treeview_trt.TRTTreeView()
-		self.trt_summary = TRTSummary()
+		self.trt_summary = wdg_summary.TRTSummary()
 
 		# Longplay Layout
 		self.view_longplay = LBTimelineView()
@@ -820,10 +734,10 @@ class LBTRTCalculator(LBUtilityTab):
 
 	@QtCore.Slot()
 	def update_summary(self):
-		self.trt_summary.add_summary_item(TRTSummaryItem(label="Locked", value=self.model().locked_bin_count()))
-		self.trt_summary.add_summary_item(TRTSummaryItem(label="Sequences", value=self.model().sequence_count()))
-		self.trt_summary.add_summary_item(TRTSummaryItem(label="Total Running Length", value=self.model().total_lfoa()))
-		self.trt_summary.add_summary_item(TRTSummaryItem(label="Total Running Time",  value=self.model().total_runtime()))
+		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(label="Locked", value=self.model().locked_bin_count()))
+		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(label="Sequences", value=self.model().sequence_count()))
+		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(label="Total Running Length", value=self.model().total_lfoa()))
+		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(label="Total Running Time",  value=self.model().total_runtime()))
 	
 	@QtCore.Slot()
 	def update_control_buttons(self):
