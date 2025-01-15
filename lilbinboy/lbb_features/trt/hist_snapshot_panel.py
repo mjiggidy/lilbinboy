@@ -103,10 +103,13 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self._txt_datetime.setText(snapshot_record.field("datetime_created").value())
 		self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
 
-		clip_color = [int(x) for x in str(snapshot_record.field("clip_color").value()).split(",")] if not snapshot_record.field("clip_color").isNull() else None
+		if snapshot_record.field("clip_color").isNull():
+			clip_color = QtGui.QColor(None)
+		else:
+			clip_color = QtGui.QColor(*[int(x) for x in str(snapshot_record.field("clip_color").value()).split(",")])
 		#print("Using", clip_color)
 
-		self._pixmap_clip_color = self.drawClipColor(size=QtCore.QSize(14,14), clip_color=QtGui.QColor(*clip_color))
+		self._pixmap_clip_color = self.drawClipColor(size=QtCore.QSize(14,14), clip_color=clip_color)
 		self._lbl_clip_color.setPixmap(self._pixmap_clip_color)
 
 	def drawClipColor(self, size:QtCore.QSize, clip_color:QtGui.QColor) -> QtGui.QPixmap:

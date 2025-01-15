@@ -14,7 +14,7 @@ db.open()
 if not db.open():
 	print("Nah lol", db.lastError().text())
 
-query_labels = QtSql.QSqlQuery("SELECT * FROM trt_snapshot_labels ORDER BY datetime_created DESC", QtSql.QSqlDatabase.database("trt"))
+query_labels = QtSql.QSqlQuery("SELECT * FROM trt_snapshot_labels ORDER BY is_current DESC, datetime_created DESC", QtSql.QSqlDatabase.database("trt"))
 wnd_history._lst_saved.model().setQuery(query_labels)
 
 
