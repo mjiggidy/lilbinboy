@@ -1,6 +1,35 @@
 import random
 from PySide6 import QtCore, QtGui, QtWidgets, QtSql
 
+class TRTHistorySnapshotProxyModel(QtCore.QSortFilterProxyModel):
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		self._filter_snapshot_ids = []
+		self._filter_field_names  = ["name", "duration_tc", "duration_ff"]
+	
+	def setSnapshotIds(self, ids:list[int]):
+		self._filter_snapshot_ids = [int(id) for id in ids]
+		self.invalidateRowsFilter()
+
+	def filterAcceptsRow(self, source_row:int, source_parent:QtCore.QModelIndex):
+		
+		id_snapshot = self.sourceModel().record(source_row).field("id_snapshot").value()
+		if id_snapshot not in self._filter_snapshot_ids:
+			return False
+		
+		return super().filterAcceptsRow(source_row, source_parent)
+	
+	def filterAcceptsColumn(self, source_column:int, source_parent:QtCore.QModelIndex):
+		record = self.sourceModel().record()
+		field_name = record.field(source_column).name()
+
+		if field_name not in self._filter_field_names:
+			return False
+		
+		return super().filterAcceptsColumn(source_column, source_parent)
+
 class TRTHistoryPanel(QtWidgets.QFrame):
 
 	def __init__(self, *args, **kwargs):
@@ -11,6 +40,9 @@ class TRTHistoryPanel(QtWidgets.QFrame):
 
 		self._sequence_name = QtWidgets.QLabel("Hi")
 		self._tree_sequences = QtWidgets.QTreeView()
+		self._tree_sequences.setModel(TRTHistorySnapshotProxyModel())
+		self._tree_sequences.setUniformRowHeights(True)
+		self._tree_sequences.setAlternatingRowColors(True)
 	#	self.lbl.setFixedHeight(50)
 
 		self.layout().addWidget(self._sequence_name)
@@ -22,7 +54,15 @@ class TRTHistoryPanel(QtWidgets.QFrame):
 
 	def setModel(self, model:QtCore.QAbstractItemModel):
 
-		self._tree_sequences.setModel(model)
+		self._tree_sequences.model().setSourceModel(model)
+
+	def model(self) -> QtCore.QAbstractItemModel:
+		return self._tree_sequences.model().sourceModel()
+	
+	def setSnapshotRecord(self, snapshot_record:QtSql.QSqlRecord):
+
+		self._sequence_name.setText(snapshot_record.field("name").value())
+		self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
 	
 	#def sizeHint(self) -> QtCore.QSize:
 	#	return QtCore.QSize(super().sizeHint().width(), 100)
@@ -137,6 +177,8 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		self._tree_temp_sequences = QtWidgets.QTreeView()
 
+		self._sequence_query_model = QtSql.QSqlQueryModel()
+
 		self._setupWidgets()
 	
 	def _setupWidgets(self):
@@ -163,11 +205,11 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._temp_history_panel = TRTHistoryPanel()
 		self._scroll_area.layout().addWidget(self._temp_history_panel)
 		#self._scroll_area.layout().addWidget(self._tree_temp_sequences)
-		self._temp_history_panel._tree_sequences.setModel(QtSql.QSqlQueryModel())
+		self._temp_history_panel.setModel(self._sequence_query_model)
 
 
 		
-		self._scroll_area.layout().addStretch()
+		#self._scroll_area.layout().addStretch()
 
 		self._scroll_panels.setWidget(self._scroll_area)
 
@@ -194,16 +236,24 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		snapshot_ids = [row.field("id_snapshot").value() for row in snapshots]
 		#print(snapshot_ids)
 
-		tree_model:QtSql.QSqlQueryModel = self._temp_history_panel._tree_sequences.model()
-
 		query = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
 
 		query_placeholders = ",".join(["?"]*len(snapshot_ids))
-		query.prepare(f"SELECT * FROM trt_snapshot_sequences WHERE id_snapshot IN ({query_placeholders})")
+		query.prepare(f"SELECT id_snapshot,clip_color,name,duration_tc,duration_ff FROM trt_snapshot_sequences s WHERE id_snapshot IN ({query_placeholders})")
 		for place, snapshot_id in enumerate(snapshot_ids):
 			query.bindValue(place, snapshot_id)
 		query.exec()
 
-		tree_model.setQuery(query)
+		self._sequence_query_model.setQuery(query)
 
-		self._temp_history_panel._sequence_name.setText(snapshots[0].field("name").value())
+		while self._scroll_area.layout().count():
+			self._scroll_area.layout().itemAt(0).widget().setParent(None)
+
+
+		for idx, snapshot in enumerate(snapshots):
+			history_panel = TRTHistoryPanel()
+			history_panel.setSnapshotRecord(snapshot)
+			history_panel.setModel(self._sequence_query_model)
+			self._scroll_area.layout().addWidget(history_panel)
+
+		#self._temp_history_panel.setSnapshotRecord(snapshots[0])
