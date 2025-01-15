@@ -1,4 +1,5 @@
 import random
+from lilbinboy.lbb_features.trt import wdg_summary
 from PySide6 import QtCore, QtGui, QtWidgets, QtSql
 
 class TRTHistorySnapshotProxyModel(QtCore.QSortFilterProxyModel):
@@ -8,6 +9,13 @@ class TRTHistorySnapshotProxyModel(QtCore.QSortFilterProxyModel):
 
 		self._filter_snapshot_ids = []
 		self._filter_field_names  = ["name", "duration_tc", "duration_ff"]
+		self._field_column_names = {
+			"clip_color": "",
+			"name": "Sequence Name",
+			"duration_tc": "Duration (TC)",
+			"duration_ff": "Duration (F+F)",
+		}
+
 	
 	def setSnapshotIds(self, ids:list[int]):
 		self._filter_snapshot_ids = [int(id) for id in ids]
@@ -29,6 +37,16 @@ class TRTHistorySnapshotProxyModel(QtCore.QSortFilterProxyModel):
 			return False
 		
 		return super().filterAcceptsColumn(source_column, source_parent)
+	
+	def headerData(self, section:int, orientation:QtCore.Qt.Orientation, role:QtCore.Qt.ItemDataRole):
+		
+		if orientation == QtCore.Qt.Orientation.Horizontal and role == QtCore.Qt.ItemDataRole.DisplayRole:
+
+			field_name = super().headerData(section, orientation, role)
+			if field_name in self._field_column_names:
+				return self._field_column_names[field_name]
+		
+		return super().headerData(section, orientation, role)
 
 class TRTHistoryPanel(QtWidgets.QFrame):
 
@@ -38,14 +56,35 @@ class TRTHistoryPanel(QtWidgets.QFrame):
 
 		self.setLayout(QtWidgets.QVBoxLayout())
 
-		self._sequence_name = QtWidgets.QLabel("Hi")
-		self._tree_sequences = QtWidgets.QTreeView()
+		self._lbl_clip_color    = QtWidgets.QLabel()
+		self._pixmap_clip_color = self.drawClipColor(QtCore.QSize(16, 16), QtGui.QColor())
+		self._txt_snapshot_name = QtWidgets.QLabel()
+		self._txt_datetime      = QtWidgets.QLabel("24 Jun 2024")
+		self._summary           = wdg_summary.TRTSummary()
+
+		font = self._txt_snapshot_name.font()
+		font.setBold(True)
+		self._txt_snapshot_name.setFont(font)
+
+		self._tree_sequences    = QtWidgets.QTreeView()
 		self._tree_sequences.setModel(TRTHistorySnapshotProxyModel())
 		self._tree_sequences.setUniformRowHeights(True)
 		self._tree_sequences.setAlternatingRowColors(True)
+		self._tree_sequences.setIndentation(0)
 	#	self.lbl.setFixedHeight(50)
 
-		self.layout().addWidget(self._sequence_name)
+		frm_title = QtWidgets.QFrame()
+		frm_title.setLayout(QtWidgets.QHBoxLayout())
+		frm_title.layout().setContentsMargins(0,0,0,0)
+		
+		self._lbl_clip_color.setPixmap(self._pixmap_clip_color)
+		frm_title.layout().addWidget(self._lbl_clip_color)
+		
+		frm_title.layout().addWidget(self._txt_snapshot_name)
+		frm_title.layout().addStretch()
+		frm_title.layout().addWidget(self._txt_datetime)
+
+		self.layout().addWidget(frm_title)
 		self.layout().addWidget(self._tree_sequences)
 		self.layout().addWidget(QtWidgets.QGroupBox())
 
@@ -61,8 +100,59 @@ class TRTHistoryPanel(QtWidgets.QFrame):
 	
 	def setSnapshotRecord(self, snapshot_record:QtSql.QSqlRecord):
 
-		self._sequence_name.setText(snapshot_record.field("name").value())
+		self._txt_snapshot_name.setText(snapshot_record.field("name").value())
 		self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
+
+		clip_color = [int(x) for x in str(snapshot_record.field("clip_color").value()).split(",")] if not snapshot_record.field("clip_color").isNull() else None
+		#print("Using", clip_color)
+
+		self._pixmap_clip_color = self.drawClipColor(size=QtCore.QSize(14,14), clip_color=QtGui.QColor(*clip_color))
+		self._lbl_clip_color.setPixmap(self._pixmap_clip_color)
+
+	def drawClipColor(self, size:QtCore.QSize, clip_color:QtGui.QColor) -> QtGui.QPixmap:
+
+		"""For now"""
+
+		pixmap = QtGui.QPixmap(size)
+
+		painter = QtGui.QPainter(pixmap)
+		
+		color_box = QtCore.QRectF(0, 0, size.width(), size.height()).adjusted(2,2,-2,-2)
+
+		pixmap.fill(QtGui.QColor(255,255,255,255))
+
+		
+		# Set outline and fill
+		pen = QtGui.QPen(QtGui.QColor(QtGui.QPalette().text().color()))
+		pen.setJoinStyle(QtCore.Qt.PenJoinStyle.MiterJoin)
+		brush = QtGui.QBrush()	
+
+		# Use clip color if available
+		if not clip_color.isValid():
+			brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
+		else:
+			brush.setColor(clip_color)
+			brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
+		
+		painter.setBrush(brush)
+		painter.setPen(pen)
+		painter.drawRect(color_box)
+
+		# Box Shadow (TODO: 128 opactiy not working)
+		color_box.moveCenter(color_box.center() + QtCore.QPointF(1,1))
+		#color_box.setWidth(color_box.width() + 2)
+
+		color_shadow = pen.color()
+		color_shadow.setAlpha(64)
+		pen.setColor(color_shadow)
+		brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
+		painter.setPen(pen)
+		painter.setBrush(brush)
+		painter.drawRect(color_box)
+
+		painter.end()
+
+		return pixmap
 	
 	#def sizeHint(self) -> QtCore.QSize:
 	#	return QtCore.QSize(super().sizeHint().width(), 100)
@@ -157,12 +247,13 @@ class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 		painter.restore()
 	
 	def sizeHint(self, option:QtWidgets.QStyleOptionViewItem, index:QtCore.QModelIndex) -> QtCore.QSizeF:
-		return QtCore.QSize(super().sizeHint(option, index).width(), 38)
+		return QtCore.QSize(165, 38)
 
 
 
 
 class TRTHistoryViewer(QtWidgets.QWidget):
+	"""View and admire your favorite TRTs of olde"""
 
 	def __init__(self, *args, **kwargs):
 
@@ -172,8 +263,9 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		#self.setWindowFlag(QtCore.Qt.WindowType.Tool)
 		self.setLayout(QtWidgets.QHBoxLayout())
 
+		self._splt_pane = QtWidgets.QSplitter()
 		self._lst_saved = QtWidgets.QListView()
-		self._scroll_panels = QtWidgets.QScrollArea()
+		self._snapshots_scroll = QtWidgets.QScrollArea()
 
 		self._tree_temp_sequences = QtWidgets.QTreeView()
 
@@ -190,30 +282,24 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._lst_saved.selectionModel().selectionChanged.connect(self.snapshotSelectionChanged)
 		self._lst_saved.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
 
+		self._splt_pane.addWidget(self._lst_saved)
 
-		self.layout().addWidget(self._lst_saved)
+		#self.layout().addWidget(self._lst_saved)
 
-		self._scroll_panels.setLayout(QtWidgets.QVBoxLayout())
-		self._scroll_panels.setVerticalScrollBarPolicy(QtGui.Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-		self._scroll_panels.setWidgetResizable(True)
+		self._snapshots_scroll.setLayout(QtWidgets.QVBoxLayout())
+		self._snapshots_scroll.setVerticalScrollBarPolicy(QtGui.Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+		self._snapshots_scroll.setWidgetResizable(True)
 		#self._scroll_panels.setSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, self.sizePolicy().verticalPolicy())
 
-		self._scroll_area = QtWidgets.QWidget()
-		self._scroll_area.setLayout(QtWidgets.QVBoxLayout())
+		self._snapshots_parent = QtWidgets.QWidget()
+		self._snapshots_parent.setLayout(QtWidgets.QVBoxLayout())
 
-		#for _ in range(random.randrange(3,5)):
-		self._temp_history_panel = TRTHistoryPanel()
-		self._scroll_area.layout().addWidget(self._temp_history_panel)
-		#self._scroll_area.layout().addWidget(self._tree_temp_sequences)
-		self._temp_history_panel.setModel(self._sequence_query_model)
+		self._snapshots_scroll.setWidget(self._snapshots_parent)
 
+		self._splt_pane.addWidget(self._snapshots_scroll)
+		#self.layout().addWidget(self._scroll_panels)
 
-		
-		#self._scroll_area.layout().addStretch()
-
-		self._scroll_panels.setWidget(self._scroll_area)
-
-		self.layout().addWidget(self._scroll_panels)
+		self.layout().addWidget(self._splt_pane)
 
 	@QtCore.Slot(QtCore.QItemSelection, QtCore.QItemSelection)
 	def snapshotSelectionChanged(self, selected:QtCore.QItemSelection, deselected:QtCore.QItemSelection):
@@ -246,14 +332,14 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		self._sequence_query_model.setQuery(query)
 
-		while self._scroll_area.layout().count():
-			self._scroll_area.layout().itemAt(0).widget().setParent(None)
+		while self._snapshots_parent.layout().count():
+			self._snapshots_parent.layout().itemAt(0).widget().setParent(None)
 
 
 		for idx, snapshot in enumerate(snapshots):
 			history_panel = TRTHistoryPanel()
 			history_panel.setSnapshotRecord(snapshot)
 			history_panel.setModel(self._sequence_query_model)
-			self._scroll_area.layout().addWidget(history_panel)
+			self._snapshots_parent.layout().addWidget(history_panel)
 
 		#self._temp_history_panel.setSnapshotRecord(snapshots[0])

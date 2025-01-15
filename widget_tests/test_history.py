@@ -18,8 +18,8 @@ query_labels = QtSql.QSqlQuery("SELECT * FROM trt_snapshot_labels ORDER BY datet
 wnd_history._lst_saved.model().setQuery(query_labels)
 
 
-query_sequences = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
-wnd_history._temp_history_panel.model().setQuery(query_sequences)
+#query_sequences = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
+#wnd_history._temp_history_panel.model().setQuery(query_sequences)
 
 
 wnd_history.show()
