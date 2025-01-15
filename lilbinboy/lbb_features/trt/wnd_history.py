@@ -131,14 +131,25 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 	def updateTreeViewThing(self, snapshot_ids:list[int]):
 
-		#query_sequences:QtSql.QSqlQuery = self._tree_temp_sequences.model().query()
-		query_sequences = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
-		print("Got", query_sequences)
+		tree_model:QtSql.QSqlQueryModel = self._tree_temp_sequences.model()
+		
+		# Works but...
+		#query = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
+		#query.exec("SELECT * FROM trt_snapshot_sequences")
+		#tree_model.setQuery(query)
+
+		query = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
 
 		query_placeholders = ",".join(["?"]*len(snapshot_ids))
-		formatted_query = f"SELECT * FROM trt_snapshot_sequences WHERE id_snapshot IN ({query_placeholders})"
-		print(formatted_query)
-		query_sequences.prepare(formatted_query)
+		query.prepare(f"SELECT * FROM trt_snapshot_sequences WHERE id_snapshot IN ({query_placeholders})")
 		for place, snapshot_id in enumerate(snapshot_ids):
-			query_sequences.bindValue(place, snapshot_id)
-		self._tree_temp_sequences.model().setQuery(query_placeholders)
+			query.bindValue(place, snapshot_id)
+		query.exec()
+
+		tree_model.setQuery(query)
+
+
+		#query_placeholders = ",".join(["?"]*len(snapshot_ids))
+		#tree_model.query().prepare(formatted_query)
+		#for place, snapshot_id in enumerate(snapshot_ids):
+		#	tree_model.query().bindValue(place, snapshot_id)
