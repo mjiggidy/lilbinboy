@@ -1,6 +1,6 @@
 import sys
 from PySide6 import QtCore, QtWidgets, QtSql
-from lilbinboy.lbb_features.trt.wnd_history import TRTHistoryViewer
+from lilbinboy.lbb_features.trt.hist_main import TRTHistoryViewer
 
 app = QtWidgets.QApplication()
 app.setStyle("Fusion")
