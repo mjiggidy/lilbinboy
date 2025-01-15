@@ -43,7 +43,7 @@ class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 		rect = option.rect
 
 		font = painter.font()
-		font.setPointSizeF(font.pointSizeF() * 1.2)
+		#font.setPointSizeF(font.pointSizeF() * 1.2)
 		font.setBold(True)
 
 		painter.setFont(font)
@@ -52,19 +52,20 @@ class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 		font = QtGui.QFont()
 		# font = QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
 		#font.setPointSizeF(font.pointSizeF() * 1.2)
-		sub_rect = rect.adjusted(margin.x(), margin.y() + 20, -margin.y(), -margin.y())
+		sub_rect = rect.adjusted(margin.x(), margin.y() + 16, -margin.y(), -margin.y())
 
+		font.setPointSizeF(font.pointSizeF() * 0.8)
 		painter.setFont(font)
-		painter.drawText(sub_rect, "01:47:23:12", QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignBottom)
+		painter.drawText(sub_rect, "01:47:23:12", QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignBottom)
 
 		datetime_str = QtCore.QDateTime.fromString(label_info.field("datetime_created").value(), QtCore.Qt.DateFormat.ISODate)
 		#print(datetime_str.toString(QtCore.Qt.DateFormat.TextDate))
-		painter.drawText(sub_rect, datetime_str.toString("dd MMM yyyy"), QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignBottom)
+		painter.drawText(sub_rect, datetime_str.toString("dd MMM yyyy"), QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignBottom)
 
 		painter.restore()
 	
 	def sizeHint(self, option:QtWidgets.QStyleOptionViewItem, index:QtCore.QModelIndex) -> QtCore.QSizeF:
-		return QtCore.QSize(super().sizeHint(option, index).width(), 44)
+		return QtCore.QSize(super().sizeHint(option, index).width(), 38)
 
 
 
@@ -107,9 +108,10 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._scroll_area.setLayout(QtWidgets.QVBoxLayout())
 
 		#for _ in range(random.randrange(3,5)):
-		#	self._scroll_area.layout().addWidget(TRTHistoryPanel())
-		self._scroll_area.layout().addWidget(self._tree_temp_sequences)
-		self._tree_temp_sequences.setModel(QtSql.QSqlQueryModel())
+		self._temp_history_panel = TRTHistoryPanel()
+		self._scroll_area.layout().addWidget(self._temp_history_panel)
+		#self._scroll_area.layout().addWidget(self._tree_temp_sequences)
+		self._temp_history_panel._tree_sequences.setModel(QtSql.QSqlQueryModel())
 
 
 		
@@ -125,18 +127,22 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		
 		model = self._lst_saved.model()
 		selected_indexes = self._lst_saved.selectionModel().selectedIndexes()
-		selected_snapshot_ids = [model.record(idx.row()).field("id_snapshot").value() for idx in selected_indexes]
-
-		self.updateTreeViewThing(selected_snapshot_ids)
-
-	def updateTreeViewThing(self, snapshot_ids:list[int]):
-
-		tree_model:QtSql.QSqlQueryModel = self._tree_temp_sequences.model()
 		
-		# Works but...
-		#query = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
-		#query.exec("SELECT * FROM trt_snapshot_sequences")
-		#tree_model.setQuery(query)
+		selected_snapshots = [model.record(idx.row()) for idx in selected_indexes]
+
+		self.updateSnapshotCard(selected_snapshots)
+		
+		#selected_snapshot_ids = [model.record(idx.row()).field("id_snapshot").value() for idx in selected_indexes]
+
+		
+		self.updateSnapshotCard(selected_snapshots)
+
+	def updateSnapshotCard(self, snapshots:list[QtSql.QSqlRecord]):
+
+		snapshot_ids = [row.field("id_snapshot").value() for row in snapshots]
+		#print(snapshot_ids)
+
+		tree_model:QtSql.QSqlQueryModel = self._temp_history_panel._tree_sequences.model()
 
 		query = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
 
@@ -148,8 +154,4 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		tree_model.setQuery(query)
 
-
-		#query_placeholders = ",".join(["?"]*len(snapshot_ids))
-		#tree_model.query().prepare(formatted_query)
-		#for place, snapshot_id in enumerate(snapshot_ids):
-		#	tree_model.query().bindValue(place, snapshot_id)
+		self._temp_history_panel._sequence_name.setText(snapshots[0].field("name").value())
