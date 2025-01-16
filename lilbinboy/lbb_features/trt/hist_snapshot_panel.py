@@ -58,12 +58,39 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 
 		self._lbl_clip_color    = QtWidgets.QLabel()
 		self._pixmap_clip_color = self.drawClipColor(QtCore.QSize(16, 16), QtGui.QColor())
-		self._txt_snapshot_name = QtWidgets.QLabel()
-		self._txt_datetime      = QtWidgets.QLabel("24 Jun 2024")
+		self._lbl_snapshot_name = QtWidgets.QLabel()
+		self._lbl_datetime      = QtWidgets.QLabel("24 Jun 2024")
 
-		font = self._txt_snapshot_name.font()
+		# Editor
+		self._txt_snapshot_name = QtWidgets.QLineEdit()
+		self._btn_clip_color    = QtWidgets.QPushButton()
+		self._btn_save          = QtWidgets.QPushButton()
+
+		self._stack_header = QtWidgets.QStackedLayout()
+
+		wdg_header_viewer = QtWidgets.QWidget()
+		wdg_header_viewer.setLayout(QtWidgets.QHBoxLayout())
+		wdg_header_viewer.layout().setContentsMargins(0,0,0,0)
+		wdg_header_viewer.layout().addWidget(self._lbl_clip_color)
+		wdg_header_viewer.layout().addWidget(self._lbl_snapshot_name)
+		wdg_header_viewer.layout().addStretch()
+		wdg_header_viewer.layout().addWidget(self._lbl_datetime)
+
+		wdg_header_editor = QtWidgets.QWidget()
+		wdg_header_editor.setLayout(QtWidgets.QHBoxLayout())
+		wdg_header_editor.layout().setContentsMargins(0,0,0,0)
+		wdg_header_editor.layout().addWidget(self._btn_clip_color)
+		wdg_header_editor.layout().addWidget(self._txt_snapshot_name)
+		wdg_header_editor.layout().addStretch()
+		wdg_header_editor.layout().addWidget(self._btn_save)
+
+
+		self._stack_header.addWidget(wdg_header_viewer)
+		self._stack_header.addWidget(wdg_header_editor)
+
+		font = self._lbl_snapshot_name.font()
 		font.setBold(True)
-		self._txt_snapshot_name.setFont(font)
+		self._lbl_snapshot_name.setFont(font)
 
 		self._tree_sequences    = QtWidgets.QTreeView()
 		self._tree_sequences.setModel(TRTHistorySnapshotProxyModel())
@@ -72,18 +99,12 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self._tree_sequences.setIndentation(0)
 	#	self.lbl.setFixedHeight(50)
 
-		frm_title = QtWidgets.QFrame()
-		frm_title.setLayout(QtWidgets.QHBoxLayout())
-		frm_title.layout().setContentsMargins(0,0,0,0)
+
 		
 		self._lbl_clip_color.setPixmap(self._pixmap_clip_color)
-		frm_title.layout().addWidget(self._lbl_clip_color)
-		
-		frm_title.layout().addWidget(self._txt_snapshot_name)
-		frm_title.layout().addStretch()
-		frm_title.layout().addWidget(self._txt_datetime)
+		self._btn_clip_color.setIcon(QtGui.QIcon(self._pixmap_clip_color))
 
-		self.layout().addWidget(frm_title)
+		self.layout().addLayout(self._stack_header)
 		self.layout().addWidget(self._tree_sequences)
 		self.layout().addWidget(QtWidgets.QGroupBox())
 
@@ -99,8 +120,11 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 	
 	def setSnapshotRecord(self, snapshot_record:QtSql.QSqlRecord):
 
-		self._txt_snapshot_name.setText(snapshot_record.field("name").value())
-		self._txt_datetime.setText(snapshot_record.field("datetime_created").value())
+		if snapshot_record.field("is_current").value() == 1:
+			self._stack_header.setCurrentIndex(1)
+
+		self._lbl_snapshot_name.setText(snapshot_record.field("name").value())
+		self._lbl_datetime.setText(snapshot_record.field("datetime_created").value())
 		self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
 
 		if snapshot_record.field("clip_color").isNull():

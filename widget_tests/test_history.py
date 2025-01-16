@@ -18,8 +18,8 @@ if not db.open():
 #wnd_history._temp_history_panel.model().setQuery(query_sequences)
 
 wnd_history = TRTHistoryViewer(db)
-wnd_history.updateLiveSnapshot([])
-wnd_history.saveLiveToSnapshot("Taa Haa!!")
+#wnd_history.updateLiveSnapshot([])
+#wnd_history.saveLiveToSnapshot("Taa Haa!!")
 wnd_history.show()
 
 app.exec()
