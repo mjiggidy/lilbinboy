@@ -21,7 +21,8 @@ wnd_history._lst_saved.model().setQuery(query_labels)
 #query_sequences = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
 #wnd_history._temp_history_panel.model().setQuery(query_sequences)
 
-
+wnd_history.updateLiveSnapshot([])
+wnd_history.saveLiveToSnapshot("Taa Haa!!")
 wnd_history.show()
 
 app.exec()
