@@ -1,4 +1,4 @@
-from lilbinboy.lbb_features.trt.hist_snapshot_panel import TRTHistorySnapshotPanel
+from lilbinboy.lbb_features.trt.hist_snapshot_panel import TRTHistorySnapshotPanel, TRTHistorySnapshotProxyModel
 from lilbinboy.lbb_features.trt.hist_snapshot_list  import TRTHistorySnapshotLabelDelegate
 from PySide6 import QtCore, QtGui, QtWidgets, QtSql
 
@@ -52,6 +52,11 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		#self.layout().addWidget(self._scroll_panels)
 
 		self.layout().addWidget(self._splt_pane)
+
+
+		## Initial State
+		self.updateModelQueries()
+		#print(self._snapshot_query_model.query())
 
 	@QtCore.Slot(QtCore.QItemSelection, QtCore.QItemSelection)
 	def snapshotSelectionChanged(self, selected:QtCore.QItemSelection, deselected:QtCore.QItemSelection):
@@ -163,9 +168,9 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		# TODO
 		id_snapshot_current = id_snapshots[0]
 
-		print("Gon copy to ", id_snapshot_current)
+		print("Gon copy from ", id_snapshot_current)
 
-		# Create new snapshot
+		# Copy "Current" snapshot label to new label
 		query.prepare(
 			"""
 			INSERT INTO trt_snapshot_labels (
@@ -194,37 +199,47 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			print(query.lastError().text())
 		
 		id_snapsphot_new = query.lastInsertId()
+
+		print("Inserted into ", id_snapsphot_new)
 		
 		# Copy sequences
-		query.exec(
+		query.prepare(
 			"""
 			INSERT INTO trt_snapshot_sequences (
-				"id_snapshot",
-				"clip_color",
-				"name",
-				"duration_frames"",
-				"duration_tc",
-				"duration_ff"
+				id_snapshot,
+				clip_color,
+				name,
+				duration_frames,
+				duration_tc,
+				duration_ff
 			)
 
 			SELECT
-				9,
+				?,
 				clip_color,
 				name,
 				duration_frames,
 				duration_tc,
 				duration_ff
 			FROM trt_snapshot_sequences
-			WHERE id_snapshot = 6
+			WHERE id_snapshot = ?
+			ORDER BY datetime_created ASC
 			"""
 		)
-		#query.addBindValue(id_snapsphot_new)
-		#query.addBindValue(id_snapshot_current)
-		if not query:
+		query.addBindValue(id_snapsphot_new)
+		query.addBindValue(id_snapshot_current)
+		if not query.exec():
 			print(query.lastError().text())
-		print("Okdone hehee")
+		print("Copied", id_snapshot_current, "into", id_snapsphot_new)
 
-		self._snapshot_query_model.setQuery(self._snapshot_query_model.query())
-		self._sequence_query_model.setQuery(self._sequence_query_model.query())
+		if not QtSql.QSqlDatabase.database("trt").commit():
+			print(QtSql.QSqlDatabase.database("trt").lastError().text())
+		print(QtSql.QSqlDatabase.database("trt").isOpen())
 
-		
+
+		self.updateModelQueries()
+		#self._snapshot_query_model.setQuery("SELECT * FROM trt_snapshot_labels", QtSql.QSqlDatabase.database("trt"))
+		#self._sequence_query_model.setQuery(self._sequence_query_model.query(), QtSql.QSqlDatabase.database("trt"))
+
+	def updateModelQueries(self):
+		self._snapshot_query_model.setQuery(QtSql.QSqlQuery("SELECT * FROM trt_snapshot_labels ORDER BY is_current DESC, datetime_created DESC", QtSql.QSqlDatabase.database("trt")))
