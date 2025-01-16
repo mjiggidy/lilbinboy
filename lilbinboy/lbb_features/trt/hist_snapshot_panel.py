@@ -66,7 +66,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self._btn_clip_color    = QtWidgets.QPushButton()
 		self._btn_save          = QtWidgets.QPushButton()
 
-		self._stack_header = QtWidgets.QStackedLayout()
+		self._stack_header = QtWidgets.QStackedWidget()
 
 		wdg_header_viewer = QtWidgets.QWidget()
 		wdg_header_viewer.setLayout(QtWidgets.QHBoxLayout())
@@ -87,6 +87,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 
 		self._stack_header.addWidget(wdg_header_viewer)
 		self._stack_header.addWidget(wdg_header_editor)
+		self._stack_header.setSizePolicy(self._stack_header.sizePolicy().horizontalPolicy(), QtWidgets.QSizePolicy.Policy.Maximum)
 
 		font = self._lbl_snapshot_name.font()
 		font.setBold(True)
@@ -97,14 +98,11 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self._tree_sequences.setUniformRowHeights(True)
 		self._tree_sequences.setAlternatingRowColors(True)
 		self._tree_sequences.setIndentation(0)
-	#	self.lbl.setFixedHeight(50)
 
-
-		
 		self._lbl_clip_color.setPixmap(self._pixmap_clip_color)
 		self._btn_clip_color.setIcon(QtGui.QIcon(self._pixmap_clip_color))
 
-		self.layout().addLayout(self._stack_header)
+		self.layout().addWidget(self._stack_header)
 		self.layout().addWidget(self._tree_sequences)
 		self.layout().addWidget(QtWidgets.QGroupBox())
 
@@ -119,6 +117,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		return self._tree_sequences.model().sourceModel()
 	
 	def setSnapshotRecord(self, snapshot_record:QtSql.QSqlRecord):
+		
 
 		if snapshot_record.field("is_current").value() == 1:
 			self._stack_header.setCurrentIndex(1)
