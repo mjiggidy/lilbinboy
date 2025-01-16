@@ -17,7 +17,7 @@ if not db.open():
 #query_sequences = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
 #wnd_history._temp_history_panel.model().setQuery(query_sequences)
 
-wnd_history = TRTHistoryViewer()
+wnd_history = TRTHistoryViewer(db)
 wnd_history.updateLiveSnapshot([])
 wnd_history.saveLiveToSnapshot("Taa Haa!!")
 wnd_history.show()

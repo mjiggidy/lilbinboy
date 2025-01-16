@@ -6,9 +6,13 @@ from PySide6 import QtCore, QtGui, QtWidgets, QtSql
 class TRTHistoryViewer(QtWidgets.QWidget):
 	"""View and admire your favorite TRTs of olde"""
 
-	def __init__(self, *args, **kwargs):
+	def __init__(self, database:QtSql.QSqlDatabase,  *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
+
+		self.setMinimumSize(QtCore.QSize(600,300))
+
+		self._db = database
 
 		self.setWindowTitle("History Viewer")
 		#self.setWindowFlag(QtCore.Qt.WindowType.Tool)
@@ -79,7 +83,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		snapshot_ids = [row.field("id_snapshot").value() for row in snapshots]
 		#print(snapshot_ids)
 
-		query = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
+		query = QtSql.QSqlQuery(self._db)
 
 		query_placeholders = ",".join(["?"]*len(snapshot_ids))
 		query.prepare(f"SELECT id_snapshot,clip_color,name,duration_tc,duration_ff FROM trt_snapshot_sequences s WHERE id_snapshot IN ({query_placeholders})")
@@ -102,7 +106,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 	
 	def updateLiveSnapshot(self, reels:list):
 
-		query = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
+		query = QtSql.QSqlQuery(self._db)
 
 		id_snapshots = []
 
@@ -151,7 +155,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 	def saveLiveToSnapshot(self, snapshot_name:str):
 
-		query = QtSql.QSqlQuery(QtSql.QSqlDatabase.database("trt"))
+		query = QtSql.QSqlQuery(self._db)
 
 		# Cet current snapshot ID
 		id_snapshots = []
@@ -232,9 +236,9 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			print(query.lastError().text())
 		print("Copied", id_snapshot_current, "into", id_snapsphot_new)
 
-		if not QtSql.QSqlDatabase.database("trt").commit():
-			print(QtSql.QSqlDatabase.database("trt").lastError().text())
-		print(QtSql.QSqlDatabase.database("trt").isOpen())
+		#if not self._db.commit():
+		#	print(self._db.lastError().text())
+		#print(self._db.isOpen())
 
 
 		self.updateModelQueries()
@@ -242,4 +246,4 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		#self._sequence_query_model.setQuery(self._sequence_query_model.query(), QtSql.QSqlDatabase.database("trt"))
 
 	def updateModelQueries(self):
-		self._snapshot_query_model.setQuery(QtSql.QSqlQuery("SELECT * FROM trt_snapshot_labels ORDER BY is_current DESC, datetime_created DESC", QtSql.QSqlDatabase.database("trt")))
+		self._snapshot_query_model.setQuery(QtSql.QSqlQuery("SELECT * FROM trt_snapshot_labels ORDER BY is_current DESC, datetime_created DESC", self._db))
