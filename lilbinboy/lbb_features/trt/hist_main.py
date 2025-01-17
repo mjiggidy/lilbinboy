@@ -102,6 +102,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			history_panel = TRTHistorySnapshotPanel()
 			history_panel.setSnapshotRecord(snapshot)
 			history_panel.setModel(self._sequence_query_model)
+			history_panel.sig_save_current_requested.connect(self.saveLiveToSnapshot)
 			self._snapshots_parent.layout().addWidget(history_panel)
 	
 	def updateLiveSnapshot(self, reels:list):

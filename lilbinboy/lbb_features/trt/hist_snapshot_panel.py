@@ -50,24 +50,31 @@ class TRTHistorySnapshotProxyModel(QtCore.QSortFilterProxyModel):
 class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 	"""A card/panel displaying details for a given snapshot"""
 
+	sig_save_current_requested = QtCore.Signal(str)
+	"""Save "Current" Snapshot"""
+
 	def __init__(self, *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
 
 		self.setLayout(QtWidgets.QVBoxLayout())
 
-		self._lbl_clip_color    = QtWidgets.QLabel()
+		# Stacked Header (Editor for "Current", Viewer for rest)
+		self._stack_header = QtWidgets.QStackedWidget()
+		self._stack_header.setSizePolicy(self._stack_header.sizePolicy().horizontalPolicy(), QtWidgets.QSizePolicy.Policy.Maximum)
+
 		self._pixmap_clip_color = self.drawClipColor(QtCore.QSize(16, 16), QtGui.QColor())
+
+		# Viewer widgets
+		self._lbl_clip_color    = QtWidgets.QLabel()
 		self._lbl_snapshot_name = QtWidgets.QLabel()
 		self._lbl_datetime      = QtWidgets.QLabel("24 Jun 2024")
 
-		# Editor
-		self._txt_snapshot_name = QtWidgets.QLineEdit()
-		self._btn_clip_color    = QtWidgets.QPushButton()
-		self._btn_save          = QtWidgets.QPushButton()
-
-		self._stack_header = QtWidgets.QStackedWidget()
-
+		font = self._lbl_snapshot_name.font()
+		font.setBold(True)
+		self._lbl_snapshot_name.setFont(font)
+		
+		# Viewer stack
 		wdg_header_viewer = QtWidgets.QWidget()
 		wdg_header_viewer.setLayout(QtWidgets.QHBoxLayout())
 		wdg_header_viewer.layout().setContentsMargins(0,0,0,0)
@@ -76,22 +83,32 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		wdg_header_viewer.layout().addStretch()
 		wdg_header_viewer.layout().addWidget(self._lbl_datetime)
 
+		# Editor widgets
+		self._txt_snapshot_name = QtWidgets.QLineEdit()
+		self._btn_clip_color    = QtWidgets.QPushButton()
+		self._btn_save          = QtWidgets.QPushButton()
+
+		self._txt_snapshot_name.setMaxLength(32)
+		font = self._txt_snapshot_name.font()
+		font.setBold(True)
+		self._txt_snapshot_name.setFont(font)
+
+		self._btn_save.setText("Save Snapshot")
+		self._btn_save.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave))
+
+		# Editor stack
 		wdg_header_editor = QtWidgets.QWidget()
 		wdg_header_editor.setLayout(QtWidgets.QHBoxLayout())
 		wdg_header_editor.layout().setContentsMargins(0,0,0,0)
 		wdg_header_editor.layout().addWidget(self._btn_clip_color)
 		wdg_header_editor.layout().addWidget(self._txt_snapshot_name)
-		wdg_header_editor.layout().addStretch()
+		#wdg_header_editor.layout().addStretch()
 		wdg_header_editor.layout().addWidget(self._btn_save)
 
 
 		self._stack_header.addWidget(wdg_header_viewer)
 		self._stack_header.addWidget(wdg_header_editor)
-		self._stack_header.setSizePolicy(self._stack_header.sizePolicy().horizontalPolicy(), QtWidgets.QSizePolicy.Policy.Maximum)
 
-		font = self._lbl_snapshot_name.font()
-		font.setBold(True)
-		self._lbl_snapshot_name.setFont(font)
 
 		self._tree_sequences    = QtWidgets.QTreeView()
 		self._tree_sequences.setModel(TRTHistorySnapshotProxyModel())
@@ -109,6 +126,8 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self.setFrameShape(QtWidgets.QFrame.Shape.Panel)
 		self.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
 
+		self._btn_save.clicked.connect(lambda: self.sig_save_current_requested.emit(self._txt_snapshot_name.text()))
+
 	def setModel(self, model:QtCore.QAbstractItemModel):
 
 		self._tree_sequences.model().setSourceModel(model)
@@ -123,6 +142,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 			self._stack_header.setCurrentIndex(1)
 
 		self._lbl_snapshot_name.setText(snapshot_record.field("name").value())
+		self._txt_snapshot_name.setPlaceholderText(snapshot_record.field("name").value())
 		self._lbl_datetime.setText(snapshot_record.field("datetime_created").value())
 		self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
 
