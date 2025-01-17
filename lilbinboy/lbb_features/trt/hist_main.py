@@ -76,7 +76,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		#selected_snapshot_ids = [model.record(idx.row()).field("id_snapshot").value() for idx in selected_indexes]
 
 		
-		self.updateSnapshotCard(selected_snapshots)
+		#self.updateSnapshotCard(selected_snapshots)
 
 	def updateSnapshotCard(self, snapshots:list[QtSql.QSqlRecord]):
 
@@ -154,9 +154,18 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				print(query.lastError().text())
 			print("I insert")
 
-	def saveLiveToSnapshot(self, snapshot_name:str):
+	def saveLiveToSnapshot(self, snapshot_name:str, clip_color:QtGui.QColor):
 
 		query = QtSql.QSqlQuery(self._db)
+
+		if clip_color.isValid():
+			clip_color_str = ",".join(str(x) for x in [
+				clip_color.red(),
+				clip_color.green(),
+				clip_color.blue()
+			])
+		else:
+			clip_color_str = None
 
 		# Cet current snapshot ID
 		id_snapshots = []
@@ -180,6 +189,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			"""
 			INSERT INTO trt_snapshot_labels (
 				"name",
+				"clip_color",
 				"rate",
 				"duration_frames",
 				"duration_tc",
@@ -188,6 +198,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			)
 
 			SELECT
+				?,
 				?,
 				rate,
 				duration_frames,
@@ -199,6 +210,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			"""
 		)
 		query.addBindValue(snapshot_name)
+		query.addBindValue(clip_color_str)
 		query.addBindValue(id_snapshot_current)
 		if not query.exec():
 			print(query.lastError().text())
@@ -243,6 +255,13 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 
 		self.updateModelQueries()
+
+		for row in range(self._lst_saved.model().rowCount()):
+			print("Look at ", self._lst_saved.model().record(row).field("id_snapshot").value())
+			if self._lst_saved.model().record(row).field("id_snapshot").value() == id_snapsphot_new:
+				self._lst_saved.setCurrentIndex(self._lst_saved.model().index(row,0))
+				print("Yee")
+				break
 		#self._snapshot_query_model.setQuery("SELECT * FROM trt_snapshot_labels", QtSql.QSqlDatabase.database("trt"))
 		#self._sequence_query_model.setQuery(self._sequence_query_model.query(), QtSql.QSqlDatabase.database("trt"))
 

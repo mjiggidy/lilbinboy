@@ -1,3 +1,4 @@
+from lilbinboy.lbb_common import LBClipColorPicker
 from PySide6 import QtSql, QtCore, QtGui, QtWidgets
 
 class TRTHistorySnapshotProxyModel(QtCore.QSortFilterProxyModel):
@@ -50,7 +51,7 @@ class TRTHistorySnapshotProxyModel(QtCore.QSortFilterProxyModel):
 class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 	"""A card/panel displaying details for a given snapshot"""
 
-	sig_save_current_requested = QtCore.Signal(str)
+	sig_save_current_requested = QtCore.Signal(str, QtGui.QColor)
 	"""Save "Current" Snapshot"""
 
 	def __init__(self, *args, **kwargs):
@@ -58,6 +59,8 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		super().__init__(*args, **kwargs)
 
 		self.setLayout(QtWidgets.QVBoxLayout())
+
+		self._color_clip = None
 
 		# Stacked Header (Editor for "Current", Viewer for rest)
 		self._stack_header = QtWidgets.QStackedWidget()
@@ -68,7 +71,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		# Viewer widgets
 		self._lbl_clip_color    = QtWidgets.QLabel()
 		self._lbl_snapshot_name = QtWidgets.QLabel()
-		self._lbl_datetime      = QtWidgets.QLabel("24 Jun 2024")
+		self._lbl_datetime      = QtWidgets.QLabel()
 
 		font = self._lbl_snapshot_name.font()
 		font.setBold(True)
@@ -85,7 +88,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 
 		# Editor widgets
 		self._txt_snapshot_name = QtWidgets.QLineEdit()
-		self._btn_clip_color    = QtWidgets.QPushButton()
+		self._btn_clip_color    = QtWidgets.QToolButton()
 		self._btn_save          = QtWidgets.QPushButton()
 
 		self._txt_snapshot_name.setMaxLength(32)
@@ -102,7 +105,6 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		wdg_header_editor.layout().setContentsMargins(0,0,0,0)
 		wdg_header_editor.layout().addWidget(self._btn_clip_color)
 		wdg_header_editor.layout().addWidget(self._txt_snapshot_name)
-		#wdg_header_editor.layout().addStretch()
 		wdg_header_editor.layout().addWidget(self._btn_save)
 
 
@@ -116,8 +118,21 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self._tree_sequences.setAlternatingRowColors(True)
 		self._tree_sequences.setIndentation(0)
 
-		self._lbl_clip_color.setPixmap(self._pixmap_clip_color)
-		self._btn_clip_color.setIcon(QtGui.QIcon(self._pixmap_clip_color))
+		
+		self._clip_color_picker = LBClipColorPicker()
+		self._clip_color_picker.setFixedSize(8*11, 4*10)
+
+		self._mnu_clip_color = QtWidgets.QMenu()
+		self._act_clip_color = QtWidgets.QWidgetAction(self._mnu_clip_color)
+		self._act_clip_color.setDefaultWidget(self._clip_color_picker)
+		self._clip_color_picker.sig_selected_color_changed.connect(self.setClipColor)
+		self._clip_color_picker.sig_hovered_color_changed.connect(self.setClipColor)
+		self._mnu_clip_color.addAction(self._act_clip_color)
+		
+		self._btn_clip_color.setMenu(self._mnu_clip_color)
+		self._btn_clip_color.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.InstantPopup)
+
+
 
 		self.layout().addWidget(self._stack_header)
 		self.layout().addWidget(self._tree_sequences)
@@ -126,7 +141,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self.setFrameShape(QtWidgets.QFrame.Shape.Panel)
 		self.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
 
-		self._btn_save.clicked.connect(lambda: self.sig_save_current_requested.emit(self._txt_snapshot_name.text()))
+		self._btn_save.clicked.connect(lambda: self.sig_save_current_requested.emit(self._txt_snapshot_name.text(), self._color_clip))
 
 	def setModel(self, model:QtCore.QAbstractItemModel):
 
@@ -134,6 +149,13 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 
 	def model(self) -> QtCore.QAbstractItemModel:
 		return self._tree_sequences.model().sourceModel()
+	
+	def setClipColor(self, color:QtGui.QColor):
+		self._color_clip = color
+
+		pix_color = self.drawClipColor(QtCore.QSize(16, 16), color)
+		self._btn_clip_color.setIcon(pix_color)
+		self._lbl_clip_color.setPixmap(pix_color)
 	
 	def setSnapshotRecord(self, snapshot_record:QtSql.QSqlRecord):
 		
@@ -152,20 +174,21 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 			clip_color = QtGui.QColor(*[int(x) for x in str(snapshot_record.field("clip_color").value()).split(",")])
 		#print("Using", clip_color)
 
-		self._pixmap_clip_color = self.drawClipColor(size=QtCore.QSize(14,14), clip_color=clip_color)
-		self._lbl_clip_color.setPixmap(self._pixmap_clip_color)
+		self.setClipColor(clip_color)
 
 	def drawClipColor(self, size:QtCore.QSize, clip_color:QtGui.QColor) -> QtGui.QPixmap:
 
 		"""For now"""
 
 		pixmap = QtGui.QPixmap(size)
+		pixmap.fill(QtCore.Qt.GlobalColor.transparent)
 
 		painter = QtGui.QPainter(pixmap)
 		
-		color_box = QtCore.QRectF(0, 0, size.width(), size.height()).adjusted(2,2,-2,-2)
+		rect_device = QtCore.QRectF(0, 0, size.width(), size.height())
+		rect_color_box = rect_device.adjusted(2,2,-2,-2)
 
-		pixmap.fill(QtGui.QColor(255,255,255,255))
+		#painter.setBackgroundMode(QtCore.Qt.BGMode.TransparentMode)
 
 		
 		# Set outline and fill
@@ -182,10 +205,10 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		
 		painter.setBrush(brush)
 		painter.setPen(pen)
-		painter.drawRect(color_box)
+		painter.drawRect(rect_color_box)
 
 		# Box Shadow (TODO: 128 opactiy not working)
-		color_box.moveCenter(color_box.center() + QtCore.QPointF(1,1))
+		rect_color_box.moveCenter(rect_color_box.center() + QtCore.QPointF(1,1))
 		#color_box.setWidth(color_box.width() + 2)
 
 		color_shadow = pen.color()
@@ -194,7 +217,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
 		painter.setPen(pen)
 		painter.setBrush(brush)
-		painter.drawRect(color_box)
+		painter.drawRect(rect_color_box)
 
 		painter.end()
 
