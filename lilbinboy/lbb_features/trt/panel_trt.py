@@ -1,9 +1,8 @@
-import dataclasses
-from PySide6 import QtWidgets, QtGui, QtCore
+from PySide6 import QtWidgets, QtGui, QtCore, QtSql
 from timecode import Timecode
 from concurrent import futures
 from lilbinboy.lbb_common import LBUtilityTab, LBSpinBoxTC, LBTimelineView
-from lilbinboy.lbb_features.trt import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt, wdg_summary
+from lilbinboy.lbb_features.trt import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt, wdg_summary, hist_main
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 
@@ -202,6 +201,8 @@ class LBTRTCalculator(LBUtilityTab):
 		self.actn_export_data = QtGui.QAction(self)
 		self.btn_export_data = QtWidgets.QPushButton()
 
+		self.btn_snapshots = QtWidgets.QPushButton()
+
 
 
 		self._setupSignals()
@@ -322,6 +323,11 @@ class LBTRTCalculator(LBUtilityTab):
 		self.layout().addWidget(self.trt_trims)
 
 		self.layout().addWidget(self.btn_export_data)
+		
+		self.btn_snapshots.setText("Show Snapshots...")
+		self.btn_snapshots.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRestore))
+		self.btn_snapshots.clicked.connect(self.historyViewerRequsted)
+		self.layout().addWidget(self.btn_snapshots)
 
 	
 	def _setupSignals(self):
@@ -832,3 +838,20 @@ class LBTRTCalculator(LBUtilityTab):
 				exporters_trt.export_delimited(self.list_trts.model(), path_file, format)
 		except Exception as e:
 			print("Prolem:",str(e))
+	
+	@QtCore.Slot()
+	def historyViewerRequsted(self):
+
+		path_db = QtCore.QDir(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.StandardLocation.AppDataLocation))
+		QtCore.QDir().mkpath(str(path_db))
+
+		db = QtSql.QSqlDatabase.addDatabase("QSQLITE", "trt")
+		db.setDatabaseName(path_db.filePath("dbtrt.db"))
+		db.open()
+
+		if not db.open():
+			print("Nah lol", db.lastError().text())
+			print(path_db)
+		
+		self.wnd_history = hist_main.TRTHistoryViewer(db)
+		self.wnd_history.show()
