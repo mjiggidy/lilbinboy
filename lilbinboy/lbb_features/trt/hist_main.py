@@ -13,6 +13,8 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self.setMinimumSize(QtCore.QSize(600,300))
 
 		self._db = database
+		if not QtSql.QSqlQuery(self._db).exec("PRAGMA foreign_keys = ON;"):
+			print("Error enabling foregin keys: ", self._db.lastError().text())
 
 		self.setWindowTitle("History Viewer")
 		#self.setWindowFlag(QtCore.Qt.WindowType.Tool)
@@ -57,6 +59,9 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._snapshots_scroll.setWidget(self._snapshots_parent)
 
 		self._splt_pane.addWidget(self._snapshots_scroll)
+		self._splt_pane.setSizes([185, 200])
+		self._splt_pane.setStretchFactor(0, 0)
+		self._splt_pane.setStretchFactor(1, 1)
 		#self.layout().addWidget(self._scroll_panels)
 
 		self.layout().addWidget(self._splt_pane)
@@ -272,7 +277,6 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self.updateModelQueries()
 
 		for row in range(self._lst_saved.model().rowCount()):
-			print("Look at ", self._lst_saved.model().record(row).field("id_snapshot").value())
 			if self._lst_saved.model().record(row).field("id_snapshot").value() == id_snapsphot_new:
 				self._lst_saved.setCurrentIndex(self._lst_saved.model().index(row,0))
 				print("Yee")
@@ -342,6 +346,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		
 		if not query.exec():
 			print(query.lastError().text())
-		
+
 		self.updateModelQueries()
+		self.updateSnapshotCard([])
 

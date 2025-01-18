@@ -165,7 +165,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 
 		self._lbl_snapshot_name.setText(snapshot_record.field("name").value())
 		self._txt_snapshot_name.setPlaceholderText(snapshot_record.field("name").value())
-		self._lbl_datetime.setText(str(QtCore.QDateTime.fromString(snapshot_record.field("datetime_created_local").value(), format=QtCore.Qt.DateFormat.ISODate).toLocalTime().toString("dd MMM yyyy @ hh:mm aP")))
+		self._lbl_datetime.setText(str(QtCore.QDateTime.fromString(snapshot_record.field("datetime_created_local").value(), format=QtCore.Qt.DateFormat.ISODate).toLocalTime().toString("dd MMM yyyy · hh:mm aP")))
 		self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
 
 		if snapshot_record.field("clip_color").isNull():
