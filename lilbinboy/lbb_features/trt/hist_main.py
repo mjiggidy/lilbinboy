@@ -1,3 +1,4 @@
+import timecode
 from lilbinboy.lbb_features.trt.hist_snapshot_panel import TRTHistorySnapshotPanel, TRTHistorySnapshotProxyModel
 from lilbinboy.lbb_features.trt.hist_snapshot_list  import TRTHistorySnapshotLabelDelegate
 from PySide6 import QtCore, QtGui, QtWidgets, QtSql
@@ -18,16 +19,19 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		self.setWindowTitle("History Viewer")
 		#self.setWindowFlag(QtCore.Qt.WindowType.Tool)
-		self.setLayout(QtWidgets.QHBoxLayout())
+		self.setLayout(QtWidgets.QVBoxLayout())
+		self.layout().setContentsMargins(2,2,2,2)
 
 		self._splt_pane = QtWidgets.QSplitter()
 		self._lst_saved = QtWidgets.QListView()
 		self._snapshots_scroll = QtWidgets.QScrollArea()
 
-		self._tree_temp_sequences = QtWidgets.QTreeView()
-
 		self._snapshot_query_model = QtSql.QSqlQueryModel()
 		self._sequence_query_model = QtSql.QSqlQueryModel()
+
+		self._status_bar = QtWidgets.QStatusBar()
+		self._status_bar.setSizeGripEnabled(True)
+		self._status_bar.setSizePolicy(self._status_bar.sizePolicy().horizontalPolicy(), QtWidgets.QSizePolicy.Policy.Maximum)
 
 		self._key_delete = QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Delete), self._lst_saved)
 		self._key_delete.activated.connect(self.deleteSnapshotLabelsRequested)
@@ -66,6 +70,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		self.layout().addWidget(self._splt_pane)
 
+		self.layout().addWidget(self._status_bar)
 
 		## Initial State
 		self.updateModelQueries()
@@ -81,12 +86,33 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		selected_snapshots = [model.record(idx.row()) for idx in selected_indexes]
 
 		self.updateSnapshotCard(selected_snapshots)
-		
-		#selected_snapshot_ids = [model.record(idx.row()).field("id_snapshot").value() for idx in selected_indexes]
+		self.updateStatusBarDelta(selected_snapshots)
+	
+	@QtCore.Slot(list)
+	def updateStatusBarDelta(self, snapshots:list[QtSql.QSqlRecord]):
+		"""Calculate duration delta"""
 
+		if len(snapshots) < 2:
+			self._status_bar.clearMessage()
+			return
 		
-		#self.updateSnapshotCard(selected_snapshots)
+		snapshots = sorted(snapshots, key=lambda r: QtCore.QDateTime.fromString(r.field("datetime_created_local").value(), format=QtCore.Qt.DateFormat.ISODate))
+		snap_first = snapshots[0]
+		snap_last = snapshots[-1]
 
+		if snap_first.field("rate").value() != snap_last.field("rate").value():
+			self._status_bar.showMessage("Cannot compare time deltas between mixed frame rates")
+			return
+		
+		timecode_first = timecode.Timecode(snap_first.field("duration_frames").value(), rate=snap_first.field("rate").value())
+		timecode_last = timecode.Timecode(snap_last.field("duration_frames").value(), rate=snap_last.field("rate").value())
+		timecode_delta = timecode_last - timecode_first
+
+		pos = "+" if timecode_delta > 0 else ""
+
+		self._status_bar.showMessage(f"Duration from {snap_first.field("name").value()} to {snap_last.field("name").value()} changed by {pos}{timecode_delta}")
+
+	@QtCore.Slot(list)
 	def updateSnapshotCard(self, snapshots:list[QtSql.QSqlRecord]):
 
 		snapshot_ids = [row.field("id_snapshot").value() for row in snapshots]
