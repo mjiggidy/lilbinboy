@@ -27,6 +27,10 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._snapshot_query_model = QtSql.QSqlQueryModel()
 		self._sequence_query_model = QtSql.QSqlQueryModel()
 
+		self._key_delete = QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Delete), self._lst_saved)
+		self._key_delete.activated.connect(self.deleteSnapshotLabelsRequested)
+		self._key_delete.setContext(QtGui.Qt.ShortcutContext.WidgetWithChildrenShortcut)
+
 		self._setupWidgets()
 	
 	def _setupWidgets(self):
@@ -86,7 +90,18 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		query = QtSql.QSqlQuery(self._db)
 
 		query_placeholders = ",".join(["?"]*len(snapshot_ids))
-		query.prepare(f"SELECT id_snapshot,clip_color,name,duration_tc,duration_ff FROM trt_snapshot_sequences s WHERE id_snapshot IN ({query_placeholders})")
+		query.prepare(
+			f"""
+			SELECT
+				id_snapshot,
+				clip_color,
+				name,
+				duration_tc,
+				duration_ff
+			FROM trt_snapshot_sequences
+			WHERE id_snapshot IN ({query_placeholders})
+			"""
+		)
 		for place, snapshot_id in enumerate(snapshot_ids):
 			query.bindValue(place, snapshot_id)
 		query.exec()
@@ -266,4 +281,67 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		#self._sequence_query_model.setQuery(self._sequence_query_model.query(), QtSql.QSqlDatabase.database("trt"))
 
 	def updateModelQueries(self):
-		self._snapshot_query_model.setQuery(QtSql.QSqlQuery("SELECT * FROM trt_snapshot_labels ORDER BY is_current DESC, datetime_created DESC", self._db))
+		self._snapshot_query_model.setQuery(QtSql.QSqlQuery(
+			"""
+			SELECT
+				id_snapshot,
+				name,
+				clip_color,
+				rate,
+				duration_frames,
+				duration_tc,
+				duration_ff,
+				is_current,
+				datetime(datetime_created, 'localtime') as datetime_created_local
+			FROM trt_snapshot_labels
+			ORDER BY is_current DESC, datetime_created DESC
+			""",
+			self._db))
+	
+	def deleteSnapshotLabelsRequested(self):
+		"""User requested to delete snapshots"""
+
+		model = self._snapshot_query_model
+		records_selected = [model.record(r.row()) for r in self._lst_saved.selectedIndexes() if not bool(model.record(r.row()).field("is_current").value())]
+
+		if not records_selected:
+			QtWidgets.QApplication.beep()
+			return
+		
+		if len(records_selected) > 1:
+			msg_warning = QtWidgets.QMessageBox.warning(self, "Delete Snapshots?", f"Are you sure you want to permanently delete these {len(records_selected)} snapshots?", QtWidgets.QMessageBox.StandardButton.YesToAll|QtWidgets.QMessageBox.StandardButton.Cancel)
+		else:
+			msg_warning = QtWidgets.QMessageBox.warning(self, "Delete Snapshot?", f"Are you sure you want to permanently delete this snapshot?", QtWidgets.QMessageBox.StandardButton.Yes|QtWidgets.QMessageBox.StandardButton.Cancel)
+		
+		if msg_warning == QtWidgets.QMessageBox.StandardButton.Cancel:
+			return
+		
+		self.deleteSnapshotLabels(records_selected)
+	
+	def deleteSnapshotLabels(self, records:list[QtSql.QSqlRecord]):
+		"""Delete a snapshot"""
+
+		if not records:
+			return
+
+		id_snapshots = [record.field("id_snapshot").value() for record in records]
+
+		query = QtSql.QSqlQuery(self._db)
+
+		# Build placeholders
+		placeholders = ",".join(["?"] * len(id_snapshots))
+
+		query.prepare(
+			f"""
+			DELETE FROM trt_snapshot_labels
+			WHERE id_snapshot IN ({placeholders})
+			"""
+		)
+		for id_snapshot in id_snapshots:
+			query.addBindValue(id_snapshot)
+		
+		if not query.exec():
+			print(query.lastError().text())
+		
+		self.updateModelQueries()
+
