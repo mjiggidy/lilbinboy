@@ -55,7 +55,7 @@ class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 		painter.setFont(font)
 		painter.drawText(sub_rect, "01:47:23:12", QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignBottom)
 
-		datetime_str = QtCore.QDateTime.fromString(label_info.field("datetime_created").value(), QtCore.Qt.DateFormat.ISODate)
+		datetime_str = QtCore.QDateTime.fromString(label_info.field("datetime_created_local").value(), QtCore.Qt.DateFormat.ISODate)
 		#print(datetime_str.toString(QtCore.Qt.DateFormat.TextDate))
 		painter.drawText(sub_rect, datetime_str.toString("dd MMM yyyy"), QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignBottom)
 
