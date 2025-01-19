@@ -200,6 +200,8 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				print(query.lastError().text())
 			print("I insert")
 
+		self.updateModelQueries()
+
 	def saveLiveToSnapshot(self, snapshot_name:str, clip_color:QtGui.QColor):
 
 		query = QtSql.QSqlQuery(self._db)
