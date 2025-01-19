@@ -842,11 +842,14 @@ class LBTRTCalculator(LBUtilityTab):
 	@QtCore.Slot()
 	def historyViewerRequsted(self):
 
-		path_db = QtCore.QDir(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.StandardLocation.AppDataLocation))
-		QtCore.QDir().mkpath(str(path_db))
+		path_db = QtCore.QDir(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.StandardLocation.AppDataLocation)).filePath("dbtrt.db")
+		QtCore.QDir().mkpath(QtCore.QFileInfo(path_db).absolutePath())
+		
+		if not QtCore.QDir().exists(QtCore.QFileInfo(path_db).absolutePath()):
+			print("Didn't make the path to DB: ", QtCore.QFileInfo(path_db).absolutePath())
 
 		db = QtSql.QSqlDatabase.addDatabase("QSQLITE", "trt")
-		db.setDatabaseName(path_db.filePath("dbtrt.db"))
+		db.setDatabaseName(QtCore.QFileInfo(path_db).absoluteFilePath())
 		db.open()
 
 		if not db.open():
