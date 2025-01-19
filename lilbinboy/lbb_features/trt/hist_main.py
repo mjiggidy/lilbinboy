@@ -151,7 +151,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			history_panel.sig_save_current_requested.connect(self.saveLiveToSnapshot)
 			self._snapshots_parent.layout().addWidget(history_panel)
 	
-	def updateLiveSnapshot(self, reels:list):
+	def updateLiveSnapshot(self, timeline_info_list:list):
 
 		query = QtSql.QSqlQuery(self._db)
 
@@ -175,7 +175,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			print("I no delet")
 			print(query.lastError().text())
 
-		for idx in range(1,7):
+		for timeline_info in timeline_info_list:
 			query.prepare(
 				"""
 				INSERT INTO trt_snapshot_sequences(
@@ -190,11 +190,11 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				)
 				""")
 			query.addBindValue(id_snapshot)
-			query.addBindValue("211,168,103")
-			query.addBindValue(f"Reel {idx} v1.{idx}.3")
-			query.addBindValue(86400)
-			query.addBindValue("00:42:16:00")
-			query.addBindValue("800+16")
+			query.addBindValue(timeline_info.clip_color)
+			query.addBindValue(timeline_info.name)
+			query.addBindValue(timeline_info.duration_frames)
+			query.addBindValue(timeline_info.duration_tc)
+			query.addBindValue(timeline_info.duration_ff)
 
 			if not query.exec():
 				print(query.lastError().text())

@@ -1,4 +1,5 @@
-from PySide6 import QtCore
+import dataclasses
+from PySide6 import QtCore, QtGui
 from lilbinboy.lbb_features.trt.treeview_trt import TRTTreeViewHeaderItem
 
 def export_delimited(model:QtCore.QAbstractItemModel, path:str, format:str):
@@ -38,3 +39,56 @@ def export_delimited(model:QtCore.QAbstractItemModel, path:str, format:str):
 		writer.writeheader()
 		for row in rows:
 			writer.writerow(row)
+
+
+
+def exportToSnapshot(proxy_model:QtCore.QAbstractProxyModel):
+	"""Package timeline info for snapshot"""
+
+	source_model = proxy_model.sourceModel()
+	source_model_cols = source_model.columnCount(QtCore.QModelIndex())
+	source_headers = [source_model.headerData(col, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole) for col in range(source_model_cols)]
+
+	timeline_infos:list[TimelineSnapshotInfo] = []
+
+	# Look up in order according to TreeView rows, but map back to source model for the actual data
+	for row in range(proxy_model.rowCount(QtCore.QModelIndex())):
+		source_row = proxy_model.mapToSource(proxy_model.index(row, 0, QtCore.QModelIndex())).row()
+		
+		timeline_info = dict()
+
+		# Clip color
+		clip_color = source_model.index(source_row, source_headers.index("sequence_color")).data(QtCore.Qt.ItemDataRole.UserRole)
+		timeline_info["clip_color"] = ",".join(str(x) for x in list(QtGui.QColor(clip_color).getRgb())[:3]) if clip_color else None
+		
+		# Sequence Name
+		timeline_info["name"] = source_model.index(source_row, source_headers.index("sequence_name")).data(QtCore.Qt.ItemDataRole.UserRole)
+		
+		# Trimmed Duration
+		duration_trimmed = source_model.index(source_row, source_headers.index("duration_trimmed")).data(QtCore.Qt.ItemDataRole.UserRole)
+		timeline_info["duration_frames"] = duration_trimmed.frame_number
+		timeline_info["duration_tc"] = str(duration_trimmed)
+		
+		# F+F From Display Role Maybe?
+		timeline_info["duration_ff"] = str(source_model.index(source_row, source_headers.index("duration_trimmed_ff")).data(QtCore.Qt.ItemDataRole.DisplayRole)).strip()
+
+		timeline_infos.append(
+			TimelineSnapshotInfo(**timeline_info)
+		)
+	
+	return timeline_infos
+
+
+#		for source_col in range(source_model_cols):
+#			source_index = source_model.index(source_row, source_col)
+#			print(source_headers[source_col], ":   ", source_index.data(QtCore.Qt.ItemDataRole.UserRole))
+#		print("")
+
+@dataclasses.dataclass
+class TimelineSnapshotInfo:
+
+	clip_color:str
+	name:str
+	duration_frames:int
+	duration_tc:str
+	duration_ff:str

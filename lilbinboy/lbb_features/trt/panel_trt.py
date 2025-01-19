@@ -856,5 +856,10 @@ class LBTRTCalculator(LBUtilityTab):
 			print("Nah lol", db.lastError().text())
 			print(path_db)
 		
+		
 		self.wnd_history = hist_main.TRTHistoryViewer(db)
+		
+		timeline_snapshots = exporters_trt.exportToSnapshot(self.list_trts.model())
+		self.wnd_history.updateLiveSnapshot(timeline_snapshots)
+		
 		self.wnd_history.show()
