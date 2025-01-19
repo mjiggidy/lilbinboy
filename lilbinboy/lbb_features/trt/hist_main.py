@@ -17,6 +17,47 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		if not QtSql.QSqlQuery(self._db).exec("PRAGMA foreign_keys = ON;"):
 			print("Error enabling foregin keys: ", self._db.lastError().text())
 
+		if not QtSql.QSqlQuery(self._db).exec(
+			"""
+			CREATE TABLE IF NOT EXISTS "trt_snapshot_labels" (
+				"id_snapshot"	INTEGER NOT NULL UNIQUE,
+				"name"	TEXT NOT NULL,
+				"datetime_created"	TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				"clip_color"	TEXT,
+				"rate"	INTEGER NOT NULL DEFAULT 24,
+				"duration_frames"	INTEGER NOT NULL DEFAULT 0,
+				"duration_tc"	TEXT NOT NULL DEFAULT '00:00:00:00',
+				"duration_ff"	TEXT NOT NULL DEFAULT '0+00',
+				"is_current"	INTEGER NOT NULL DEFAULT 0,
+				PRIMARY KEY("id_snapshot" AUTOINCREMENT)
+			)
+			"""
+		):
+			print("Error setting up snapshot labels: ", self._db.lastError().text())
+		else:
+			print("Yurrr")
+
+		if not QtSql.QSqlQuery(self._db).exec(
+			"""
+			CREATE TABLE IF NOT EXISTS "trt_snapshot_sequences" (
+				"id_snapshot"	INTEGER NOT NULL,
+				"id_sequence"	INTEGER NOT NULL UNIQUE,
+				"clip_color"	TEXT,
+				"name"	TEXT NOT NULL,
+				"duration_frames"	INTEGER NOT NULL,
+				"duration_tc"	TEXT NOT NULL,
+				"duration_ff"	TEXT NOT NULL,
+				"datetime_created"	TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				PRIMARY KEY("id_sequence" AUTOINCREMENT),
+				FOREIGN KEY("id_snapshot") REFERENCES "trt_snapshot_labels"("id_snapshot") ON DELETE CASCADE
+			)
+			"""
+		):
+			print("Error setting up snapshot sequences: ", self._db.lastError().text())
+		else:
+			print("yas")
+		
+
 		self.setWindowTitle("History Viewer")
 		#self.setWindowFlag(QtCore.Qt.WindowType.Tool)
 		self.setLayout(QtWidgets.QVBoxLayout())
