@@ -56,6 +56,32 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			print("Error setting up snapshot sequences: ", self._db.lastError().text())
 		else:
 			print("yas")
+
+		if not QtSql.QSqlQuery(self._db).exec(
+			"""
+			INSERT INTO trt_snapshot_labels (
+				name,
+				rate,
+				duration_frames,
+				duration_tc,
+				duration_ff,
+				is_current
+			) SELECT
+				"Current",
+				24,
+				0,
+				"00:00:00:00",
+				"0+00",
+				1
+			WHERE NOT EXISTS (
+				SELECT 1 FROM trt_snapshot_labels
+				WHERE is_current = 1
+			)
+			"""
+		):
+			print("Error adding Current label:", self._db.lastError().text())
+		else:
+			print("heehee")
 		
 
 		self.setWindowTitle("History Viewer")
@@ -241,7 +267,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				print(query.lastError().text())
 			print("I insert")
 
-		self.updateModelQueries()
+		self.snapshotSelectionChanged(0,0)
 
 	def saveLiveToSnapshot(self, snapshot_name:str, clip_color:QtGui.QColor):
 
