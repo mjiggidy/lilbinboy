@@ -48,14 +48,40 @@ def main():
 	wnd_main.show()
 
 	# Setup main window
-	wnd_main.menuBar().addMenu("&File")
+	mnu_file = wnd_main.menuBar().addMenu("&File")
+
+	act_quit = QtGui.QAction("Quit")
+	act_quit.setMenuRole(QtGui.QAction.MenuRole.ApplicationSpecificRole)
+	act_quit.triggered.connect(wnd_main.close)
+	act_quit.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ApplicationExit))
+	mnu_file.addAction(act_quit)
+
 	wnd_main.menuBar().addMenu("&Edit")
-	wnd_main.menuBar().addMenu("&Tools")
+	mnu_tools = wnd_main.menuBar().addMenu("&Tools")
+
+	act_datalocation = QtGui.QAction("Open Data Storage Location...")
+	act_datalocation.triggered.connect(lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.StandardLocation.AppDataLocation))))
+	act_datalocation.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.FolderOpen))
+	mnu_tools.addAction(act_datalocation)
+
 
 	mnu_help = QtWidgets.QMenu("&Help")
+
+	act_wiki = QtGui.QAction("Lil' Bin Boy Wiki...")
+	act_wiki.triggered.connect(lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl("https://github.com/mjiggidy/lilbinboy/wiki")))
+	mnu_help.addAction(act_wiki)
+
+	act_updates = QtGui.QAction("Check For Updates...")
+	act_updates.triggered.connect(lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl("https://github.com/mjiggidy/lilbinboy/releases")))
+	mnu_help.addAction(act_updates)
+
+	mnu_help.addSeparator()
+	
+
 	act_aboutbox = QtGui.QAction("About Lil' Bin Boy...")
 	act_aboutbox.setMenuRole(QtGui.QAction.MenuRole.AboutRole)
 	act_aboutbox.triggered.connect(lambda: lbb_common.wnd_about.LBAboutWindow(wnd_main).exec())
+	act_aboutbox.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.HelpAbout))
 	mnu_help.addAction(act_aboutbox)
 	
 	wnd_main.menuBar().addMenu(mnu_help)
