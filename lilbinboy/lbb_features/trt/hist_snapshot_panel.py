@@ -1,6 +1,10 @@
 from lilbinboy.lbb_common import LBClipColorPicker
 from PySide6 import QtSql, QtCore, QtGui, QtWidgets
 
+class TRTCurrentViewProxyModel(QtCore.QSortFilterProxyModel):
+	"""Proxy Model for the Current View"""
+
+
 class TRTHistorySnapshotProxyModel(QtCore.QSortFilterProxyModel):
 	"""Proxy model to filter for an individual snapshot ID"""
 
@@ -51,7 +55,7 @@ class TRTHistorySnapshotProxyModel(QtCore.QSortFilterProxyModel):
 class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 	"""A card/panel displaying details for a given snapshot"""
 
-	sig_save_current_requested = QtCore.Signal(str, QtGui.QColor)
+	sig_save_current_requested = QtCore.Signal(str, QtGui.QColor, list)
 	"""Save "Current" Snapshot"""
 
 	def __init__(self, *args, **kwargs):
@@ -141,7 +145,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self.setFrameShape(QtWidgets.QFrame.Shape.Panel)
 		self.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
 
-		self._btn_save.clicked.connect(lambda: self.sig_save_current_requested.emit(self._txt_snapshot_name.text(), self._color_clip))
+		self._btn_save.clicked.connect(self.saveCurrentRequested)
 
 	def setModel(self, model:QtCore.QAbstractItemModel):
 
@@ -160,13 +164,17 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 	def setSnapshotRecord(self, snapshot_record:QtSql.QSqlRecord):
 		
 
+		# NOTE: Wasn't if/else here before... trying to sus out the Current View thing
 		if snapshot_record.field("is_current").value() == 1:
 			self._stack_header.setCurrentIndex(1)
+			self._tree_sequences.setModel(TRTCurrentViewProxyModel())
+		
+		else:
 
-		self._lbl_snapshot_name.setText(snapshot_record.field("name").value())
-		self._txt_snapshot_name.setPlaceholderText(snapshot_record.field("name").value())
-		self._lbl_datetime.setText(str(QtCore.QDateTime.fromString(snapshot_record.field("datetime_created_local").value(), format=QtCore.Qt.DateFormat.ISODate).toLocalTime().toString("dd MMM yyyy · hh:mm aP")))
-		self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
+			self._lbl_snapshot_name.setText(snapshot_record.field("name").value())
+			self._txt_snapshot_name.setPlaceholderText(snapshot_record.field("name").value())
+			self._lbl_datetime.setText(str(QtCore.QDateTime.fromString(snapshot_record.field("datetime_created_local").value(), format=QtCore.Qt.DateFormat.ISODate).toLocalTime().toString("dd MMM yyyy · hh:mm aP")))
+			self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
 
 		if snapshot_record.field("clip_color").isNull():
 			clip_color = QtGui.QColor(None)
@@ -222,3 +230,12 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		painter.end()
 
 		return pixmap
+	
+	@QtCore.Slot()
+	def saveCurrentRequested(self):
+		from lilbinboy.lbb_features.trt import exporters_trt
+
+		label_text = self._txt_snapshot_name.text()
+		label_color = self._color_clip
+		sequences = exporters_trt.exportToSnapshot(self._tree_sequences.model())
+		self.sig_save_current_requested.emit(label_text, label_color, sequences)

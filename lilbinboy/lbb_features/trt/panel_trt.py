@@ -858,11 +858,9 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		
 		self.wnd_history = hist_main.TRTHistoryViewer(db)
+		self.wnd_history.setCurrentModel(self._treeview_model) # "Current" as in "Current Sequences in main Program"
 		
-		timeline_snapshots = exporters_trt.exportToSnapshot(self.list_trts.model())
-		self.wnd_history.updateLiveSnapshot(timeline_snapshots)
-
-		self.list_trts.model().layoutChanged.connect(lambda: self.wnd_history.updateLiveSnapshot(exporters_trt.exportToSnapshot(self.list_trts.model())))
-		self.model().sig_data_changed.connect(lambda: self.wnd_history.updateLiveSnapshot(exporters_trt.exportToSnapshot(self.list_trts.model())))
+		#timeline_snapshots = exporters_trt.exportToSnapshot(self.list_trts.model())
+		#self.wnd_history.updateLiveSnapshot(timeline_snapshots)
 		
 		self.wnd_history.show()

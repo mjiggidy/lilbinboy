@@ -1,4 +1,5 @@
 import timecode
+from lilbinboy.lbb_features.trt.model_trt import TRTViewModel
 from lilbinboy.lbb_features.trt.hist_snapshot_panel import TRTHistorySnapshotPanel, TRTHistorySnapshotProxyModel
 from lilbinboy.lbb_features.trt.hist_snapshot_list  import TRTHistorySnapshotLabelDelegate
 from PySide6 import QtCore, QtGui, QtWidgets, QtSql
@@ -95,6 +96,8 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		self._snapshot_query_model = QtSql.QSqlQueryModel()
 		self._sequence_query_model = QtSql.QSqlQueryModel()
+		self._current_model = TRTViewModel()
+		"""The "Current View" model from the main program"""
 
 		self._status_bar = QtWidgets.QStatusBar()
 		self._status_bar.setSizeGripEnabled(True)
@@ -214,9 +217,17 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		for snapshot in snapshots:
 			history_panel = TRTHistorySnapshotPanel()
 			history_panel.setSnapshotRecord(snapshot)
-			history_panel.setModel(self._sequence_query_model)
+
+			if snapshot.field("is_current").value() == 1:
+				history_panel.setModel(self._current_model)
+			else:
+				history_panel.setModel(self._sequence_query_model)
 			history_panel.sig_save_current_requested.connect(self.saveLiveToSnapshot)
 			self._snapshots_parent.layout().addWidget(history_panel)
+	
+	def setCurrentModel(self, datamodel:TRTViewModel):
+		"""Set the "Current sequences" model from the main program"""
+		self._current_model = datamodel
 	
 	def updateLiveSnapshot(self, timeline_info_list:list):
 
@@ -269,7 +280,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		self.snapshotSelectionChanged(0,0)
 
-	def saveLiveToSnapshot(self, snapshot_name:str, clip_color:QtGui.QColor):
+	def saveLiveToSnapshot(self, snapshot_name:str, clip_color:QtGui.QColor, timeline_info_list:list):
 
 		query = QtSql.QSqlQuery(self._db)
 
@@ -281,23 +292,6 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			])
 		else:
 			clip_color_str = None
-
-		# Cet current snapshot ID
-		id_snapshots = []
-
-		# Get the ID of the "Current" row
-		print(query.exec("SELECT id_snapshot FROM trt_snapshot_labels WHERE is_current=1"))
-		while query.next():
-			id_snapshots.append(int(query.value("id_snapshot")))
-		
-		if not id_snapshots:
-			print("Nope")
-			return
-		
-		# TODO
-		id_snapshot_current = id_snapshots[0]
-
-		print("Gon copy from ", id_snapshot_current)
 
 		# Copy "Current" snapshot label to new label
 		query.prepare(
@@ -312,21 +306,19 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				"is_current"
 			)
 
-			SELECT
+			VALUES (
 				?,
 				?,
-				rate,
-				duration_frames,
-				duration_tc,
-				duration_ff,
+				24,
+				0,
+				"00:00:00:00",
+				"0+00",
 				0
-			FROM trt_snapshot_labels
-			WHERE id_snapshot = ?
+			)
 			"""
 		)
 		query.addBindValue(snapshot_name)
 		query.addBindValue(clip_color_str)
-		query.addBindValue(id_snapshot_current)
 		if not query.exec():
 			print(query.lastError().text())
 		
@@ -335,34 +327,30 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		print("Inserted into ", id_snapsphot_new)
 		
 		# Copy sequences
-		query.prepare(
-			"""
-			INSERT INTO trt_snapshot_sequences (
-				id_snapshot,
-				clip_color,
-				name,
-				duration_frames,
-				duration_tc,
-				duration_ff
-			)
+		for timeline_info in timeline_info_list:
+			query.prepare(
+				"""
+				INSERT INTO trt_snapshot_sequences(
+					"id_snapshot",
+					"clip_color",
+					"name",
+					"duration_frames",
+					"duration_tc",
+					"duration_ff"
+				) VALUES (
+					?,?,?,?,?,?
+				)
+				""")
+			query.addBindValue(id_snapsphot_new)
+			query.addBindValue(timeline_info.clip_color)
+			query.addBindValue(timeline_info.name)
+			query.addBindValue(timeline_info.duration_frames)
+			query.addBindValue(timeline_info.duration_tc)
+			query.addBindValue(timeline_info.duration_ff)
 
-			SELECT
-				?,
-				clip_color,
-				name,
-				duration_frames,
-				duration_tc,
-				duration_ff
-			FROM trt_snapshot_sequences
-			WHERE id_snapshot = ?
-			ORDER BY datetime_created ASC
-			"""
-		)
-		query.addBindValue(id_snapsphot_new)
-		query.addBindValue(id_snapshot_current)
-		if not query.exec():
-			print(query.lastError().text())
-		print("Copied", id_snapshot_current, "into", id_snapsphot_new)
+			if not query.exec():
+				print(query.lastError().text())
+			print("I insert")
 
 		#if not self._db.commit():
 		#	print(self._db.lastError().text())
