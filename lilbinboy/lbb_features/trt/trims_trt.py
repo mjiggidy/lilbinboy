@@ -54,7 +54,7 @@ class TRTControlsTrims(QtWidgets.QWidget):
 	def _setupWidgets(self):
 
 		# Trim from Head / Duration
-		grp_head_trims = QtWidgets.QGroupBox("Trim Each Head")
+		grp_head_trims = QtWidgets.QGroupBox("Per-Sequence FFOA")
 		grp_head_trims.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
 		grp_head_trims.setLayout(QtWidgets.QGridLayout())
 
@@ -96,7 +96,7 @@ class TRTControlsTrims(QtWidgets.QWidget):
 
 		# Trim from Tail / Duration
 
-		grp_tail_trims = QtWidgets.QGroupBox("Trim Each Tail")
+		grp_tail_trims = QtWidgets.QGroupBox("Per-Sequence LFOA")
 		grp_tail_trims.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
 		grp_tail_trims.setLayout(QtWidgets.QGridLayout())
 
