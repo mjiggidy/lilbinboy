@@ -5,6 +5,8 @@ from PySide6 import QtSql, QtCore, QtGui, QtWidgets
 class SnapshotClipColorDelegate(QtWidgets.QStyledItemDelegate):
 
 	def paint(self, painter:QtGui.QPainter, option:QtWidgets.QStyleOption, index:QtCore.QModelIndex):
+
+		option.widget.style().drawControl(QtWidgets.QStyle.CE_ItemViewItem, option, painter, option.widget)
 		
 		rect_device = option.rect
 		
