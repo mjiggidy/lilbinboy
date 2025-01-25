@@ -11,9 +11,9 @@ class TRTHistorySnapshotAbstractProxyModel(QtCore.QSortFilterProxyModel):
 		self._filter_snapshot_ids = []
 		self._field_column_names = {
 			"sequence_color": "",
-			"name": "Sequence Name",
-			"duration_tc": "Duration (TC)",
-			"duration_ff": "Duration (F+F)",
+			"sequence_name": "Sequence Name",
+			"duration_trimmed_tc": "Duration (TC)",
+			"duration_trimmed_ff": "Duration (F+F)",
 		}
 
 	@abc.abstractmethod
@@ -58,9 +58,9 @@ class TRTHistorySnapshotDatabaseProxyModel(TRTHistorySnapshotAbstractProxyModel)
 		self._filter_snapshot_ids = []
 		self._field_column_names = {
 			"sequence_color": "",
-			"name": "Sequence Name",
-			"duration_tc": "Duration (TC)",
-			"duration_ff": "Duration (F+F)",
+			"sequence_name": "Sequence Name",
+			"duration_trimmed_tc": "Duration (TC)",
+			"duration_trimmed_ff": "Duration (F+F)",
 		}
 
 	
@@ -211,8 +211,8 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		
 		else:
 
-			self._lbl_snapshot_name.setText(snapshot_record.field("name").value())
-			self._txt_snapshot_name.setPlaceholderText(snapshot_record.field("name").value())
+			self._lbl_snapshot_name.setText(snapshot_record.field("label_name").value())
+			self._txt_snapshot_name.setPlaceholderText(snapshot_record.field("label_name").value())
 			self._lbl_datetime.setText(str(QtCore.QDateTime.fromString(snapshot_record.field("datetime_created_local").value(), format=QtCore.Qt.DateFormat.ISODate).toLocalTime().toString("dd MMM yyyy · hh:mm aP")))
 			self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
 

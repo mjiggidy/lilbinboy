@@ -44,7 +44,7 @@ class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 
 		painter.setPen(text_color)
 		painter.setFont(font)
-		painter.drawText(rect.adjusted(margin.x(), margin.y(), -margin.y(), -margin.y()), label_info.field("name").value())
+		painter.drawText(rect.adjusted(margin.x(), margin.y(), -margin.y(), -margin.y()), label_info.field("label_name").value())
 
 		font = QtGui.QFont()
 		# font = QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
@@ -53,7 +53,7 @@ class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 
 		font.setPointSizeF(font.pointSizeF() * 0.8)
 		painter.setFont(font)
-		painter.drawText(sub_rect, label_info.field("duration_tc").value(), QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignBottom)
+		painter.drawText(sub_rect, label_info.field("duration_trimmed_tc").value(), QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignBottom)
 
 		datetime_str = QtCore.QDateTime.fromString(label_info.field("datetime_created_local").value(), QtCore.Qt.DateFormat.ISODate)
 		#print(datetime_str.toString(QtCore.Qt.DateFormat.TextDate))

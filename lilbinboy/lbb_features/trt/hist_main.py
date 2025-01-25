@@ -22,13 +22,13 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			"""
 			CREATE TABLE IF NOT EXISTS "trt_snapshot_labels" (
 				"id_snapshot"	INTEGER NOT NULL UNIQUE,
-				"name"	TEXT NOT NULL,
+				"label_name"	TEXT NOT NULL,
 				"datetime_created"	TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				"label_color"	TEXT,
 				"rate"	INTEGER NOT NULL DEFAULT 24,
-				"duration_frames"	INTEGER NOT NULL DEFAULT 0,
-				"duration_tc"	TEXT NOT NULL DEFAULT '00:00:00:00',
-				"duration_ff"	TEXT NOT NULL DEFAULT '0+00',
+				"duration_trimmed_frames"	INTEGER NOT NULL DEFAULT 0,
+				"duration_trimmed_tc"	TEXT NOT NULL DEFAULT '00:00:00:00',
+				"duration_trimmed_ff"	TEXT NOT NULL DEFAULT '0+00',
 				"is_current"	INTEGER NOT NULL DEFAULT 0,
 				PRIMARY KEY("id_snapshot" AUTOINCREMENT)
 			)
@@ -44,10 +44,10 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				"id_snapshot"	INTEGER NOT NULL,
 				"id_sequence"	INTEGER NOT NULL UNIQUE,
 				"sequence_color"	TEXT,
-				"name"	TEXT NOT NULL,
-				"duration_frames"	INTEGER NOT NULL,
-				"duration_tc"	TEXT NOT NULL,
-				"duration_ff"	TEXT NOT NULL,
+				"sequence_name"	TEXT NOT NULL,
+				"duration_trimmed_frames"	INTEGER NOT NULL,
+				"duration_trimmed_tc"	TEXT NOT NULL,
+				"duration_trimmed_ff"	TEXT NOT NULL,
 				"datetime_created"	TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				PRIMARY KEY("id_sequence" AUTOINCREMENT),
 				FOREIGN KEY("id_snapshot") REFERENCES "trt_snapshot_labels"("id_snapshot") ON DELETE CASCADE
@@ -61,12 +61,12 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		if not QtSql.QSqlQuery(self._db).exec(
 			"""
 			INSERT INTO trt_snapshot_labels (
-				name,
-				rate,
-				duration_frames,
-				duration_tc,
-				duration_ff,
-				is_current
+				"label_name",
+				"rate",
+				"duration_trimmed_frames",
+				"duration_trimmed_tc",
+				"duration_trimmed_ff",
+				"is_current"
 			) SELECT
 				"Current",
 				24,
@@ -174,13 +174,13 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			self._status_bar.showMessage("Cannot compare time deltas between mixed frame rates")
 			return
 		
-		timecode_first = timecode.Timecode(snap_first.field("duration_frames").value(), rate=snap_first.field("rate").value())
-		timecode_last = timecode.Timecode(snap_last.field("duration_frames").value(), rate=snap_last.field("rate").value())
+		timecode_first = timecode.Timecode(snap_first.field("duration_trimmed_frames").value(), rate=snap_first.field("rate").value())
+		timecode_last = timecode.Timecode(snap_last.field("duration_trimmed_frames").value(), rate=snap_last.field("rate").value())
 		timecode_delta = timecode_last - timecode_first
 
 		pos = "+" if timecode_delta > 0 else ""
 
-		self._status_bar.showMessage(f"Duration from {snap_first.field("name").value()} to {snap_last.field("name").value()} changed by {pos}{timecode_delta}")
+		self._status_bar.showMessage(f"Duration from {snap_first.field("label_name").value()} to {snap_last.field("label_name").value()} changed by {pos}{timecode_delta}")
 
 	@QtCore.Slot(list)
 	def updateSnapshotCard(self, snapshots:list[QtSql.QSqlRecord]):
@@ -194,11 +194,11 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		query.prepare(
 			f"""
 			SELECT
-				id_snapshot,
-				sequence_color,
-				name,
-				duration_tc,
-				duration_ff
+				"id_snapshot",
+				"sequence_color",
+				"sequence_name",
+				"duration_trimmed_tc",
+				"duration_trimmed_ff"
 			FROM trt_snapshot_sequences
 			WHERE id_snapshot IN ({query_placeholders})
 			"""
@@ -259,10 +259,10 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				INSERT INTO trt_snapshot_sequences(
 					"id_snapshot",
 					"sequence_color",
-					"name",
-					"duration_frames",
-					"duration_tc",
-					"duration_ff"
+					"sequence_name",
+					"duration_trimmed_frames",
+					"duration_trimmed_tc",
+					"duration_trimmed_ff"
 				) VALUES (
 					?,?,?,?,?,?
 				)
@@ -297,12 +297,12 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		query.prepare(
 			"""
 			INSERT INTO trt_snapshot_labels (
-				"name",
+				"label_name",
 				"label_color",
 				"rate",
-				"duration_frames",
-				"duration_tc",
-				"duration_ff",
+				"duration_trimmed_frames",
+				"duration_trimmed_tc",
+				"duration_trimmed_ff",
 				"is_current"
 			)
 
@@ -333,10 +333,10 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				INSERT INTO trt_snapshot_sequences(
 					"id_snapshot",
 					"sequence_color",
-					"name",
-					"duration_frames",
-					"duration_tc",
-					"duration_ff"
+					"sequence_name",
+					"duration_trimmed_frames",
+					"duration_trimmed_tc",
+					"duration_trimmed_ff"
 				) VALUES (
 					?,?,?,?,?,?
 				)
@@ -371,15 +371,15 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._snapshot_query_model.setQuery(QtSql.QSqlQuery(
 			"""
 			SELECT
-				id_snapshot,
-				name,
-				label_color,
-				rate,
-				duration_frames,
-				duration_tc,
-				duration_ff,
-				is_current,
-				datetime(datetime_created, 'localtime') as datetime_created_local
+				"id_snapshot",
+				"label_name",
+				"label_color",
+				"rate",
+				"duration_trimmed_frames",
+				"duration_trimmed_tc",
+				"duration_trimmed_ff",
+				"is_current",
+				datetime(datetime_created, "localtime") as "datetime_created_local"
 			FROM trt_snapshot_labels
 			ORDER BY is_current DESC, datetime_created DESC
 			""",
