@@ -32,10 +32,10 @@ lbl_icon.setPixmap(pix_clip_color)
 
 btn_icon = QtWidgets.QPushButton()
 
-icn=make_icon(QtGui.QColor("Blue"))
+icn=QtGui.QIcon(pix_clip_color)
 print(icn)
 btn_icon.setIcon(icn)
-btn_icon.setText("Hi")
+btn_icon.setText("Hi :3")
 
 wnd_main.layout().addWidget(lbl_icon)
 wnd_main.layout().addWidget(btn_icon)
