@@ -1,20 +1,63 @@
+import abc
 from lilbinboy.lbb_common import LBClipColorPicker
 from PySide6 import QtSql, QtCore, QtGui, QtWidgets
 
-class TRTCurrentViewProxyModel(QtCore.QSortFilterProxyModel):
-	"""Proxy Model for the Current View"""
-
-
-class TRTHistorySnapshotProxyModel(QtCore.QSortFilterProxyModel):
+class TRTHistorySnapshotAbstractProxyModel(QtCore.QSortFilterProxyModel):
 	"""Proxy model to filter for an individual snapshot ID"""
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
 		self._filter_snapshot_ids = []
-		self._filter_field_names  = ["name", "duration_tc", "duration_ff"]
 		self._field_column_names = {
-			"clip_color": "",
+			"sequence_color": "",
+			"name": "Sequence Name",
+			"duration_tc": "Duration (TC)",
+			"duration_ff": "Duration (F+F)",
+		}
+
+	@abc.abstractmethod
+	def resolveFieldName(self, source_column:int) -> str:
+		"""Determine the field name (key) of a given column"""
+		pass
+	
+
+	
+	def headerData(self, section:int, orientation:QtCore.Qt.Orientation, role:QtCore.Qt.ItemDataRole):
+		
+		if orientation == QtCore.Qt.Orientation.Horizontal and role == QtCore.Qt.ItemDataRole.DisplayRole:
+
+			field_name = super().headerData(section, orientation, role)
+			if field_name in self._field_column_names:
+				return self._field_column_names[field_name]
+		
+		return super().headerData(section, orientation, role)
+
+
+
+class TRTHistorySnapshotLiveProxyModel(TRTHistorySnapshotAbstractProxyModel):
+	"""Proxy Model for the Current View"""
+
+	def resolveFieldName(self, source_column:int) -> str:
+		
+		#ource_index = self.mapToSource(self.index(0, source_column, QtCore.QModelIndex()))
+		field_name = self.sourceModel().headerData(source_column, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole)
+		return field_name
+	
+	def filterAcceptsColumn(self, source_column:int, source_parent:QtCore.QModelIndex) -> bool:
+		field_name = self.resolveFieldName(source_column)
+		return field_name in self._field_column_names
+
+
+class TRTHistorySnapshotDatabaseProxyModel(TRTHistorySnapshotAbstractProxyModel):
+	"""Proxy model to filter for an individual snapshot ID"""
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		self._filter_snapshot_ids = []
+		self._field_column_names = {
+			"sequence_color": "",
 			"name": "Sequence Name",
 			"duration_tc": "Duration (TC)",
 			"duration_ff": "Duration (F+F)",
@@ -33,24 +76,21 @@ class TRTHistorySnapshotProxyModel(QtCore.QSortFilterProxyModel):
 		
 		return super().filterAcceptsRow(source_row, source_parent)
 	
-	def filterAcceptsColumn(self, source_column:int, source_parent:QtCore.QModelIndex):
+	def resolveFieldName(self, source_column:int) -> str:
 		record = self.sourceModel().record()
 		field_name = record.field(source_column).name()
+		return field_name
+	
+	def filterAcceptsColumn(self, source_column:int, source_parent:QtCore.QModelIndex):
 
-		if field_name not in self._filter_field_names:
+
+		field_name = self.resolveFieldName(source_column)
+
+		if field_name not in self._field_column_names:
 			return False
 		
 		return super().filterAcceptsColumn(source_column, source_parent)
 	
-	def headerData(self, section:int, orientation:QtCore.Qt.Orientation, role:QtCore.Qt.ItemDataRole):
-		
-		if orientation == QtCore.Qt.Orientation.Horizontal and role == QtCore.Qt.ItemDataRole.DisplayRole:
-
-			field_name = super().headerData(section, orientation, role)
-			if field_name in self._field_column_names:
-				return self._field_column_names[field_name]
-		
-		return super().headerData(section, orientation, role)
 
 class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 	"""A card/panel displaying details for a given snapshot"""
@@ -117,7 +157,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 
 
 		self._tree_sequences    = QtWidgets.QTreeView()
-		self._tree_sequences.setModel(TRTHistorySnapshotProxyModel())
+		self._tree_sequences.setModel(TRTHistorySnapshotDatabaseProxyModel())
 		self._tree_sequences.setUniformRowHeights(True)
 		self._tree_sequences.setAlternatingRowColors(True)
 		self._tree_sequences.setIndentation(0)
@@ -167,7 +207,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		# NOTE: Wasn't if/else here before... trying to sus out the Current View thing
 		if snapshot_record.field("is_current").value() == 1:
 			self._stack_header.setCurrentIndex(1)
-			self._tree_sequences.setModel(TRTCurrentViewProxyModel())
+			self._tree_sequences.setModel(TRTHistorySnapshotLiveProxyModel())
 		
 		else:
 
@@ -176,10 +216,10 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 			self._lbl_datetime.setText(str(QtCore.QDateTime.fromString(snapshot_record.field("datetime_created_local").value(), format=QtCore.Qt.DateFormat.ISODate).toLocalTime().toString("dd MMM yyyy · hh:mm aP")))
 			self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
 
-		if snapshot_record.field("clip_color").isNull():
+		if snapshot_record.field("label_color").isNull():
 			clip_color = QtGui.QColor(None)
 		else:
-			clip_color = QtGui.QColor(*[int(x) for x in str(snapshot_record.field("clip_color").value()).split(",")])
+			clip_color = QtGui.QColor(*[int(x) for x in str(snapshot_record.field("label_color").value()).split(",")])
 		#print("Using", clip_color)
 
 		self.setClipColor(clip_color)

@@ -1,6 +1,6 @@
 import timecode
 from lilbinboy.lbb_features.trt.model_trt import TRTViewModel
-from lilbinboy.lbb_features.trt.hist_snapshot_panel import TRTHistorySnapshotPanel, TRTHistorySnapshotProxyModel
+from lilbinboy.lbb_features.trt.hist_snapshot_panel import TRTHistorySnapshotPanel, TRTHistorySnapshotDatabaseProxyModel
 from lilbinboy.lbb_features.trt.hist_snapshot_list  import TRTHistorySnapshotLabelDelegate
 from PySide6 import QtCore, QtGui, QtWidgets, QtSql
 
@@ -24,7 +24,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				"id_snapshot"	INTEGER NOT NULL UNIQUE,
 				"name"	TEXT NOT NULL,
 				"datetime_created"	TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-				"clip_color"	TEXT,
+				"label_color"	TEXT,
 				"rate"	INTEGER NOT NULL DEFAULT 24,
 				"duration_frames"	INTEGER NOT NULL DEFAULT 0,
 				"duration_tc"	TEXT NOT NULL DEFAULT '00:00:00:00',
@@ -43,7 +43,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			CREATE TABLE IF NOT EXISTS "trt_snapshot_sequences" (
 				"id_snapshot"	INTEGER NOT NULL,
 				"id_sequence"	INTEGER NOT NULL UNIQUE,
-				"clip_color"	TEXT,
+				"sequence_color"	TEXT,
 				"name"	TEXT NOT NULL,
 				"duration_frames"	INTEGER NOT NULL,
 				"duration_tc"	TEXT NOT NULL,
@@ -195,7 +195,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			f"""
 			SELECT
 				id_snapshot,
-				clip_color,
+				sequence_color,
 				name,
 				duration_tc,
 				duration_ff
@@ -258,7 +258,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				"""
 				INSERT INTO trt_snapshot_sequences(
 					"id_snapshot",
-					"clip_color",
+					"sequence_color",
 					"name",
 					"duration_frames",
 					"duration_tc",
@@ -298,7 +298,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			"""
 			INSERT INTO trt_snapshot_labels (
 				"name",
-				"clip_color",
+				"label_color",
 				"rate",
 				"duration_frames",
 				"duration_tc",
@@ -332,7 +332,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				"""
 				INSERT INTO trt_snapshot_sequences(
 					"id_snapshot",
-					"clip_color",
+					"sequence_color",
 					"name",
 					"duration_frames",
 					"duration_tc",
@@ -373,7 +373,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			SELECT
 				id_snapshot,
 				name,
-				clip_color,
+				label_color,
 				rate,
 				duration_frames,
 				duration_tc,

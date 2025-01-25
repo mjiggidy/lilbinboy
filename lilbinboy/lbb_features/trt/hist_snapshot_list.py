@@ -14,10 +14,10 @@ class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 		label_info = index.model().record(index.row())
 
 		is_current = bool(label_info.field("is_current").value())
-		if label_info.field("clip_color").isNull():
+		if label_info.field("label_color").isNull():
 			clip_color = QtGui.QColor(None)
 		else:
-			clip_color = QtGui.QColor(*[int(x) for x in str(label_info.field("clip_color").value()).split(",")])
+			clip_color = QtGui.QColor(*[int(x) for x in str(label_info.field("label_color").value()).split(",")])
 
 
 		if option.state & QtWidgets.QStyle.StateFlag.State_Selected:
