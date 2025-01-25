@@ -71,7 +71,7 @@ class SnapshotClipColorDelegate(QtWidgets.QStyledItemDelegate):
 		painter.restore()
 
 class TRTHistorySnapshotAbstractProxyModel(QtCore.QSortFilterProxyModel):
-	"""Proxy model to filter for an individual snapshot ID"""
+	"""Abstract proxy model to filter for an individual snapshot ID"""
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -87,9 +87,6 @@ class TRTHistorySnapshotAbstractProxyModel(QtCore.QSortFilterProxyModel):
 	@abc.abstractmethod
 	def resolveFieldName(self, source_column:int) -> str:
 		"""Determine the field name (key) of a given column"""
-		pass
-	
-
 	
 	def headerData(self, section:int, orientation:QtCore.Qt.Orientation, role:QtCore.Qt.ItemDataRole):
 		
