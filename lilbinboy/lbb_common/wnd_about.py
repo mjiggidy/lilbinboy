@@ -64,6 +64,7 @@ class LBAboutWindow(QtWidgets.QDialog):
 
 		# Lankz
 		layout_links = QtWidgets.QGridLayout()
+		layout_links.setSpacing(0)
 		
 		layout_links.addWidget(QtWidgets.QLabel("Github:"), 0, 0)
 		lbl_github = QtWidgets.QLabel("<a href=\"https://github.com/mjiggidy/lilbinboy/\">https://github.com/mjiggidy/lilbinboy/</a>")
