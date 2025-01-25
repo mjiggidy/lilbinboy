@@ -2,6 +2,72 @@ import abc
 from lilbinboy.lbb_common import LBClipColorPicker
 from PySide6 import QtSql, QtCore, QtGui, QtWidgets
 
+class SnapshotClipColorDelegate(QtWidgets.QStyledItemDelegate):
+
+	def paint(self, painter:QtGui.QPainter, option:QtWidgets.QStyleOption, index:QtCore.QModelIndex):
+		
+		rect_device = option.rect
+		
+		min_size = min(rect_device.width(), rect_device.height())
+		rect_clip_color = QtCore.QRectF(0, 0, min_size, min_size).adjusted(2, 2, -2, -2)
+		rect_clip_color.moveCenter(rect_device.center())
+
+		if index.data(QtCore.Qt.ItemDataRole.UserRole):
+			clip_color =  QtGui.QColor(index.data(QtCore.Qt.ItemDataRole.UserRole))
+		elif index.data(QtCore.Qt.ItemDataRole.DisplayRole):
+			display_role = str(index.data(QtCore.Qt.ItemDataRole.DisplayRole))
+			clip_color = QtGui.QColor(*[int(x) for x in display_role.split(",")])
+		else:
+			clip_color = QtGui.QColor()
+		
+		self.drawClipColor(rect_clip_color, painter, clip_color)
+
+		
+
+	def drawClipColor(self, rect:QtCore.QRect, painter:QtGui.QPainter, clip_color:QtGui.QColor):
+	#def drawClipColor():
+
+		painter.save()
+
+		
+
+		#painter = QtGui.QPainter(self)
+		#rect = QtCore.QRect(10, 5, 32, 32)
+		#clip_color = QtGui.QColor(0,0,244)
+		# Set box location
+		color_box = rect
+		#color_box.moveCenter(rect.center())
+		
+		# Set outline and fill
+		pen = QtGui.QPen(QtGui.QColor(QtGui.QPalette().text().color()))
+		pen.setJoinStyle(QtCore.Qt.PenJoinStyle.MiterJoin)
+		brush = QtGui.QBrush()	
+
+		# Use clip color if available
+		if not clip_color.isValid():
+			brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
+		else:
+			brush.setColor(clip_color)
+			brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
+		
+		painter.setBrush(brush)
+		painter.setPen(pen)
+		painter.drawRect(color_box)
+
+		# Box Shadow (TODO: 128 opactiy not working)
+		color_box.moveCenter(color_box.center() + QtCore.QPointF(1,1))
+		#color_box.setWidth(color_box.width() + 2)
+
+		color_shadow = pen.color()
+		color_shadow.setAlpha(64)
+		pen.setColor(color_shadow)
+		brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
+		painter.setPen(pen)
+		painter.setBrush(brush)
+		painter.drawRect(color_box)
+
+		painter.restore()
+
 class TRTHistorySnapshotAbstractProxyModel(QtCore.QSortFilterProxyModel):
 	"""Proxy model to filter for an individual snapshot ID"""
 
@@ -40,13 +106,23 @@ class TRTHistorySnapshotLiveProxyModel(TRTHistorySnapshotAbstractProxyModel):
 
 	def resolveFieldName(self, source_column:int) -> str:
 		
-		#ource_index = self.mapToSource(self.index(0, source_column, QtCore.QModelIndex()))
 		field_name = self.sourceModel().headerData(source_column, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole)
 		return field_name
 	
 	def filterAcceptsColumn(self, source_column:int, source_parent:QtCore.QModelIndex) -> bool:
 		field_name = self.resolveFieldName(source_column)
 		return field_name in self._field_column_names
+	
+	def headerData(self, section:int, orientation:QtCore.Qt.Orientation, role:QtCore.Qt.ItemDataRole):
+		
+		if orientation == QtCore.Qt.Orientation.Horizontal and role == QtCore.Qt.ItemDataRole.DisplayRole:
+
+			# I don't remember/understand why I can't use resolveFieldName here buuuut....
+			field_name = super().headerData(section, orientation, QtCore.Qt.ItemDataRole.UserRole)
+			if field_name in self._field_column_names:
+				return self._field_column_names[field_name]
+		
+	#	return super().headerData(section, orientation, role)
 
 
 class TRTHistorySnapshotDatabaseProxyModel(TRTHistorySnapshotAbstractProxyModel):
@@ -83,13 +159,13 @@ class TRTHistorySnapshotDatabaseProxyModel(TRTHistorySnapshotAbstractProxyModel)
 	
 	def filterAcceptsColumn(self, source_column:int, source_parent:QtCore.QModelIndex):
 
-
 		field_name = self.resolveFieldName(source_column)
 
 		if field_name not in self._field_column_names:
 			return False
 		
 		return super().filterAcceptsColumn(source_column, source_parent)
+		
 	
 
 class TRTHistorySnapshotPanel(QtWidgets.QFrame):
@@ -216,6 +292,8 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 			self._txt_snapshot_name.setPlaceholderText(snapshot_record.field("label_name").value())
 			self._lbl_datetime.setText(str(QtCore.QDateTime.fromString(snapshot_record.field("datetime_created_local").value(), format=QtCore.Qt.DateFormat.ISODate).toLocalTime().toString("dd MMM yyyy · hh:mm aP")))
 			self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
+
+		self._tree_sequences.setItemDelegateForColumn(0, SnapshotClipColorDelegate())
 
 		if snapshot_record.field("label_color").isNull():
 			clip_color = QtGui.QColor(None)
