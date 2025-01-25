@@ -783,7 +783,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 				bin_info = self.model().data()[mapped_idx]
 				bin_dict = self.model().item_to_dict(bin_info)
-				unsorted_durs.append((bin_dict.get("sequence_name").data(QtCore.Qt.ItemDataRole.UserRole), bin_dict.get("duration_trimmed").data(QtCore.Qt.ItemDataRole.UserRole).frame_number))
+				unsorted_durs.append((bin_dict.get("sequence_name").data(QtCore.Qt.ItemDataRole.UserRole), bin_dict.get("duration_trimmed_tc").data(QtCore.Qt.ItemDataRole.UserRole).frame_number))
 			except Exception as e:
 				print(f"Proxy out of sync with data ({self.list_trts.model().rowCount()} vs {len(self._data_model.data())})")
 		

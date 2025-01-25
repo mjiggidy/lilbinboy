@@ -207,6 +207,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		# NOTE: Wasn't if/else here before... trying to sus out the Current View thing
 		if snapshot_record.field("is_current").value() == 1:
 			self._stack_header.setCurrentIndex(1)
+			self._txt_snapshot_name.setPlaceholderText("Current")
 			self._tree_sequences.setModel(TRTHistorySnapshotLiveProxyModel())
 		
 		else:

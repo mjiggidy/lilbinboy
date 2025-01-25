@@ -65,7 +65,7 @@ def exportToSnapshot(proxy_model:QtCore.QAbstractProxyModel):
 		timeline_info["name"] = source_model.index(source_row, source_headers.index("sequence_name")).data(QtCore.Qt.ItemDataRole.UserRole)
 		
 		# Trimmed Duration
-		duration_trimmed = source_model.index(source_row, source_headers.index("duration_trimmed")).data(QtCore.Qt.ItemDataRole.UserRole)
+		duration_trimmed = source_model.index(source_row, source_headers.index("duration_trimmed_tc")).data(QtCore.Qt.ItemDataRole.UserRole)
 		timeline_info["duration_frames"] = duration_trimmed.frame_number
 		timeline_info["duration_tc"] = str(duration_trimmed)
 		

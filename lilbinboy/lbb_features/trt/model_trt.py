@@ -210,7 +210,7 @@ class TRTDataModel(QtCore.QObject):
 		trt = Timecode(0, rate=self._fps)
 
 		for bin_info in self._data:
-			trt += self.item_to_dict(bin_info)["duration_trimmed"].data(QtCore.Qt.ItemDataRole.UserRole)
+			trt += self.item_to_dict(bin_info)["duration_trimmed_tc"].data(QtCore.Qt.ItemDataRole.UserRole)
 		
 		return max(Timecode(0, rate=self.rate()), trt + self.trimTotal())
 	
@@ -528,8 +528,8 @@ class TRTDataModel(QtCore.QObject):
 			"sequence_name":       treeview_trt.TRTStringItem(self.getSequenceName(timeline_info)),
 			"sequence_color":      treeview_trt.TRTClipColorItem(self.getSequenceColor(timeline_info)),
 			"sequence_start_tc":   treeview_trt.TRTTimecodeItem(self.getSequenceStartTimecode(timeline_info)),
-			"duration_total":      treeview_trt.TRTDurationItem(duration_total),
-			"duration_trimmed":    treeview_trt.TRTDurationItem(duration_trimmed),
+			"duration_total_tc":      treeview_trt.TRTDurationItem(duration_total),
+			"duration_trimmed_tc":    treeview_trt.TRTDurationItem(duration_trimmed),
 			"duration_trimmed_ff": treeview_trt.TRTFeetFramesItem(duration_trimmed.frame_number),
 			"head_trimmed_tc":     treeview_trt.TRTDurationItem(head_trim_tc, icon=head_icon, tooltip=head_tooltip),	# TODO: Make Trim Item w/Icon
 			"head_trimmed_ff":     treeview_trt.TRTFeetFramesItem(head_trim_tc.frame_number),	# TODO: Make Trim Item w/Icon
@@ -558,8 +558,8 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		self.setHeaderItems([
 			treeview_trt.TRTTreeViewHeaderItem("","sequence_color", display_delegate=treeview_trt.TRTClipColorDisplayDelegate()),
 			treeview_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
-			treeview_trt.TRTTreeViewHeaderItem("Full Duration","duration_total", include_total=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (TC)","duration_trimmed", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Full Duration","duration_total_tc", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (TC)","duration_trimmed_tc", include_total=True),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (F+F)","duration_trimmed_ff", include_total=True),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (TC)", "head_trimmed_tc", include_total=True),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (F+F)", "head_trimmed_ff", include_total=True),
