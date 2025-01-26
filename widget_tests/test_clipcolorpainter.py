@@ -36,8 +36,8 @@ for size in sizes:
 	painter.end()
 
 	icon.addPixmap(pix_clip_color)
-	pix_clip_color.setDevicePixelRatio(2)
-	icon.addPixmap(pix_clip_color)
+	#pix_clip_color.setDevicePixelRatio(2)
+	#icon.addPixmap(pix_clip_color)
 
 
 wnd_main = QtWidgets.QWidget()
