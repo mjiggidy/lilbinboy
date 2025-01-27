@@ -718,7 +718,7 @@ class LBTRTCalculator(LBUtilityTab):
 	def saveFieldOrder(self, fields:list[str]):
 		"""Save the field order of the Sequence TreeView"""
 		QtCore.QSettings().setValue("trt/column_field_order", fields)
-		print(QtCore.QSettings().value("trt/column_field_order"))
+#		print(QtCore.QSettings().value("trt/column_field_order"))
 	
 	def choose_folder(self):
 		last_bin_path = QtCore.QSettings().value("trt/last_bin")
@@ -819,7 +819,7 @@ class LBTRTCalculator(LBUtilityTab):
 			return
 		
 		# If user specified a known suffix in the filename, go with it
-		print("Got ", QtCore.QFileInfo(path_file).suffix())
+#		print("Got ", QtCore.QFileInfo(path_file).suffix())
 		if QtCore.QFileInfo(path_file).suffix().lower() in formats.keys():
 			self.sig_export_requested.emit(path_file, QtCore.QFileInfo(path_file).suffix())
 			return
