@@ -1,5 +1,6 @@
 import abc
 from lilbinboy.lbb_common import LBClipColorPicker
+from lilbinboy.lbb_common.paint_delegates import LBClipColorPainter
 from PySide6 import QtSql, QtCore, QtGui, QtWidgets
 
 class SnapshotClipColorDelegate(QtWidgets.QStyledItemDelegate):
@@ -11,7 +12,7 @@ class SnapshotClipColorDelegate(QtWidgets.QStyledItemDelegate):
 		rect_device = option.rect
 		
 		min_size = min(rect_device.width(), rect_device.height())
-		rect_clip_color = QtCore.QRectF(0, 0, min_size, min_size).adjusted(2, 2, -2, -2)
+		rect_clip_color = QtCore.QRectF(0, 0, min_size, min_size)
 		rect_clip_color.moveCenter(rect_device.center())
 
 		if index.data(QtCore.Qt.ItemDataRole.UserRole):
@@ -22,53 +23,12 @@ class SnapshotClipColorDelegate(QtWidgets.QStyledItemDelegate):
 		else:
 			clip_color = QtGui.QColor()
 		
-		self.drawClipColor(rect_clip_color, painter, clip_color)
+		LBClipColorPainter(rect_clip_color, painter, clip_color=clip_color)
+	
+	def sizeHint(self, option:QtWidgets.QStyleOption, index:QtCore.QModelIndex) -> QtCore.QSize:
+		min_size = min_size = min(option.rect.width(), option.rect.height())
+		return QtCore.QSize(min_size,min_size)
 
-		
-
-	def drawClipColor(self, rect:QtCore.QRect, painter:QtGui.QPainter, clip_color:QtGui.QColor):
-	#def drawClipColor():
-
-		painter.save()
-
-		
-
-		#painter = QtGui.QPainter(self)
-		#rect = QtCore.QRect(10, 5, 32, 32)
-		#clip_color = QtGui.QColor(0,0,244)
-		# Set box location
-		color_box = rect
-		#color_box.moveCenter(rect.center())
-		
-		# Set outline and fill
-		pen = QtGui.QPen(QtGui.QColor(QtGui.QPalette().text().color()))
-		pen.setJoinStyle(QtCore.Qt.PenJoinStyle.MiterJoin)
-		brush = QtGui.QBrush()	
-
-		# Use clip color if available
-		if not clip_color.isValid():
-			brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
-		else:
-			brush.setColor(clip_color)
-			brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
-		
-		painter.setBrush(brush)
-		painter.setPen(pen)
-		painter.drawRect(color_box)
-
-		# Box Shadow (TODO: 128 opactiy not working)
-		color_box.moveCenter(color_box.center() + QtCore.QPointF(1,1))
-		#color_box.setWidth(color_box.width() + 2)
-
-		color_shadow = pen.color()
-		color_shadow.setAlpha(64)
-		pen.setColor(color_shadow)
-		brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
-		painter.setPen(pen)
-		painter.setBrush(brush)
-		painter.drawRect(color_box)
-
-		painter.restore()
 
 class TRTHistorySnapshotAbstractProxyModel(QtCore.QSortFilterProxyModel):
 	"""Abstract proxy model to filter for an individual snapshot ID"""
@@ -185,7 +145,8 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self._stack_header = QtWidgets.QStackedWidget()
 		self._stack_header.setSizePolicy(self._stack_header.sizePolicy().horizontalPolicy(), QtWidgets.QSizePolicy.Policy.Maximum)
 
-		self._pixmap_clip_color = self.drawClipColor(QtCore.QSize(16, 16), QtGui.QColor())
+		self._pixmap_clip_color = QtGui.QPixmap(QtCore.QSize(16, 16))
+		self._pixmap_clip_color.fill(QtCore.Qt.GlobalColor.transparent)
 
 		# Viewer widgets
 		self._lbl_clip_color    = QtWidgets.QLabel()
@@ -272,9 +233,17 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 	def setClipColor(self, color:QtGui.QColor):
 		self._color_clip = color
 
-		pix_color = self.drawClipColor(QtCore.QSize(16, 16), color)
-		self._btn_clip_color.setIcon(pix_color)
-		self._lbl_clip_color.setPixmap(pix_color)
+		icon_color = QtGui.QIcon()
+
+		# Draw for std/hi dpi
+		for s in [16, 32]:
+			pix_color = QtGui.QPixmap(QtCore.QSize(s,s))
+			pix_color.fill(QtCore.Qt.GlobalColor.transparent)
+			LBClipColorPainter(pix_color.rect(), QtGui.QPainter(pix_color), clip_color=self._color_clip)
+			icon_color.addPixmap(pix_color)
+
+		self._btn_clip_color.setIcon(icon_color)
+		self._lbl_clip_color.setPixmap(icon_color.pixmap(16,16))
 	
 	def setSnapshotRecord(self, snapshot_record:QtSql.QSqlRecord):
 		
@@ -302,53 +271,6 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 
 		self.setClipColor(clip_color)
 
-	def drawClipColor(self, size:QtCore.QSize, clip_color:QtGui.QColor) -> QtGui.QPixmap:
-
-		"""For now"""
-
-		pixmap = QtGui.QPixmap(size)
-		pixmap.fill(QtCore.Qt.GlobalColor.transparent)
-
-		painter = QtGui.QPainter(pixmap)
-		
-		rect_device = QtCore.QRectF(0, 0, size.width(), size.height())
-		rect_color_box = rect_device.adjusted(2,2,-2,-2)
-
-		#painter.setBackgroundMode(QtCore.Qt.BGMode.TransparentMode)
-
-		
-		# Set outline and fill
-		pen = QtGui.QPen(QtGui.QColor(QtGui.QPalette().text().color()))
-		pen.setJoinStyle(QtCore.Qt.PenJoinStyle.MiterJoin)
-		brush = QtGui.QBrush()	
-
-		# Use clip color if available
-		if not clip_color.isValid():
-			brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
-		else:
-			brush.setColor(clip_color)
-			brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
-		
-		painter.setBrush(brush)
-		painter.setPen(pen)
-		painter.drawRect(rect_color_box)
-
-		# Box Shadow (TODO: 128 opactiy not working)
-		rect_color_box.moveCenter(rect_color_box.center() + QtCore.QPointF(1,1))
-		#color_box.setWidth(color_box.width() + 2)
-
-		color_shadow = pen.color()
-		color_shadow.setAlpha(64)
-		pen.setColor(color_shadow)
-		brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
-		painter.setPen(pen)
-		painter.setBrush(brush)
-		painter.drawRect(rect_color_box)
-
-		painter.end()
-
-		return pixmap
-	
 	@QtCore.Slot()
 	def saveCurrentRequested(self):
 		from lilbinboy.lbb_features.trt import exporters_trt

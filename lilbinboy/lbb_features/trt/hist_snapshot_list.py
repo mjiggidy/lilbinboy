@@ -1,4 +1,5 @@
 from PySide6 import QtSql, QtCore, QtGui, QtWidgets
+from lilbinboy.lbb_common.paint_delegates import LBClipColorPainter
 
 class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 
@@ -31,9 +32,9 @@ class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 
 		rect:QtCore.QRect = option.rect
 
-		rect_clip_color = QtCore.QRectF(0,0, 10, 10)
+		rect_clip_color = QtCore.QRectF(0,0, 16, 16)
 		rect_clip_color.moveCenter(QtCore.QPointF(12, rect.center().y()))
-		self.drawClipColor(rect=rect_clip_color, painter=painter, clip_color=clip_color)
+		LBClipColorPainter(rect=rect_clip_color, painter=painter, clip_color=clip_color)
 		#self.drawClipColor()
 
 		font = painter.font()
@@ -69,50 +70,6 @@ class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 			line = QtCore.QLine(rect.bottomLeft(), rect.bottomRight())
 			painter.setPen(pen)
 			painter.drawLine(line)
-
-		painter.restore()
-
-	def drawClipColor(self, rect:QtCore.QRect, painter:QtGui.QPainter, clip_color:QtGui.QColor):
-	#def drawClipColor():
-
-		painter.save()
-
-		
-
-		#painter = QtGui.QPainter(self)
-		#rect = QtCore.QRect(10, 5, 32, 32)
-		#clip_color = QtGui.QColor(0,0,244)
-		# Set box location
-		color_box = rect
-		#color_box.moveCenter(rect.center())
-		
-		# Set outline and fill
-		pen = QtGui.QPen(QtGui.QColor(QtGui.QPalette().text().color()))
-		pen.setJoinStyle(QtCore.Qt.PenJoinStyle.MiterJoin)
-		brush = QtGui.QBrush()	
-
-		# Use clip color if available
-		if not clip_color.isValid():
-			brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
-		else:
-			brush.setColor(clip_color)
-			brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
-		
-		painter.setBrush(brush)
-		painter.setPen(pen)
-		painter.drawRect(color_box)
-
-		# Box Shadow (TODO: 128 opactiy not working)
-		color_box.moveCenter(color_box.center() + QtCore.QPointF(1,1))
-		#color_box.setWidth(color_box.width() + 2)
-
-		color_shadow = pen.color()
-		color_shadow.setAlpha(64)
-		pen.setColor(color_shadow)
-		brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
-		painter.setPen(pen)
-		painter.setBrush(brush)
-		painter.drawRect(color_box)
 
 		painter.restore()
 	

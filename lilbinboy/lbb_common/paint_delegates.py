@@ -1,10 +1,11 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui
 
 def LBClipColorPainter(rect:QtCore.QRect, painter:QtGui.QPainter, outline_color:QtGui.QColor=None, clip_color:QtGui.QColor=None, pen_width:int=1, padding:QtCore.QSize=None, shadow_offset:QtCore.QPoint=None):
+		"""Draw a Clip Color graphic for a given painter"""
 		
-		outline_color = outline_color or QtGui.QColor()
+		outline_color = outline_color or QtGui.QColor("Black")
 		clip_color = clip_color or QtGui.QColor()
-		padding = padding or QtCore.QSize(2,2)
+		padding = padding or QtCore.QSize(3,3)
 		shadow_offset = shadow_offset or QtCore.QPoint(1,1)
 		
 		painter.save()
@@ -46,5 +47,8 @@ def LBClipColorPainter(rect:QtCore.QRect, painter:QtGui.QPainter, outline_color:
 
 		# Draw shadow
 		painter.drawRect(color_box)
+
+		# DEBUG
+		painter.drawText(color_box, str(rect.height()), QtCore.Qt.AlignmentFlag.AlignCenter|QtCore.Qt.AlignmentFlag.AlignVCenter)
 
 		painter.restore()

@@ -3,6 +3,7 @@ import avbutils
 from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
 from lilbinboy.lbb_features.trt import model_trt
+from lilbinboy.lbb_common.paint_delegates import LBClipColorPainter
 
 #
 # Cell items
@@ -194,36 +195,17 @@ class TRTClipColorDisplayDelegate(QtWidgets.QStyledItemDelegate):
 
 		super().paint(painter, option, index)
 		
+		# Get clip color from UserRole (Qrgba64 struct)
 		clip_color = QtGui.QColor(index.data(role=QtCore.Qt.ItemDataRole.UserRole))
 
-		# Set box location
-		color_box = QtCore.QRect(0,0, option.rect.height()-self.PADDING, option.rect.height()-self.PADDING)
-		color_box.moveCenter(option.rect.center())
+		# Based on the device rect, determine a centered, square QRect
+		rect_device:QtCore.QRect = option.rect
+		min_size = min(rect_device.width(), rect_device.height())
+		rect_colorbox = QtCore.QRect(0, 0, min_size, min_size)
+		rect_colorbox.moveCenter(rect_device.center())
 		
-		# Set outline and fill
-		pen = QtGui.QPen(QtGui.QColorConstants.Black)
-		brush = QtGui.QBrush()	
-
-		# Use clip color if available
-		if not clip_color.isValid():
-			brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
-		else:
-			brush.setColor(clip_color)
-			brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
-		
-		painter.setBrush(brush)
-		painter.setPen(pen)
-		painter.drawRect(color_box)
-
-		# Box Shadow (TODO: 128 opactiy not working)
-		color_box.moveCenter(color_box.center() + self.SHADOW_OFFSET)
-		#color_box.setWidth(color_box.width() + 2)
-
-		pen.setColor(QtGui.QColor(0,0,0,64))
-		brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
-		painter.setPen(pen)
-		painter.setBrush(brush)
-		painter.drawRect(color_box)	
+		# Draw that sucker
+		LBClipColorPainter(rect_colorbox, painter, clip_color=clip_color)
 	
 
 
