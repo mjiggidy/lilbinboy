@@ -226,6 +226,21 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 	def setModel(self, model:QtCore.QAbstractItemModel):
 
 		self._tree_sequences.model().setSourceModel(model)
+		
+		self.updateTreeSizes()
+		
+		self._tree_sequences.model().rowsInserted.connect(self.updateTreeSizes)
+	
+	@QtCore.Slot()
+	def updateTreeSizes(self):
+		for col in range(self._tree_sequences.header().count()):
+			self._tree_sequences.resizeColumnToContents(col)
+		
+		# Resize treeview to show all seqences (up to 10)
+		if self._tree_sequences.model().rowCount():
+			self._tree_sequences.setFixedHeight(
+				self._tree_sequences.sizeHintForRow(0) * min(self._tree_sequences.model().rowCount(), 10) + self._tree_sequences.header().size().height() + self._tree_sequences.horizontalScrollBar().size().height()
+			)
 
 	def model(self) -> QtCore.QAbstractItemModel:
 		return self._tree_sequences.model().sourceModel()
@@ -249,7 +264,9 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 	def setSnapshotRecord(self, snapshot_record:QtSql.QSqlRecord):
 		
 
-		# NOTE: Wasn't if/else here before... trying to sus out the Current View thing
+		# NOTE TO SELF: I'm setting the proxy models here, but the source models are set with setModel()
+		# I... I forgot about that.
+
 		if snapshot_record.field("is_current").value() == 1:
 			self._stack_header.setCurrentIndex(1)
 			self._txt_snapshot_name.setPlaceholderText("Current")
@@ -263,12 +280,12 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 			self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
 
 		self._tree_sequences.setItemDelegateForColumn(0, SnapshotClipColorDelegate())
+		self._tree_sequences.model().rowsInserted.connect(lambda: print("Ayyy"))
 
 		if snapshot_record.field("label_color").isNull():
 			clip_color = QtGui.QColor(None)
 		else:
 			clip_color = QtGui.QColor(*[int(x) for x in str(snapshot_record.field("label_color").value()).split(",")])
-		#print("Using", clip_color)
 
 		self.setClipColor(clip_color)
 
