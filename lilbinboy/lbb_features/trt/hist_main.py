@@ -8,6 +8,9 @@ from PySide6 import QtCore, QtGui, QtWidgets, QtSql
 class TRTHistoryViewer(QtWidgets.QWidget):
 	"""View and admire your favorite TRTs of olde"""
 
+	sig_is_closing = QtCore.Signal()
+	"""Window is about to close"""
+
 	def __init__(self, database:QtSql.QSqlDatabase,  *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
@@ -140,6 +143,10 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		## Initial State
 		self.updateModelQueries()
 		#print(self._snapshot_query_model.query())
+
+	def closeEvent(self, event):
+		self.sig_is_closing.emit()
+		event.accept()
 
 	@QtCore.Slot(QtCore.QItemSelection, QtCore.QItemSelection)
 	def snapshotSelectionChanged(self, selected:QtCore.QItemSelection, deselected:QtCore.QItemSelection):

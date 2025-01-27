@@ -229,7 +229,9 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		
 		self.updateTreeSizes()
 		
-		self._tree_sequences.model().rowsInserted.connect(self.updateTreeSizes)
+		# Listen for updates if this is a live view
+		if isinstance(self._tree_sequences.model(), TRTHistorySnapshotLiveProxyModel):
+			self._tree_sequences.model().rowsInserted.connect(self.updateTreeSizes)
 	
 	@QtCore.Slot()
 	def updateTreeSizes(self):
