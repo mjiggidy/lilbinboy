@@ -92,8 +92,9 @@ def main():
 		wnd_main.tabs.setTabIcon(wnd_main.tabs.count()-1, QtGui.QIcon(panel.PATH_ICON))
 
 	# Coming soon...
-	wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Binlocker"))
-	wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Continuity Maker"))
-	wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Bin Config"))
+	wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Bin Snitch"))
+	wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Attic Scrounger"))
+	wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Batch Bin"))
+	wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Porta-Nexis"))
 
 	app.exec()
