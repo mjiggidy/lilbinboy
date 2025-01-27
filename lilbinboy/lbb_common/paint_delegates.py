@@ -49,6 +49,6 @@ def LBClipColorPainter(rect:QtCore.QRect, painter:QtGui.QPainter, outline_color:
 		painter.drawRect(color_box)
 
 		# DEBUG
-		painter.drawText(color_box, str(rect.height()), QtCore.Qt.AlignmentFlag.AlignCenter|QtCore.Qt.AlignmentFlag.AlignVCenter)
+		#painter.drawText(color_box, str(rect.height()), QtCore.Qt.AlignmentFlag.AlignCenter|QtCore.Qt.AlignmentFlag.AlignVCenter)
 
 		painter.restore()
