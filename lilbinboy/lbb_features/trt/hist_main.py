@@ -35,8 +35,6 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			"""
 		):
 			print("Error setting up snapshot labels: ", self._db.lastError().text())
-		else:
-			print("Yurrr")
 
 		if not QtSql.QSqlQuery(self._db).exec(
 			"""
@@ -55,8 +53,6 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			"""
 		):
 			print("Error setting up snapshot sequences: ", self._db.lastError().text())
-		else:
-			print("yas")
 
 		if not QtSql.QSqlQuery(self._db).exec(
 			"""
@@ -81,8 +77,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			"""
 		):
 			print("Error adding Current label:", self._db.lastError().text())
-		else:
-			print("heehee")
+
 		
 
 		self.setWindowTitle("History Viewer")
@@ -228,57 +223,6 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 	def setCurrentModel(self, datamodel:TRTViewModel):
 		"""Set the "Current sequences" model from the main program"""
 		self._current_model = datamodel
-	
-	def updateLiveSnapshot(self, timeline_info_list:list):
-
-		query = QtSql.QSqlQuery(self._db)
-
-		id_snapshots = []
-
-		# Get the ID of the "Current" row
-		print(query.exec("SELECT id_snapshot FROM trt_snapshot_labels WHERE is_current=1"))
-		while query.next():
-			id_snapshots.append(int(query.value("id_snapshot")))
-		
-		if not id_snapshots:
-			print("Nope")
-			return
-		
-		# TODO
-		id_snapshot = id_snapshots[0]
-
-		query.prepare("DELETE FROM trt_snapshot_sequences WHERE id_snapshot = ?")
-		query.addBindValue(id_snapshot)
-		if not query.exec():
-			print("I no delet")
-			print(query.lastError().text())
-
-		for timeline_info in timeline_info_list:
-			query.prepare(
-				"""
-				INSERT INTO trt_snapshot_sequences(
-					"id_snapshot",
-					"sequence_color",
-					"sequence_name",
-					"duration_trimmed_frames",
-					"duration_trimmed_tc",
-					"duration_trimmed_ff"
-				) VALUES (
-					?,?,?,?,?,?
-				)
-				""")
-			query.addBindValue(id_snapshot)
-			query.addBindValue(timeline_info.clip_color)
-			query.addBindValue(timeline_info.name)
-			query.addBindValue(timeline_info.duration_frames)
-			query.addBindValue(timeline_info.duration_tc)
-			query.addBindValue(timeline_info.duration_ff)
-
-			if not query.exec():
-				print(query.lastError().text())
-			print("I insert")
-
-		self.snapshotSelectionChanged(0,0)
 
 	def saveLiveToSnapshot(self, snapshot_name:str, clip_color:QtGui.QColor, timeline_info_list:list):
 
