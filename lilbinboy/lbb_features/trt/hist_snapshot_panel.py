@@ -239,7 +239,8 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		for s in [16, 32]:
 			pix_color = QtGui.QPixmap(QtCore.QSize(s,s))
 			pix_color.fill(QtCore.Qt.GlobalColor.transparent)
-			LBClipColorPainter(pix_color.rect(), QtGui.QPainter(pix_color), clip_color=self._color_clip)
+			scale_factor = s/16
+			LBClipColorPainter(pix_color.rect(), QtGui.QPainter(pix_color), clip_color=self._color_clip, padding=QtCore.QSize(scale_factor * 3, scale_factor * 3), pen_width=scale_factor*1, shadow_offset=QtCore.QPoint(1*scale_factor, 1*scale_factor))
 			icon_color.addPixmap(pix_color)
 
 		self._btn_clip_color.setIcon(icon_color)
