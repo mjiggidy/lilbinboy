@@ -10,6 +10,7 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		self.setWindowTitle("Check For Updates")
 		self.setLayout(QtWidgets.QVBoxLayout())
 
+
 		self._prg_checking = QtWidgets.QProgressBar()
 		self._prg_checking.setRange(0,0)
 		self._prg_checking.setHidden(True)
@@ -17,7 +18,11 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		self._lbl_version_latest = QtWidgets.QLabel("Checking...")
 		
 		self._lbl_release_name = QtWidgets.QLabel()
-		
+		font = self._lbl_release_name.font()
+		font.setBold(True)
+		self._lbl_release_name.setFont(font)
+
+		self._lbl_release_date = QtWidgets.QLabel()
 		self._lbl_version_url = QtWidgets.QLabel()
 		self._lbl_version_url.setOpenExternalLinks(True)
 		self._lbl_version_url.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.LinksAccessibleByKeyboard|QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse)
@@ -27,6 +32,9 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		self._txt_release_notes.setOpenLinks(False)
 		self._txt_release_notes.setOpenExternalLinks(False)
 		self._txt_release_notes.anchorClicked.connect(QtGui.QDesktopServices.openUrl)
+		self._btn_download = QtWidgets.QPushButton()
+		self._btn_download.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.InsertLink))
+		self._btn_download.setText("Download From GitHub")
 		#self._txt_release_notes.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.LinksAccessibleByKeyboard|QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse)
 
 		lay_version = QtWidgets.QGridLayout()
@@ -37,15 +45,23 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		lay_version.setColumnStretch(2,1)
 
 
-		self.layout().addWidget(QtWidgets.QLabel("Lil' Bin Boy"))
+		
+		#self.layout().addWidget(QtWidgets.QLabel("Lil' Bin Boy"))
 		self.layout().addLayout(lay_version)
 
 		self.layout().addWidget(self._prg_checking)
 		self.layout().addStretch()
 
-		self.layout().addWidget(self._lbl_release_name)
-		self.layout().addWidget(self._lbl_version_url)
-		self.layout().addWidget(self._txt_release_notes)
+		self._grp_release_info = QtWidgets.QGroupBox()
+		self._grp_release_info.setLayout(QtWidgets.QVBoxLayout())
+		self._grp_release_info.setHidden(True)
+
+		self._grp_release_info.layout().addWidget(self._lbl_release_name)
+		self._grp_release_info.layout().addWidget(self._lbl_release_date)
+		self._grp_release_info.layout().addWidget(self._txt_release_notes)
+		self._grp_release_info.layout().addWidget(self._btn_download)
+
+		self.layout().addWidget(self._grp_release_info)
 	
 	@QtCore.Slot()
 	def networkCheckStart(self):
@@ -54,13 +70,16 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 	def networkCheckFinished(self):
 		self._prg_checking.setHidden(True)
 	
-	def setLatestVersion(self, name:str, version:str, release_notes:str, release_url:str):
+	def setLatestVersion(self, name:str, date:QtCore.QDateTime, version:str, release_notes:str, release_url:str):
 
 		if version != QtWidgets.QApplication.instance().applicationVersion():
-			self._lbl_release_name.setText(name)
 			self._lbl_version_latest.setText(version)
+
+			self._lbl_release_name.setText(name)
+			self._lbl_release_date.setText("Released " + date.toLocalTime().toString("dd MMMM yyyy"))
+			self._btn_download.clicked.connect(lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl(release_url)))
 			self._txt_release_notes.setMarkdown(release_notes)
-			self._lbl_version_url.setText(f"<a href=\"{release_url}\">{release_url}</a>")
+			self._grp_release_info.setHidden(False)
 		
 		else:
 			self._lbl_release_name.setText("You are on the latest version")
@@ -75,11 +94,12 @@ def show_results(reply:QtNetwork.QNetworkReply):
 	version = latest_release.get("tag_name")[1:] # Strip 'v'
 	release_notes = latest_release.get("body")
 	release_url = latest_release.get("html_url")
-	#print(release_url)
-	#print(release_notes)
-	wnd_main.setLatestVersion(release_name, version, release_notes, release_url)
+	release_date = QtCore.QDateTime.fromString(latest_release.get("published_at"), QtCore.Qt.DateFormat.ISODate)
+
+	wnd_main.setLatestVersion(release_name, release_date, version, release_notes, release_url)
 
 app = QtWidgets.QApplication()
+app.setStyle("Fusion")
 
 wnd_main = LBCheckForUpdatesWindow()
 wnd_main.show()
