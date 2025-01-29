@@ -1,5 +1,6 @@
 from PySide6 import QtCore, QtWidgets
 from lilbinboy.lbb_common.dlg_errorlog import LBErrorLogWindow
+from lilbinboy.lbb_common.wnd_checkforupdates import LBCheckForUpdatesWindow
 
 class LBMainWindow(QtWidgets.QMainWindow):
 	"""Lil' Main Window Boy"""
@@ -51,3 +52,13 @@ class LBMainWindow(QtWidgets.QMainWindow):
 	def resizeEvent(self, event):
 		super().resizeEvent(event)
 		self.sig_resized.emit(self.geometry())
+	
+	@QtCore.Slot()
+	def checkForUpdates(self):
+		self.wnd_check = LBCheckForUpdatesWindow()
+		
+		self.wnd_check.setWindowFlag(QtCore.Qt.WindowType.WindowStaysOnTopHint)
+		
+		self.wnd_check.show()
+		self.wnd_check.checkForUpdates()
+		

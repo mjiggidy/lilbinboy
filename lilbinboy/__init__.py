@@ -72,7 +72,7 @@ def main():
 	mnu_help.addAction(act_wiki)
 
 	act_updates = QtGui.QAction("Check For Updates...")
-	act_updates.triggered.connect(lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl("https://github.com/mjiggidy/lilbinboy/releases")))
+	act_updates.triggered.connect(wnd_main.checkForUpdates)
 	mnu_help.addAction(act_updates)
 
 	mnu_help.addSeparator()
