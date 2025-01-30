@@ -7,6 +7,7 @@
 # nuitka-project: --output-dir="dist/"
 # nuitka-project: --remove-output
 # nuitka-project: --plugin-enable=pyside6
+# nuitka-project: --include-qt-plugins=sqldrivers
 # nuitka-project: --noinclude-setuptools-mode="nofollow"
 # ---
 
