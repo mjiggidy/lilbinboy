@@ -491,7 +491,7 @@ class TRTDataModel(QtCore.QObject):
 
 		self._marker_icons = markers_trt.LBMarkerIcons()
 
-		head_icon = self._marker_icons.ICONS.get(head_marker.color.value) if head_marker else None
+		head_icon = self._marker_icons.ICONS.get(head_marker.color.value).pixmap(10,10) if head_marker else None
 		head_tooltip = str(
 			f"""
 			<b>Matched FFOA Marker Criteria</b>
@@ -506,7 +506,7 @@ class TRTDataModel(QtCore.QObject):
 			"""
 		) if head_marker else "Using global \"Trim Each Head\" value"
 
-		tail_icon = self._marker_icons.ICONS.get(tail_marker.color.value) if tail_marker else None
+		tail_icon = self._marker_icons.ICONS.get(tail_marker.color.value).pixmap(10,10) if tail_marker else None
 		tail_tooltip = str(
 			f"""
 			<b>Matched LFOA Marker Criteria</b>
@@ -532,9 +532,9 @@ class TRTDataModel(QtCore.QObject):
 			"duration_trimmed_tc":    treeview_trt.TRTDurationItem(duration_trimmed),
 			"duration_trimmed_ff": treeview_trt.TRTFeetFramesItem(duration_trimmed.frame_number),
 			"head_trimmed_tc":     treeview_trt.TRTDurationItem(head_trim_tc, icon=head_icon, tooltip=head_tooltip),	# TODO: Make Trim Item w/Icon
-			"head_trimmed_ff":     treeview_trt.TRTFeetFramesItem(head_trim_tc.frame_number),	# TODO: Make Trim Item w/Icon
+			"head_trimmed_ff":     treeview_trt.TRTFeetFramesItem(head_trim_tc.frame_number, icon=head_icon, tooltip=head_tooltip),	# TODO: Make Trim Item w/Icon
 			"tail_trimmed_tc":     treeview_trt.TRTDurationItem(tail_trim_tc, icon=tail_icon, tooltip=tail_tooltip),	# TODO: Make Trim Item w/Icon
-			"tail_trimmed_ff":     treeview_trt.TRTFeetFramesItem(tail_trim_tc.frame_number),	# TODO: Make Trim Item w/Icon
+			"tail_trimmed_ff":     treeview_trt.TRTFeetFramesItem(tail_trim_tc.frame_number, icon=tail_icon, tooltip=tail_tooltip),	# TODO: Make Trim Item w/Icon
 			"ffoa_tc":             treeview_trt.TRTTimecodeItem(ffoa_tc),
 			"ffoa_ff":             treeview_trt.TRTFeetFramesItem(head_trim_tc.frame_number),
 			"lfoa_tc":             treeview_trt.TRTTimecodeItem(lfoa_tc),
