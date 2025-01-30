@@ -9,11 +9,14 @@ class LBMarkerIcons:
 	def __init__(self):
 
 		# "Any" color
-		self.ICONS.update({"(Any Color)": LBMarkerIcon(None)})
+		if "(Any Color)" not in self.ICONS:
+			self.ICONS.update({"(Any Color)": LBMarkerIcon(None)})
 		# NOTE: At the moment I think this can just be a list? I don't think I'm looking anything up by key
 		# But I.... I dunno
 		
 		for color in avbutils.MarkerColors:
+			if color.value in self.ICONS:
+				continue
 			self.ICONS.update({color.value: LBMarkerIcon(color.value)})
 	
 	def __iter__(self):
@@ -53,7 +56,10 @@ class LBMarkerIcon(QtGui.QIcon):
 		self._name = color
 		self._color = QtGui.QColor().fromString(color) if color else None
 
-		self.addPixmap(self._create_pixmap())
+		#print("I make for ", self._color)
+
+		for s in [8,16, 32, 64]:
+			self.addPixmap(self._create_pixmap(s,s))
 	
 	def color(self) -> QtGui.QColor:
 		return self._color
@@ -61,30 +67,27 @@ class LBMarkerIcon(QtGui.QIcon):
 	def name(self) -> str:
 		return self._name
 	
-	def _create_pixmap(self):
-		pixmap = QtGui.QPixmap(32, 32)
-		pixmap.fill(QtGui.QColor(0,0,0,0))
+	def _create_pixmap(self, width:int, height:int) -> QtGui.QPixmap:
+		pixmap = QtGui.QPixmap(width, height)
+		pixmap.fill(QtCore.Qt.GlobalColor.transparent)
 
 		painter = QtGui.QPainter(pixmap)
 		painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
 
 		pen = QtGui.QPen()
+		pen.setWidthF(pixmap.width() * 0.075)
+		pen.setStyle(QtCore.Qt.PenStyle.SolidLine)
 
 		if self.color():
-			pen.setWidth(3)
 			pen.setColor(self.color().darker(300))
-			pen.setStyle(QtCore.Qt.PenStyle.SolidLine)
 		else:
-			pen.setWidth(3)
 			pen.setColor(QtGui.QColor(0,0,0))
-			#pen.setColor(QtGui.QColor.fromString("White"))
-			#pen.setStyle(QtCore.Qt.PenStyle.DashLine)
 		
 		painter.setPen(pen)
 		
-		brush = QtGui.QBrush()
 
 		if self.color():
+			brush = QtGui.QBrush()
 			brush.setColor(self.color())
 			brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
 		else:
@@ -106,7 +109,9 @@ class LBMarkerIcon(QtGui.QIcon):
 		
 		painter.setBrush(brush)
 
-		painter.drawRoundedRect(QtCore.QRect(5, 2, pixmap.rect().height()/2, pixmap.rect().height()-4), 75, 50, QtGui.Qt.SizeMode.RelativeSize)
+		rect_marker = QtCore.QRect(0, 0, pixmap.rect().width(), pixmap.rect().height()).adjusted(pixmap.rect().width() / 4, pen.width(), -pixmap.rect().width()/4, -pen.width())
+
+		painter.drawRoundedRect(rect_marker, 75, 50, QtGui.Qt.SizeMode.RelativeSize)
 		painter.end()
 
 		return pixmap
