@@ -3,6 +3,10 @@ from PySide6 import QtCore, QtGui
 def LBClipColorPainter(rect:QtCore.QRect, painter:QtGui.QPainter, outline_color:QtGui.QColor=None, clip_color:QtGui.QColor=None, pen_width:int=1, padding:QtCore.QSize=None, shadow_offset:QtCore.QPoint=None):
 		"""Draw a Clip Color graphic for a given painter"""
 		
+		if not painter.isActive():
+			print("No active")
+			return
+
 		outline_color = outline_color or QtGui.QColor("Black")
 		clip_color = clip_color or QtGui.QColor()
 		padding = padding or QtCore.QSize(3,3)
