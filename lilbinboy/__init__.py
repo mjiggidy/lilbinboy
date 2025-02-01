@@ -72,6 +72,7 @@ def main():
 	mnu_help.addAction(act_wiki)
 
 	act_updates = QtGui.QAction("Check For Updates...")
+	act_updates.setMenuRole(QtGui.QAction.MenuRole.ApplicationSpecificRole)
 	act_updates.triggered.connect(wnd_main.checkForUpdates)
 	mnu_help.addAction(act_updates)
 
