@@ -554,7 +554,7 @@ class LBTRTCalculator(LBUtilityTab):
 	def save_bins(self):
 		settings = QtCore.QSettings()
 
-		unique_bin_paths = list(set([QtCore.QFileInfo(timeline.bin_path).absoluteFilePath() for timeline in self.model().data()]))
+		unique_bin_paths = list(set([QtCore.QFileInfo(timeline.binFilePath()).absoluteFilePath() for timeline in self.model().data()]))
 
 		settings.setValue("trt/bin_paths", unique_bin_paths)
 	

@@ -46,7 +46,7 @@ class TRTStringItem(TRTAbstractItem):
 class TRTPathItem(TRTAbstractItem):
 	"""A file path"""
 
-	def __init__(self, raw_data:str):
+	def __init__(self, raw_data:str|QtCore.QFileInfo):
 		super().__init__(QtCore.QFileInfo(raw_data))
 	
 	def _prepare_data(self):
@@ -57,6 +57,19 @@ class TRTPathItem(TRTAbstractItem):
 			QtCore.Qt.ItemDataRole.InitialSortOrderRole: 	avbutils.human_sort(self._data.fileName()),
 			QtCore.Qt.ItemDataRole.DecorationRole:			QtWidgets.QFileIconProvider().icon(self._data),
 			QtCore.Qt.ItemDataRole.ToolTipRole:				QtCore.QDir.toNativeSeparators(self._data.absoluteFilePath()),
+		})
+
+class TRTDateTimeItem(TRTAbstractItem):
+	"""A datetime entry"""
+
+	def __init__(self, raw_data:QtCore.QDateTime):
+		super().__init__(raw_data)
+
+	def _prepare_data(self):
+		super()._prepare_data()
+	
+		self._data_roles.update({
+			QtCore.Qt.ItemDataRole.DisplayRole:		self._data.toLocalTime().toString("dd MMM yyyy @ hh:mm:ss AP")
 		})
 
 class TRTTimecodeItem(TRTAbstractItem):
@@ -106,9 +119,11 @@ class TRTClipColorItem(TRTAbstractItem):
 	def __init__(self, raw_data:avbutils.ClipColor|QtGui.QRgba64, *args, **kwargs):
 
 		if isinstance(raw_data, avbutils.ClipColor):
-			raw_data = QtGui.QRgba64.fromRgba64(*raw_data, raw_data.max_16b())
-		#elif not isinstance(raw_data, QtGui.QColor) or raw_data is not None:
-		#	raise TypeError(f"Data must be a 16-bit color or None (got {type(raw_data)})")
+			raw_data = QtGui.QColor.fromRgba64(*raw_data, raw_data.max_16b())
+		elif isinstance(raw_data, QtGui.QRgba64):
+			raw_data = QtGui.QColor.fromRgba64(raw_data)
+		elif not isinstance(raw_data, QtGui.QColor):
+			raise TypeError(f"Data must be a QColor object (got {type(raw_data)})")
 		
 		super().__init__(raw_data, *args, **kwargs)
 	
@@ -120,7 +135,7 @@ class TRTClipColorItem(TRTAbstractItem):
 		self._data_roles.update({
 			QtCore.Qt.ItemDataRole.UserRole: self._data,
 			QtCore.Qt.ItemDataRole.ToolTipRole: f"R: {color_8b.red()} G: {color_8b.green()} B: {color_8b.blue()}" if color_8b.isValid() else None,
-			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data.toRgb16() if self._data is not None else QtGui.QRgba64().toRgb16()
+			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data.getRgb() if self._data is not None else QtGui.QColor.rgb()
 		})
 
 class TRTBinLockItem(TRTAbstractItem):
