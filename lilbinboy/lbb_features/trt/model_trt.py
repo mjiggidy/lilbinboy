@@ -348,10 +348,48 @@ class TRTDataModel(QtCore.QObject):
 		self._head_marker_preset_name = None
 		self._tail_marker_preset_name = None
 	
+	#
+	# Statz
+	#
 	def sequence_count(self) -> int:
 		"""Number of sequences being considered"""
 		return len(self._data)
 	
+	def bin_count(self) -> int:
+		"""Number of individual bins involved in this"""
+		return len(set(b.binFilePath() for b in self._data))
+	
+	def total_runtime(self) -> Timecode:
+		"""Total running time"""
+		trt = Timecode(0, rate=self._fps)
+
+		for timeline_info in self._data:
+			trt += timeline_info.timelineTimecodeTrimmed().duration
+		
+		return max(Timecode(0, rate=self.rate()), trt + self.trimTotal())
+
+	def total_lfoa(self) -> str:
+		"""Total running length (F+F)"""
+		trt = self.total_runtime()
+		return self.tc_to_lfoa(trt)
+	
+	def locked_bin_count(self) -> int:
+		"""Bins that were locked while reading"""
+		locked = 0
+		unique_bins = set()
+
+		for timeline in self._data:
+			if timeline.binFilePath().absoluteFilePath() in unique_bins:
+				continue
+			unique_bins.add(timeline.binFilePath().absoluteFilePath())
+			if timeline.binLockInfo():
+				locked += 1
+
+		return locked
+	
+	#
+	# Modez
+	#
 	def sequenceSelectionMode(self) -> SequenceSelectionMode:
 		return self._sequence_selection_mode
 
@@ -375,19 +413,6 @@ class TRTDataModel(QtCore.QObject):
 		
 		self.sig_sequence_selection_process_changed.emit(self.sequenceSelectionProcess())
 	
-	def bin_count(self) -> int:
-		"""Number of individual bins involved in this"""
-		return len(set(b.binFilePath() for b in self._data))
-	
-	def total_runtime(self) -> Timecode:
-		
-		trt = Timecode(0, rate=self._fps)
-
-		for timeline_info in self._data:
-			trt += timeline_info.timelineTimecodeTrimmed().duration
-		
-		return max(Timecode(0, rate=self.rate()), trt + self.trimTotal())
-	
 	def rate(self) -> int:
 		return self._fps
 	
@@ -399,71 +424,74 @@ class TRTDataModel(QtCore.QObject):
 		self.sig_rate_changed.emit(self.rate())
 		self.sig_data_changed.emit()
 	
+	#
+	#	Binz 'n' Sequencez/Timelinez
+	#
+	def set_data(self, bin_info_list:list[logic_trt.TimelineInfo]):
+		# TODO: Deprecated I believe?
+		self._data = bin_info_list
+		self.sig_data_changed.emit()
+		self.sig_bins_changed.emit()
+	
+	#
+	#	Global FFOA/LFOA trims
+	#
 	def trimFromHead(self) -> Timecode:
+		"""Default FFOA offset from head"""
 		return self._trim_head
 	
 	def setTrimFromHead(self, timecode:Timecode):
+		"""Specify the default FFOA offset from head"""
 		self._trim_head = timecode
 		
 		self.sig_data_changed.emit()
+
+		for timeline in self.data():
+			timeline.setGlobalFFOA(self.trimFromHead())
+
 		self.sig_head_trim_tc_changed.emit(self.trimFromHead())
 		self.sig_trims_changed.emit()
 	
 	def trimFromTail(self) -> Timecode:
+		"""Default LFOA offset from tail"""
 		return self._trim_tail
 	
 	def setTrimFromTail(self, timecode:Timecode):
+		"""Specify the default LFOA offset from tail"""
 		self._trim_tail = timecode
 		
 		self.sig_data_changed.emit()
+
+		for timeline in self.data():
+			timeline.setGlobalLFOA(self.trimFromTail())
+
 		self.sig_tail_trim_tc_changed.emit(self.trimFromTail())
 		self.sig_trims_changed.emit()
 
 	def trimTotal(self) -> Timecode:
+		"""Final adjustment to the TRT (not reel-specific)"""
 		return self._trim_total
 
 	def setTrimTotal(self, timecode:Timecode):
+		"""Specify final adjustments to the TRT (not reel-specific)"""
 		self._trim_total = timecode
 		self.sig_total_trim_tc_changed.emit(self.trimTotal())
 		self.sig_data_changed.emit()
 		self.sig_trims_changed.emit()
 	
-	def total_lfoa(self) -> str:
-		trt = self.total_runtime()
-		return self.tc_to_lfoa(trt)
-	
-	def locked_bin_count(self) -> int:
-		locked = 0
-		unique_bins = set()
 
-		for timeline in self._data:
-			if timeline.binFilePath().absoluteFilePath() in unique_bins:
-				continue
-			unique_bins.add(timeline.binFilePath().absoluteFilePath())
-			if timeline.binLockInfo():
-				locked += 1
-
-		return locked
 	
 	# Helper
 	def tc_to_lfoa(self, tc:Timecode) -> str:
 		zpadding = len(str(self.LFOA_PERFS_PER_FOOT))
 		#tc = max(tc, Timecode(0, rate=self.rate()))
 		return str(tc.frame_number // 16) + "+" + str(tc.frame_number % self.LFOA_PERFS_PER_FOOT).zfill(zpadding)
-		
-	def _trim_head_amount(self) -> Timecode:
-		# TODO: Implement markers; indiciate if it was Marker or head trim
-		return self._trim_head
 	
-	def _trim_tail_amount(self) -> Timecode:
-		# TODO: Implement markers; indiciate if it was Marker or tail trim
-		return self._trim_tail
-
-	
-	def set_data(self, bin_info_list:list[logic_trt.TimelineInfo]):
-		self._data = bin_info_list
-		self.sig_data_changed.emit()
-		self.sig_bins_changed.emit()
+	#
+	#	Marker Match Criteria Presets
+	#	
+	def marker_presets(self) -> dict[str, markers_trt.LBMarkerPreset]:
+		return self._marker_presets
 	
 	def set_marker_presets(self, marker_presets:dict[str, markers_trt.LBMarkerPreset]):
 		self._marker_presets = marker_presets
@@ -498,6 +526,10 @@ class TRTDataModel(QtCore.QObject):
 		
 		if not marker_preset_name or marker_preset_name in self.marker_presets():
 			self._head_marker_preset_name = marker_preset_name or None
+
+			for timeline in self.data():
+				timeline.findMarkerFFOAFromPreset(self.activeHeadMarkerPreset())
+
 			self.sig_head_marker_preset_changed.emit(self._head_marker_preset_name)
 			self.sig_data_changed.emit()
 		else:
@@ -509,19 +541,21 @@ class TRTDataModel(QtCore.QObject):
 		
 		if not marker_preset_name or marker_preset_name in self.marker_presets():
 			self._tail_marker_preset_name = marker_preset_name or None
+
+			for timeline in self.data():
+				timeline.findMarkerLFOAFromPreset(self.activeTailMarkerPreset())
+
 			self.sig_tail_marker_preset_changed.emit(self._tail_marker_preset_name)
 			self.sig_data_changed.emit()
 		else:
 			print("Noo", marker_preset_name)
 
 	
-	def marker_presets(self) -> dict[str, markers_trt.LBMarkerPreset]:
-		return self._marker_presets
+
 	
 	#
 	# Actual bin/timeline data model stuff here
 	#
-	
 	def add_timelines_from_bin(self, bin_info:list[logic_trt.TimelineInfo]):
 		"""Given all timelines in a bin, add it depending on the SequenceSelection mode"""
 
@@ -531,16 +565,18 @@ class TRTDataModel(QtCore.QObject):
 
 		if self._sequence_selection_mode is SequenceSelectionMode.ALL_SEQUENCES_PER_BIN:
 			for timeline_info in bin_info:
-				self.add_sequence(self.CalculatedTimelineInfo(timeline_info))
+				self._add_sequence(self.CalculatedTimelineInfo(timeline_info))
 		
 		else:
 			filtered_sequence = self.sequenceSelectionProcess().getSingleSequence(bin_info)
 			if not filtered_sequence:
 				return
-			self.add_sequence(self.CalculatedTimelineInfo(filtered_sequence))
+			self._add_sequence(self.CalculatedTimelineInfo(filtered_sequence))
 			
 
-	def add_sequence(self, sequence_info:CalculatedTimelineInfo):
+	def _add_sequence(self, sequence_info:CalculatedTimelineInfo):
+		"""Add a sequence to the data model"""
+		# NOTE: This should be called from add_timelines_from_bin
 
 		# Set 'er up
 		sequence_info.setGlobalFFOA(self.trimFromHead())
@@ -554,6 +590,7 @@ class TRTDataModel(QtCore.QObject):
 
 	
 	def remove_sequence(self, index:int):
+		"""Remove a sequence from the data model"""
 		try:
 			del self._data[index]
 		except Exception as e:
@@ -565,10 +602,13 @@ class TRTDataModel(QtCore.QObject):
 		self.sig_data_changed.emit()
 
 	def clear(self):
+		"""Remove ALL sequences from the data model ohohoohoo"""
 		for _ in range(len(self.data())):
 			self.remove_sequence(0)
 	
-	def data(self) -> list[logic_trt.TimelineInfo]:
+	def data(self) -> list[CalculatedTimelineInfo]:
+		"""All the data"""
+		# TODO: Iterator or something?
 		return self._data
 	
 	#
