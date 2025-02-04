@@ -69,7 +69,7 @@ class TRTDateTimeItem(TRTAbstractItem):
 		super()._prepare_data()
 	
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole:		self._data.toLocalTime().toString("dd MMM yyyy @ hh:mm:ss AP")
+			QtCore.Qt.ItemDataRole.DisplayRole:		self._data.toLocalTime().toString("dd MMM yyyy hh:mm:ss AP")
 		})
 
 class TRTTimecodeItem(TRTAbstractItem):
