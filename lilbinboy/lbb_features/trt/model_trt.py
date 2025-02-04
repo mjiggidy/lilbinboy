@@ -282,12 +282,18 @@ class TRTDataModel(QtCore.QObject):
 
 
 			
+	sig_trt_changed = QtCore.Signal(Timecode)
+	"""Something happen that affects TRT calculation"""
 
+	sig_sequence_selection_mode_changed = QtCore.Signal(SequenceSelectionMode)
+	"""User changed sequence selection mode"""
+	sig_sequence_selection_process_changed = QtCore.Signal(SingleSequenceSelectionProcess)
+	"""User changed sequence selection criteria"""
 
-	sig_bins_changed = QtCore.Signal()
+	sig_bins_changed = QtCore.Signal(list)
 	"""Bins (sequnces?) were added or removed"""
 
-	sig_sequence_added = QtCore.Signal(logic_trt.TimelineInfo)
+	sig_sequence_added = QtCore.Signal(CalculatedTimelineInfo)
 	"""BinInfo for a new bin added"""
 	sig_sequence_removed = QtCore.Signal(int)
 	"""Row index for a sequence removed"""
@@ -295,18 +301,21 @@ class TRTDataModel(QtCore.QObject):
 	sig_data_changed  = QtCore.Signal()
 
 	sig_rate_changed = QtCore.Signal(int)
+	"""Timecode rate has changed"""
 
 	sig_head_trim_tc_changed = QtCore.Signal(Timecode)
+	"""Global FFOA offset changed"""
 	sig_tail_trim_tc_changed = QtCore.Signal(Timecode)
+	"""Global LFOA offset changed"""
 	sig_total_trim_tc_changed = QtCore.Signal(Timecode)
-	sig_trims_changed = QtCore.Signal()
-
-	sig_sequence_selection_mode_changed = QtCore.Signal(SequenceSelectionMode)
-	sig_sequence_selection_process_changed = QtCore.Signal(SingleSequenceSelectionProcess)
+	"""Final adjustment changed"""
 
 	sig_marker_presets_model_changed = QtCore.Signal(dict)
+	"""Marker match criteria presets model has been updated"""
 	sig_head_marker_preset_changed   = QtCore.Signal(str)
+	"""User chose a head marker preset"""
 	sig_tail_marker_preset_changed   = QtCore.Signal(str)
+	"""User chose a tail marker preset"""
 
 	#LFOA_PERFS_PER_FOOT = 8 # 35.8
 	LFOA_PERFS_PER_FOOT = 16 # 35.4
@@ -321,27 +330,21 @@ class TRTDataModel(QtCore.QObject):
 	#LFOA_PERFS_PER_FOOT = 8 # Vista - 8 perfs but 2 perfs per frame - goes 0, 2, 4, 6
 
 
-	# TODO: Not a great place for these probably
-	MAX_8b = (1 << 8) - 1
-	"""Maximum 8-bit value"""
-	MAX_16b = (1 << 16) - 1
-	"""Maximum 16-bit value"""
-
-	def __init__(self, bin_info_list:list[logic_trt.TimelineInfo]=None):
+	def __init__(self):
 		super().__init__()
 
-		self._data:list[self.CalculatedTimelineInfo] = bin_info_list or []
-		self._marker_presets = dict()
+		self._data:list[self.CalculatedTimelineInfo] = []
+		self._marker_presets:dict[str, markers_trt.LBMarkerPreset] = dict()
 
 		# TODO: Deal with
 		self._fps = 24
-		self._trim_head = Timecode("8:00", rate=self._fps)
-		self._trim_tail = Timecode("4:00", rate=self._fps)
-		self._trim_total = Timecode(0, rate=self._fps)
+		self._trim_head    = Timecode("8:00", rate=self._fps)
+		self._trim_tail    = Timecode("4:00", rate=self._fps)
+		self._trim_total   = Timecode(0, rate=self._fps)
 		self._adjust_total = Timecode(0, rate=self._fps)
 
 		# Settings
-		self._sequence_selection_mode = SequenceSelectionMode.ONE_SEQUENCE_PER_BIN
+		self._sequence_selection_mode    = SequenceSelectionMode.ONE_SEQUENCE_PER_BIN
 		self._sequence_selection_process = SingleSequenceSelectionProcess()
 
 		# Marker presets
@@ -427,11 +430,13 @@ class TRTDataModel(QtCore.QObject):
 	#
 	#	Binz 'n' Sequencez/Timelinez
 	#
-	def set_data(self, bin_info_list:list[logic_trt.TimelineInfo]):
-		# TODO: Deprecated I believe?
-		self._data = bin_info_list
-		self.sig_data_changed.emit()
-		self.sig_bins_changed.emit()
+	#def set_data(self, bin_info_list:list[logic_trt.TimelineInfo]):
+	#	# TODO: Deprecated I believe?
+	#	self._data = bin_info_list
+	#	self.sig_data_changed.emit()
+	#	self.sig_bins_changed.emit()
+	#
+	#	self.sig_trt_changed.emit(self.total_runtime())
 	
 	#
 	#	Global FFOA/LFOA trims
@@ -444,13 +449,13 @@ class TRTDataModel(QtCore.QObject):
 		"""Specify the default FFOA offset from head"""
 		self._trim_head = timecode
 		
-		self.sig_data_changed.emit()
 
 		for timeline in self.data():
 			timeline.setGlobalFFOA(self.trimFromHead())
 
+		self.sig_data_changed.emit()
 		self.sig_head_trim_tc_changed.emit(self.trimFromHead())
-		self.sig_trims_changed.emit()
+		self.sig_trt_changed.emit(self.total_runtime())
 	
 	def trimFromTail(self) -> Timecode:
 		"""Default LFOA offset from tail"""
@@ -460,13 +465,13 @@ class TRTDataModel(QtCore.QObject):
 		"""Specify the default LFOA offset from tail"""
 		self._trim_tail = timecode
 		
-		self.sig_data_changed.emit()
 
 		for timeline in self.data():
 			timeline.setGlobalLFOA(self.trimFromTail())
 
+		self.sig_data_changed.emit()
 		self.sig_tail_trim_tc_changed.emit(self.trimFromTail())
-		self.sig_trims_changed.emit()
+		self.sig_trt_changed.emit(self.total_runtime())
 
 	def trimTotal(self) -> Timecode:
 		"""Final adjustment to the TRT (not reel-specific)"""
@@ -477,7 +482,8 @@ class TRTDataModel(QtCore.QObject):
 		self._trim_total = timecode
 		self.sig_total_trim_tc_changed.emit(self.trimTotal())
 		self.sig_data_changed.emit()
-		self.sig_trims_changed.emit()
+
+		self.sig_trt_changed.emit(self.total_runtime())
 	
 
 	
@@ -532,6 +538,8 @@ class TRTDataModel(QtCore.QObject):
 
 			self.sig_head_marker_preset_changed.emit(self._head_marker_preset_name)
 			self.sig_data_changed.emit()
+
+			self.sig_trt_changed.emit(self.total_runtime())
 		else:
 			print("Got weird one:", marker_preset_name, str(type(marker_preset_name)))
 
@@ -547,6 +555,8 @@ class TRTDataModel(QtCore.QObject):
 
 			self.sig_tail_marker_preset_changed.emit(self._tail_marker_preset_name)
 			self.sig_data_changed.emit()
+
+			self.sig_trt_changed.emit(self.total_runtime())
 		else:
 			print("Noo", marker_preset_name)
 
@@ -581,13 +591,20 @@ class TRTDataModel(QtCore.QObject):
 		# Set 'er up
 		sequence_info.setGlobalFFOA(self.trimFromHead())
 		sequence_info.setGlobalLFOA(self.trimFromTail())
+
 		sequence_info.findMarkerFFOAFromPreset(self.activeHeadMarkerPreset())
 		sequence_info.findMarkerLFOAFromPreset(self.activeTailMarkerPreset())
+
 		self._data.insert(0, sequence_info)
 		self.sig_sequence_added.emit(sequence_info)
-		self.sig_bins_changed.emit()
+		self.sig_bins_changed.emit(self.binsUsed())
 		self.sig_data_changed.emit()
 
+		self.sig_trt_changed.emit(self.total_runtime())
+
+	def binsUsed(self) -> list[str]:
+		"""Get a list of bins currently in use"""
+		return list(set(sequence.binFilePath().absoluteFilePath() for sequence in self.data()))
 	
 	def remove_sequence(self, index:int):
 		"""Remove a sequence from the data model"""
@@ -598,8 +615,10 @@ class TRTDataModel(QtCore.QObject):
 		
 		self.sig_sequence_removed.emit(index)
 		
-		self.sig_bins_changed.emit()
+		self.sig_bins_changed.emit(self.binsUsed())
 		self.sig_data_changed.emit()
+
+		self.sig_trt_changed.emit(self.total_runtime())
 
 	def clear(self):
 		"""Remove ALL sequences from the data model ohohoohoo"""
@@ -614,7 +633,6 @@ class TRTDataModel(QtCore.QObject):
 	#
 	# Item To Dict Methods
 	#
-	
 	def item_to_dict(self, timeline_info:CalculatedTimelineInfo):
 
 		self._marker_icons = markers_trt.LBMarkerIcons()

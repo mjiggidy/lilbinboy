@@ -334,7 +334,7 @@ class LBTRTCalculator(LBUtilityTab):
 		"""Connect signals and slots"""
 
 		# Bin/sequence loading mode
-		self.model().sig_data_changed.connect(self.update_summary)
+		self.model().sig_trt_changed.connect(self.update_summary)
 		self.model().sig_sequence_selection_mode_changed.connect(self.sequenceSelectionModeChanged)	# Single sequence vs all sequences
 		self.model().sig_sequence_selection_process_changed.connect(self.singleSequenceSelectionProcessChanged) # Single sequence selection filters
 
@@ -345,7 +345,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().sig_sequence_removed.connect(self.sequenceRemoved)
 
 		# Data model bins have changed
-		self.model().sig_bins_changed.connect(self.save_bins)
+		self.model().sig_bins_changed.connect(self.saveBins)
 
 		self.model().sig_rate_changed.connect(self.saveRate)
 		
@@ -551,18 +551,17 @@ class LBTRTCalculator(LBUtilityTab):
 	def model(self) -> model_trt.TRTDataModel:
 		return self._data_model
 
-	def save_bins(self):
+	@QtCore.Slot(list)
+	def saveBins(self, bin_paths:list[str]):
 		settings = QtCore.QSettings()
 
-		unique_bin_paths = list(set([QtCore.QFileInfo(timeline.binFilePath()).absoluteFilePath() for timeline in self.model().data()]))
-
-		settings.setValue("trt/bin_paths", unique_bin_paths)
+		settings.setValue("trt/bin_paths", bin_paths)
 	
-	@QtCore.Slot(logic_trt.TimelineInfo)
-	def sequenceAdded(self, bin_info: logic_trt.TimelineInfo):
+	@QtCore.Slot(model_trt.TRTDataModel.CalculatedTimelineInfo)
+	def sequenceAdded(self, sequence_info: model_trt.TRTDataModel.CalculatedTimelineInfo):
 		"""Model reports that a sequence has been added"""
 
-		view_item = self.model().item_to_dict(bin_info)
+		view_item = self.model().item_to_dict(sequence_info)
 		self._treeview_model.addSequenceInfo(view_item)
 		self.list_trts.fit_headers()
 	
@@ -626,12 +625,12 @@ class LBTRTCalculator(LBUtilityTab):
 		bin_paths = set()
 		data = self.model().data()
 		for idx in selected:
-			bin_paths.add(data[idx].bin_path)
+			bin_paths.add(data[idx].binFilePath().absoluteFilePath())
 		
 		# Add any others that have the same bin paths
 		reload_indexes = []
 		for idx, timeline_info in enumerate(data):
-			if timeline_info.bin_path in bin_paths:
+			if timeline_info.binFilePath().absoluteFilePath() in bin_paths:
 				reload_indexes.append(idx)
 		
 		# Remove existing
@@ -738,7 +737,7 @@ class LBTRTCalculator(LBUtilityTab):
 	def setSorting(self, sort_field:str, sort_order:QtCore.Qt.SortOrder):
 		self.list_trts.setSorting(sort_field, sort_order)
 
-	@QtCore.Slot()
+	@QtCore.Slot(Timecode)
 	def update_summary(self):
 		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(label="Locked", value=self.model().locked_bin_count()))
 		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(label="Sequences", value=self.model().sequence_count()))
