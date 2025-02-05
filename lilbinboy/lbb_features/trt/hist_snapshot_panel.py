@@ -302,7 +302,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 			self.setRate(adjustment.rate)
 
 		self._summary.add_summary_item(wdg_summary.TRTSummaryItem(
-			label = "Adjustment",
+			label = "Final Adjustment",
 			value = timecode.Timecode(self._final_adjust_frames, rate=self._rate)
 		))
 		
@@ -325,10 +325,33 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		
 		else:
 
-			self._lbl_snapshot_name.setText(snapshot_record.field("label_name").value())
-			self._txt_snapshot_name.setPlaceholderText(snapshot_record.field("label_name").value())
-			self._lbl_datetime.setText(str(QtCore.QDateTime.fromString(snapshot_record.field("datetime_created_local").value(), format=QtCore.Qt.DateFormat.ISODate).toLocalTime().toString("dd MMM yyyy · hh:mm aP")))
+			self._lbl_snapshot_name.setText(
+				snapshot_record.field("label_name").value()
+			)
+			self._txt_snapshot_name.setPlaceholderText(
+				snapshot_record.field("label_name").value()
+			)
+			self._lbl_datetime.setText(str(
+				QtCore.QDateTime.fromString(
+					snapshot_record.field("datetime_created_local").value(),
+					format=QtCore.Qt.DateFormat.ISODate
+				).toLocalTime().toString("dd MMM yyyy · hh:mm aP")
+			))
 			self._tree_sequences.model().setSnapshotIds([snapshot_record.field("id_snapshot").value()])
+			
+			self.setTrtFrames(timecode.Timecode(
+				snapshot_record.field("duration_trimmed_frames").value(),
+				rate = snapshot_record.field("rate").value()
+			))
+
+			self.setFinalAdjustmentFrames(timecode.Timecode(
+				snapshot_record.field("duration_offset_frames").value(),
+				rate = snapshot_record.field("rate").value()
+			))
+
+			self.setRate(timecode.Timecode(
+				snapshot_record.field("rate").value()
+			))
 
 		self._tree_sequences.setItemDelegateForColumn(0, SnapshotClipColorDelegate())
 		self._tree_sequences.model().rowsInserted.connect(lambda: print("Ayyy"))

@@ -233,6 +233,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				self.sig_live_rate_changed.connect(history_panel.setRate)
 			else:
 				history_panel.setModel(self._sequence_query_model)
+				
 			history_panel.sig_save_current_requested.connect(self.saveLiveToSnapshot)
 			self._snapshots_parent.layout().addWidget(history_panel)
 	
@@ -263,10 +264,12 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				"duration_trimmed_frames",
 				"duration_trimmed_tc",
 				"duration_trimmed_ff",
+				"duration_offset_frames",
 				"is_current"
 			)
 
 			VALUES (
+				?,
 				?,
 				?,
 				?,
@@ -282,8 +285,8 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		query.addBindValue(rate)
 		query.addBindValue(duration_frames)
 		query.addBindValue(str(timecode.Timecode(duration_frames, rate=rate)))
-		query.addBindValue(str(duration_frames)) # TODO
-		print(query.boundValues())
+		query.addBindValue(str(duration_frames)) # TODO: F+F
+		query.addBindValue(adjust_frames)
 		if not query.exec():
 			print(query.lastError().text())
 		
@@ -343,6 +346,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				"duration_trimmed_frames",
 				"duration_trimmed_tc",
 				"duration_trimmed_ff",
+				"duration_offset_frames",
 				"is_current",
 				datetime(datetime_created, "localtime") as "datetime_created_local"
 			FROM trt_snapshot_labels
