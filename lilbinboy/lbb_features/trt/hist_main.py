@@ -11,6 +11,11 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 	sig_is_closing = QtCore.Signal()
 	"""Window is about to close"""
 
+	sig_live_trt_changed = QtCore.Signal(timecode.Timecode)
+	sig_live_total_adjust_changed = QtCore.Signal(timecode.Timecode)
+	sig_live_rate_changed = QtCore.Signal(int)
+
+
 	def __init__(self, database:QtSql.QSqlDatabase,  *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
@@ -200,7 +205,8 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				"sequence_color",
 				"sequence_name",
 				"duration_trimmed_tc",
-				"duration_trimmed_ff"
+				"duration_trimmed_ff",
+				"duration_trimmed_frames"
 			FROM trt_snapshot_sequences
 			WHERE id_snapshot IN ({query_placeholders})
 			"""
@@ -222,6 +228,9 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 			if snapshot.field("is_current").value() == 1:
 				history_panel.setModel(self._current_model)
+				self.sig_live_trt_changed.connect(history_panel.setTrtFrames)
+				self.sig_live_total_adjust_changed.connect(history_panel.setFinalAdjustmentFrames)
+				self.sig_live_rate_changed.connect(history_panel.setRate)
 			else:
 				history_panel.setModel(self._sequence_query_model)
 			history_panel.sig_save_current_requested.connect(self.saveLiveToSnapshot)
@@ -231,7 +240,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		"""Set the "Current sequences" model from the main program"""
 		self._current_model = datamodel
 
-	def saveLiveToSnapshot(self, snapshot_name:str, clip_color:QtGui.QColor, timeline_info_list:list):
+	def saveLiveToSnapshot(self, snapshot_name:str, clip_color:QtGui.QColor, rate:int, adjust_frames:int, duration_frames:int, timeline_info_list:list):
 
 		query = QtSql.QSqlQuery(self._db)
 
@@ -260,16 +269,21 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			VALUES (
 				?,
 				?,
-				24,
-				0,
-				"00:00:00:00",
-				"0+00",
+				?,
+				?,
+				?,
+				?,
 				0
 			)
 			"""
 		)
 		query.addBindValue(snapshot_name)
 		query.addBindValue(clip_color_str)
+		query.addBindValue(rate)
+		query.addBindValue(duration_frames)
+		query.addBindValue(str(timecode.Timecode(duration_frames, rate=rate)))
+		query.addBindValue(str(duration_frames)) # TODO
+		print(query.boundValues())
 		if not query.exec():
 			print(query.lastError().text())
 		
@@ -383,4 +397,3 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		self.updateModelQueries()
 		self.updateSnapshotCard([])
-

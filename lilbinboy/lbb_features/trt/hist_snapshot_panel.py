@@ -1,6 +1,8 @@
 import abc
+import timecode
 from lilbinboy.lbb_common import LBClipColorPicker
 from lilbinboy.lbb_common.paint_delegates import LBClipColorPainter
+from lilbinboy.lbb_features.trt import wdg_summary
 from PySide6 import QtSql, QtCore, QtGui, QtWidgets
 
 class SnapshotClipColorDelegate(QtWidgets.QStyledItemDelegate):
@@ -36,12 +38,13 @@ class TRTHistorySnapshotAbstractProxyModel(QtCore.QSortFilterProxyModel):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
-		self._filter_snapshot_ids = []
+		#self._filter_snapshot_ids = []
 		self._field_column_names = {
 			"sequence_color": "",
 			"sequence_name": "Sequence Name",
 			"duration_trimmed_tc": "Duration (TC)",
 			"duration_trimmed_ff": "Duration (F+F)",
+			"duration_trimmed_frames": "Duration (Frames)",
 		}
 
 	@abc.abstractmethod
@@ -91,12 +94,12 @@ class TRTHistorySnapshotDatabaseProxyModel(TRTHistorySnapshotAbstractProxyModel)
 		super().__init__(*args, **kwargs)
 
 		self._filter_snapshot_ids = []
-		self._field_column_names = {
-			"sequence_color": "",
-			"sequence_name": "Sequence Name",
-			"duration_trimmed_tc": "Duration (TC)",
-			"duration_trimmed_ff": "Duration (F+F)",
-		}
+		#self._field_column_names = {
+		#	"sequence_color": "",
+		#	"sequence_name": "Sequence Name",
+		#	"duration_trimmed_tc": "Duration (TC)",
+		#	"duration_trimmed_ff": "Duration (F+F)",
+		#}
 
 	
 	def setSnapshotIds(self, ids:list[int]):
@@ -130,7 +133,7 @@ class TRTHistorySnapshotDatabaseProxyModel(TRTHistorySnapshotAbstractProxyModel)
 class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 	"""A card/panel displaying details for a given snapshot"""
 
-	sig_save_current_requested = QtCore.Signal(str, QtGui.QColor, list)
+	sig_save_current_requested = QtCore.Signal(str, QtGui.QColor, int, int, int, list)
 	"""Save "Current" Snapshot"""
 
 	def __init__(self, *args, **kwargs):
@@ -140,6 +143,10 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self.setLayout(QtWidgets.QVBoxLayout())
 
 		self._color_clip = None
+
+		self._final_adjust_frames = 0
+		self._trt_frames = 0
+		self._rate = 24
 
 		# Stacked Header (Editor for "Current", Viewer for rest)
 		self._stack_header = QtWidgets.QStackedWidget()
@@ -212,11 +219,23 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self._btn_clip_color.setMenu(self._mnu_clip_color)
 		self._btn_clip_color.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.InstantPopup)
 
-
-
+		# Summary
+		self._summary = wdg_summary.TRTSummary()
+		self._summary.add_summary_item(wdg_summary.TRTSummaryItem(
+			label = "Rate",
+			value = "--"
+		))
+		self._summary.add_summary_item(wdg_summary.TRTSummaryItem(
+			label ="Final Adjustment",
+			value = "--"
+		))
+		self._summary.add_summary_item(wdg_summary.TRTSummaryItem(
+			label ="Total Running Time",
+			value = "--"
+		))
 		self.layout().addWidget(self._stack_header)
 		self.layout().addWidget(self._tree_sequences)
-		self.layout().addWidget(QtWidgets.QGroupBox())
+		self.layout().addWidget(self._summary)
 
 		self.setFrameShape(QtWidgets.QFrame.Shape.Panel)
 		self.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
@@ -263,6 +282,36 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self._btn_clip_color.setIcon(icon_color)
 		self._lbl_clip_color.setPixmap(icon_color.pixmap(16,16))
 	
+	def setTrtFrames(self, trt:timecode.Timecode):
+		self._trt_frames = trt.frame_number
+		
+		if self._rate != trt.rate:
+			self.setRate(trt.rate)
+		
+		self._summary.add_summary_item(wdg_summary.TRTSummaryItem(
+			label = "Total Running Time",
+			value = timecode.Timecode(self._trt_frames, rate=self._rate)
+		))
+
+		#print("TRT set to ", timecode.Timecode(self._trt_frames, rate=self._rate))
+	
+	def setFinalAdjustmentFrames(self, adjustment:timecode.Timecode):
+		self._final_adjust_frames = adjustment.frame_number
+
+		if self._rate != adjustment.rate:
+			self.setRate(adjustment.rate)
+
+		self._summary.add_summary_item(wdg_summary.TRTSummaryItem(
+			label = "Adjustment",
+			value = timecode.Timecode(self._final_adjust_frames, rate=self._rate)
+		))
+		
+		#print("Final adjust set to ", timecode.Timecode(self._rate, rate=self._rate))
+
+	def setRate(self, rate:int):
+		#print("Ayy I'm setting the thing to ", str(rate))
+		self._rate = rate
+	
 	def setSnapshotRecord(self, snapshot_record:QtSql.QSqlRecord):
 		
 
@@ -298,4 +347,5 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		label_text = self._txt_snapshot_name.text()
 		label_color = self._color_clip
 		sequences = exporters_trt.exportToSnapshot(self._tree_sequences.model())
-		self.sig_save_current_requested.emit(label_text, label_color, sequences)
+		
+		self.sig_save_current_requested.emit(label_text, label_color, self._rate, self._final_adjust_frames, self._trt_frames, sequences)

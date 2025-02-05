@@ -858,6 +858,16 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		self.wnd_history = hist_main.TRTHistoryViewer(db)
 		self.wnd_history.setCurrentModel(self._treeview_model) # "Current" as in "Current Sequences in main Program"
+
+		# Keep er real up to date real nice.  Keep er fed.  Real nice.
+		self.wnd_history.sig_live_trt_changed.emit(self.model().total_runtime())
+		self.model().sig_trt_changed.connect(self.wnd_history.sig_live_trt_changed)
+
+		self.wnd_history.sig_live_total_adjust_changed.emit(self.model().trimTotal())
+		self.model().sig_total_trim_tc_changed.connect(self.wnd_history.sig_live_total_adjust_changed)
+
+		self.wnd_history.sig_live_rate_changed.emit(self.model().rate())
+		self.model().sig_rate_changed.connect(self.wnd_history.sig_live_rate_changed)
 		
 		# Just really try to delete this thing
 		self.wnd_history.sig_is_closing.connect(self.wnd_history.deleteLater)
