@@ -43,6 +43,21 @@ class TRTStringItem(TRTAbstractItem):
 	def __init__(self, raw_data:str, *args, **kwargs):
 		super().__init__(str(raw_data), *args, **kwargs)
 
+class TRTNumericItem(TRTAbstractItem):
+	"""A numeric value"""
+
+	def __init__(self, raw_data:int, *args, **kwargs):
+		super().__init__(raw_data, *args, **kwargs)
+
+	def _prepare_data(self):
+		super()._prepare_data()
+
+		self._data_roles.update({
+			QtCore.Qt.ItemDataRole.DisplayRole:          str(self._data),
+			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data,
+			QtCore.Qt.ItemDataRole.FontRole:				QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
+		})
+
 class TRTPathItem(TRTAbstractItem):
 	"""A file path"""
 

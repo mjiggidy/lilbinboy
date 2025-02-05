@@ -674,24 +674,29 @@ class TRTDataModel(QtCore.QObject):
 		
 
 		return {
-			"sequence_name":       treeview_trt.TRTStringItem(timeline_info.timelineName()),
-			"sequence_color":      treeview_trt.TRTClipColorItem(timeline_info.timelineColor()),
-			"sequence_start_tc":   treeview_trt.TRTTimecodeItem(timeline_info.timelineTimecodeExtents().start),
-			"duration_total_tc":   treeview_trt.TRTDurationItem(timeline_info.timelineTimecodeExtents().duration),
-			"duration_trimmed_tc": treeview_trt.TRTDurationItem(timeline_info.timelineTimecodeTrimmed().duration),
-			"duration_trimmed_ff": treeview_trt.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().duration.frame_number),
-			"head_trimmed_tc":     treeview_trt.TRTDurationItem(timeline_info.ffoaOffset(), icon=head_icon, tooltip=head_tooltip),	# TODO: Make Trim Item w/Icon
-			"head_trimmed_ff":     treeview_trt.TRTFeetFramesItem(timeline_info.ffoaOffset().frame_number, icon=head_icon, tooltip=head_tooltip),	# TODO: Make Trim Item w/Icon
-			"tail_trimmed_tc":     treeview_trt.TRTDurationItem(timeline_info.lfoaOffset(), icon=tail_icon, tooltip=tail_tooltip),	# TODO: Make Trim Item w/Icon
-			"tail_trimmed_ff":     treeview_trt.TRTFeetFramesItem(timeline_info.lfoaOffset().frame_number, icon=tail_icon, tooltip=tail_tooltip),	# TODO: Make Trim Item w/Icon
-			"ffoa_tc":             treeview_trt.TRTTimecodeItem(timeline_info.timelineTimecodeTrimmed().start),
-			"ffoa_ff":             treeview_trt.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().start.frame_number),
-			"lfoa_tc":             treeview_trt.TRTTimecodeItem(timeline_info.timelineTimecodeTrimmed().end),
-			"lfoa_ff":             treeview_trt.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().duration.frame_number),
-			"date_modified":       treeview_trt.TRTDateTimeItem(timeline_info.timelineDateModified()),	# TODO: Need an Item type fro this
-			"date_created":        treeview_trt.TRTDateTimeItem(timeline_info.timelineDateCreated()),
-			"bin_path":            treeview_trt.TRTPathItem(timeline_info.binFilePath()),
-			"bin_lock":            treeview_trt.TRTBinLockItem(timeline_info.binLockInfo())
+			"sequence_name":           treeview_trt.TRTStringItem(timeline_info.timelineName()),
+			"sequence_color":          treeview_trt.TRTClipColorItem(timeline_info.timelineColor()),
+			"sequence_start_tc":       treeview_trt.TRTTimecodeItem(timeline_info.timelineTimecodeExtents().start),
+			"duration_total_tc":       treeview_trt.TRTDurationItem(timeline_info.timelineTimecodeExtents().duration),
+			"duration_total_ff":       treeview_trt.TRTFeetFramesItem(timeline_info.timelineTimecodeExtents().duration.frame_number),
+			"duration_total_frames":   treeview_trt.TRTNumericItem(timeline_info.timelineTimecodeExtents().duration.frame_number),
+			"duration_trimmed_tc":     treeview_trt.TRTDurationItem(timeline_info.timelineTimecodeTrimmed().duration),
+			"duration_trimmed_ff":     treeview_trt.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().duration.frame_number),
+			"duration_trimmed_frames": treeview_trt.TRTNumericItem(timeline_info.timelineTimecodeTrimmed().duration.frame_number),
+			"head_trimmed_tc":         treeview_trt.TRTDurationItem(timeline_info.ffoaOffset(), icon=head_icon, tooltip=head_tooltip),
+			"head_trimmed_ff":         treeview_trt.TRTFeetFramesItem(timeline_info.ffoaOffset().frame_number, icon=head_icon, tooltip=head_tooltip),
+			"head_trimmed_frames":     treeview_trt.TRTNumericItem(timeline_info.ffoaOffset().frame_number, icon=head_icon, tooltip=head_tooltip),
+			"tail_trimmed_tc":         treeview_trt.TRTDurationItem(timeline_info.lfoaOffset(), icon=tail_icon, tooltip=tail_tooltip),
+			"tail_trimmed_ff":         treeview_trt.TRTFeetFramesItem(timeline_info.lfoaOffset().frame_number, icon=tail_icon, tooltip=tail_tooltip),
+			"tail_trimmed_frames":     treeview_trt.TRTNumericItem(timeline_info.lfoaOffset().frame_number, icon=tail_icon, tooltip=tail_tooltip),
+			"ffoa_tc":                 treeview_trt.TRTTimecodeItem(timeline_info.timelineTimecodeTrimmed().start),
+			"ffoa_ff":                 treeview_trt.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().start.frame_number),
+			"lfoa_tc":                 treeview_trt.TRTTimecodeItem(timeline_info.timelineTimecodeTrimmed().end),
+			"lfoa_ff":                 treeview_trt.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().duration.frame_number),
+			"date_modified":           treeview_trt.TRTDateTimeItem(timeline_info.timelineDateModified()),
+			"date_created":            treeview_trt.TRTDateTimeItem(timeline_info.timelineDateCreated()),
+			"bin_path":                treeview_trt.TRTPathItem(timeline_info.binFilePath()),
+			"bin_lock":                treeview_trt.TRTBinLockItem(timeline_info.binLockInfo())
 		}
 	
 
@@ -707,13 +712,18 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		self.setHeaderItems([
 			treeview_trt.TRTTreeViewHeaderItem("","sequence_color", display_delegate=treeview_trt.TRTClipColorDisplayDelegate()),
 			treeview_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
-			treeview_trt.TRTTreeViewHeaderItem("Full Duration","duration_total_tc", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Full Duration (TC)","duration_total_tc", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Full Duration (F+F)","duration_total_ff", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Full Duration (Frames)","duration_total_frames", include_total=True),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (TC)","duration_trimmed_tc", include_total=True),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (F+F)","duration_trimmed_ff", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (Frames)","duration_trimmed_frames", include_total=True),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (TC)", "head_trimmed_tc", include_total=True),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (F+F)", "head_trimmed_ff", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (Frames)", "head_trimmed_frames", include_total=True),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (TC)", "tail_trimmed_tc", include_total=True),
 			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (F+F)", "tail_trimmed_ff", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (Frames)", "tail_trimmed_frames", include_total=True),
 			treeview_trt.TRTTreeViewHeaderItem("Sequence Start", "sequence_start_tc"),
 			treeview_trt.TRTTreeViewHeaderItem("FFOA (F+F)", "ffoa_ff"),
 			treeview_trt.TRTTreeViewHeaderItem("FFOA (TC)", "ffoa_tc"),
