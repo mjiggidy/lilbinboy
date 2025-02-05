@@ -37,6 +37,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				"duration_trimmed_frames"	INTEGER NOT NULL DEFAULT 0,
 				"duration_trimmed_tc"	TEXT NOT NULL DEFAULT '00:00:00:00',
 				"duration_trimmed_ff"	TEXT NOT NULL DEFAULT '0+00',
+				"duration_offset_frames"	INTEGER NOT NULL DEFAULT 0,
 				"is_current"	INTEGER NOT NULL DEFAULT 0,
 				PRIMARY KEY("id_snapshot" AUTOINCREMENT)
 			)
