@@ -317,17 +317,22 @@ class LBTRTCalculator(LBUtilityTab):
 
 		self.layout().addWidget(grp_summaries)
 
+		lay_exporters = QtWidgets.QHBoxLayout()
+		
+		lay_exporters.addWidget(self.btn_export_data)
+		self.btn_snapshots.setText("Show Snapshots...")
+		self.btn_snapshots.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRestore))
+		self.btn_snapshots.clicked.connect(self.historyViewerRequsted)
+		lay_exporters.addWidget(self.btn_snapshots)
 
+		self.layout().addLayout(lay_exporters)
 		
 		# Set up sequence trim controls
 		self.layout().addWidget(self.trt_trims)
 
-		self.layout().addWidget(self.btn_export_data)
 		
-		self.btn_snapshots.setText("Show Snapshots...")
-		self.btn_snapshots.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRestore))
-		self.btn_snapshots.clicked.connect(self.historyViewerRequsted)
-		self.layout().addWidget(self.btn_snapshots)
+		
+		#self.layout().addWidget()
 
 	
 	def _setupSignals(self):
