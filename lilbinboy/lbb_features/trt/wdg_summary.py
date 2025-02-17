@@ -13,54 +13,25 @@ class TRTSummaryItem():
 
 class TRTSummary(QtWidgets.QWidget):
 
-	_fnt_label = QtGui.QFont()
-	_fnt_value = QtGui.QFont()
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
+		self.setSizePolicy(QtWidgets.QSizePolicy(self.sizePolicy().horizontalPolicy(), QtWidgets.QSizePolicy.Policy.Maximum))
+
+		self._fnt_label = QtGui.QFont()
+		self._fnt_value = QtGui.QFont()
+
 		self._summary_items = dict()
 
-		self.__class__._fnt_label.setCapitalization(QtGui.QFont.Capitalization.AllUppercase)
-		self.__class__._fnt_label.setPointSizeF(8)
+		self._fnt_label.setCapitalization(QtGui.QFont.Capitalization.AllUppercase)
+		self._fnt_label.setPointSizeF(8)
 
-		self.__class__._fnt_value.setBold(True)
-		self.__class__._fnt_value.setPointSizeF(18)
+		self._fnt_value.setBold(True)
+		self._fnt_value.setPointSizeF(18)
 
 		self.setLayout(QtWidgets.QGridLayout())
 		self.layout().setHorizontalSpacing(24)
-
-		self._add_initial_summary_items()
-
-	def _add_initial_summary_items(self):
-			"""Initial info for now"""
-
-			self.add_summary_item(TRTSummaryItem(
-				label="Sequences",
-				value="0"
-			))
-
-			self.add_summary_item(TRTSummaryItem(
-				label="Locked",
-				value="0"
-			))
-
-			self.add_summary_item(TRTSummaryItem(
-				label="FPS",
-				value="24"
-			))
-
-			self.layout().addItem(QtWidgets.QSpacerItem(1,1, QtWidgets.QSizePolicy.Policy.MinimumExpanding), 1, self.layout().columnCount())
-
-			self.add_summary_item(TRTSummaryItem(
-				label="Total Running Length",
-				value="0+00"
-			))
-
-			self.add_summary_item(TRTSummaryItem(
-				label="Total Running Time",
-				value="00:00:00:00"
-			))
 	
 	def add_summary_item(self, item:TRTSummaryItem):
 
@@ -71,12 +42,12 @@ class TRTSummary(QtWidgets.QWidget):
 		else:
 			
 			lbl_value = QtWidgets.QLabel(str(item.value))
-			lbl_value.setFont(self.__class__._fnt_value)
+			lbl_value.setFont(self._fnt_value)
 			lbl_value.setAlignment(QtGui.Qt.AlignmentFlag.AlignCenter)
 			lbl_value.setTextInteractionFlags(QtGui.Qt.TextInteractionFlag.TextSelectableByMouse|QtGui.Qt.TextInteractionFlag.TextSelectableByKeyboard)
 
 			lbl_label = QtWidgets.QLabel(str(item.label))
-			lbl_label.setFont(self.__class__._fnt_label)
+			lbl_label.setFont(self._fnt_label)
 			lbl_label.setAlignment(QtGui.Qt.AlignmentFlag.AlignCenter)
 			lbl_label.setBuddy(lbl_value)
 
@@ -86,3 +57,7 @@ class TRTSummary(QtWidgets.QWidget):
 			
 			self.layout().addWidget(lbl_value, 0, self.layout().columnCount())
 			self.layout().addWidget(lbl_label, 1, self.layout().columnCount()-1)
+	
+	def add_spacer(self):
+
+		self.layout().addItem(QtWidgets.QSpacerItem(1,1, QtWidgets.QSizePolicy.Policy.MinimumExpanding), 1, self.layout().columnCount())

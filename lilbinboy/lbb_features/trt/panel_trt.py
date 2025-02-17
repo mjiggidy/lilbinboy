@@ -310,11 +310,40 @@ class LBTRTCalculator(LBUtilityTab):
 		self.view_longplay.setItems([])
 		self.layout().addWidget(self.view_longplay)
 
+		# Summary
 		grp_summaries = QtWidgets.QGroupBox()
 		grp_summaries.setLayout(QtWidgets.QVBoxLayout())
 		grp_summaries.layout().setContentsMargins(0,0,0,0)
-		grp_summaries.layout().addWidget(self.trt_summary)
+		
+		# Initial items
+		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(
+			label="Sequences",
+			value="0"
+		))
 
+		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(
+			label="Locked",
+			value="0"
+		))
+
+		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(
+			label="FPS",
+			value="24"
+		))
+
+		self.trt_summary.add_spacer()
+
+		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(
+			label="Total Running Length",
+			value="0+00"
+		))
+
+		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(
+			label="Total Running Time",
+			value="00:00:00:00"
+		))
+		
+		grp_summaries.layout().addWidget(self.trt_summary)
 		self.layout().addWidget(grp_summaries)
 
 		lay_exporters = QtWidgets.QHBoxLayout()
