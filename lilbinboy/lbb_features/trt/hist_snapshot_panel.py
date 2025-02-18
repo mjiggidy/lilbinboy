@@ -140,6 +140,8 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 
 		super().__init__(*args, **kwargs)
 
+		self.setSizePolicy(self.sizePolicy().horizontalPolicy(), QtWidgets.QSizePolicy.Policy.Maximum)
+
 		self.setLayout(QtWidgets.QVBoxLayout())
 
 		self._color_clip = None

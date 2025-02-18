@@ -129,6 +129,8 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._snapshots_scroll.setLayout(QtWidgets.QVBoxLayout())
 		self._snapshots_scroll.setVerticalScrollBarPolicy(QtGui.Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
 		self._snapshots_scroll.setWidgetResizable(True)
+		self._snapshots_scroll.layout().setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+		self._snapshots_scroll.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 		#self._scroll_panels.setSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, self.sizePolicy().verticalPolicy())
 
 		self._snapshots_parent = QtWidgets.QWidget()
