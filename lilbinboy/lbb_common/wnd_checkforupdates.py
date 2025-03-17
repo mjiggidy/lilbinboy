@@ -42,16 +42,21 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		#self._prg_checking.setHidden(True)
 
 		self._grp_new_version = QtWidgets.QGroupBox()
-		self._grp_new_version.setLayout(QtWidgets.QHBoxLayout())
+		self._grp_new_version.setLayout(QtWidgets.QVBoxLayout())
+
+		self._lay_new_version_announce = QtWidgets.QHBoxLayout()
+
 		#self._grp_new_version.layout().setSpacing(0)
 		#self._grp_new_version.layout().setContentsMargins(0,0,0,0)
-		self._grp_new_version.layout().addWidget(QtWidgets.QLabel("A new version is available!"))
-		self._grp_new_version.layout().addStretch()
+		self._lay_new_version_announce.addWidget(QtWidgets.QLabel("A new version is available!"))
+		self._lay_new_version_announce.addStretch()
 		
 		self._btn_download = QtWidgets.QPushButton()
 		self._btn_download.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.InsertLink))
 		self._btn_download.setText("Download")
-		self._grp_new_version.layout().addWidget(self._btn_download)
+		self._lay_new_version_announce.addWidget(self._btn_download)
+
+		self._grp_new_version.layout().addLayout(self._lay_new_version_announce)
 
 		self._grp_no_update = QtWidgets.QGroupBox()
 		self._grp_no_update.setLayout(QtWidgets.QHBoxLayout())
@@ -104,18 +109,17 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 
 		self.layout().addStretch()
 
-		self._grp_release_info = QtWidgets.QGroupBox()
-		self._grp_release_info.setLayout(QtWidgets.QVBoxLayout())
+		self._grp_release_info = QtWidgets.QVBoxLayout()
 		#elf._grp_release_info.layout().setSpacing(0)
 		#self._grp_release_info.layout().setContentsMargins(0,0,0,0)
-		self._grp_release_info.setHidden(True)
+		#self._grp_release_info.setHidden(True)
 
-		self._grp_release_info.layout().addWidget(self._lbl_release_name)
-		self._grp_release_info.layout().addWidget(self._lbl_release_date)
-		self._grp_release_info.layout().addWidget(self._txt_release_notes)
+		self._grp_release_info.addWidget(self._lbl_release_name)
+		self._grp_release_info.addWidget(self._lbl_release_date)
+		self._grp_release_info.addWidget(self._txt_release_notes)
 		#self._grp_release_info.layout().addWidget(self._btn_download)
 
-		self.layout().addWidget(self._grp_release_info)
+		self._grp_new_version.layout().addLayout(self._grp_release_info)
 
 		self.layout().addWidget(self._chk_automatic)
 	
@@ -136,7 +140,7 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 			self._lbl_release_date.setText("Released " + QtCore.QDateTime.fromString(release_info.date, QtCore.Qt.DateFormat.ISODate).toLocalTime().toString("dd MMMM yyyy"))
 			self._btn_download.clicked.connect(lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl(release_info.release_url)))
 			self._txt_release_notes.setMarkdown(release_info.release_notes)
-			self._grp_release_info.setHidden(False)
+			#self._grp_release_info.setHidden(False)
 
 			self._stack_status.setCurrentWidget(self._grp_new_version)
 		
