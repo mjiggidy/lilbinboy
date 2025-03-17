@@ -240,7 +240,7 @@ class LBTRTCalculator(LBUtilityTab):
 		sequenceSelectionSettings.setSortColumn(QtCore.QSettings().value("trt/sequence_selection/sort_column/name","Name"))
 		sequenceSelectionSettings.setSortDirection(QtCore.QSettings().value("trt/sequence_selection/sort_column/direction", "Descending"))
 		sequenceSelectionFilters = []
-		for filter in QtCore.QSettings().value("trt/sequence_selection/filters", []):
+		for filter in QtCore.QSettings().value("trt/sequence_selection/filters", None) or []:
 			if filter.get("kind") == "name_contains":
 				sequenceSelectionFilters.append(
 					model_trt.SingleSequenceSelectionProcess.NameContainsFilter(filter.get("string",""))
