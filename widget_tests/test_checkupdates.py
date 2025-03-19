@@ -32,7 +32,7 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		self.setLayout(QtWidgets.QVBoxLayout())
 
 		# Set up widgets
-		self._stack_status = QtWidgets.QStackedWidget()
+		self._stack_status = QtWidgets.QStackedWidget()	# 
 
 		self._btn_check = QtWidgets.QPushButton()
 		self._chk_automatic = QtWidgets.QCheckBox("Automatically check for updates")
