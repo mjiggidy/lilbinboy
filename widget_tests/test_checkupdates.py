@@ -5,6 +5,8 @@ URL_RELEASES = r"https://api.github.com/repos/mjiggidy/lilbinboy/releases"
 
 @dataclasses.dataclass
 class ReleaseInfo:
+	"""Information for a lil' release boy"""
+
 	name:str
 	"""Release Name"""
 
@@ -20,19 +22,18 @@ class ReleaseInfo:
 	release_url:str
 	"""Github Release Page"""
 
-	release_url:str
-
 class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
 		self.setWindowTitle("Check For Updates")
-		#self.setFixedWidth(300)
 
 		self.setLayout(QtWidgets.QVBoxLayout())
 
 		self._stack_status = QtWidgets.QStackedWidget()
+
+		self._btn_check = QtWidgets.QPushButton()
 
 		self._chk_automatic = QtWidgets.QCheckBox("Check automatically at startup")
 
@@ -91,7 +92,13 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		lbl_latest_version.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
 		lay_version.addWidget(lbl_latest_version, 2, 0)
 		lay_version.addWidget(self._lbl_version_latest, 2, 1)
-		lay_version.setColumnStretch(2,1)
+		lay_version.setColumnStretch(1,1)
+
+		self._btn_check.setText("Refresh")
+		lay_version.addWidget(self._btn_check, 0, 2, 2, 1)
+		
+
+
 
 
 		
@@ -151,6 +158,7 @@ class LBUpdateManager(QtCore.QObject):
 
 	sig_networkCheckStarted  = QtCore.Signal()
 	sig_networkCheckFinished = QtCore.Signal()
+	sig_timeoutExpired		 = QtCore.Signal()
 	sig_newReleaseAvailable  = QtCore.Signal(ReleaseInfo)
 
 
@@ -166,7 +174,7 @@ class LBUpdateManager(QtCore.QObject):
 		super().__init__(*args, **kwargs)
 
 		# Signals
-		self._auto_check_timer.timeout.connect(self.checkForUpdates)
+		self._auto_check_timer.timeout.connect(self.timeoutTimerExpired)
 
 		self._netman.finished.connect(self.sig_networkCheckFinished)
 		self._netman.finished.connect(self.processNetworkReply)
@@ -181,7 +189,7 @@ class LBUpdateManager(QtCore.QObject):
 		self._auto_check = autocheck
 
 		if autocheck and not self._auto_check_timer.isActive():
-			self._auto_check_timer.start()
+			self.checkForUpdates()
 
 	def automaticallyCheckForUpdates(self) -> bool:
 		return self._auto_check
@@ -198,8 +206,18 @@ class LBUpdateManager(QtCore.QObject):
 	def networkCheckFinished(self):
 		pass
 
+	@QtCore.Slot()
+	def timeoutTimerExpired(self):
+		if self.automaticallyCheckForUpdates():
+			self.checkForUpdates()
+		else:
+			self.sig_timeoutExpired.emit()
+
 	@QtCore.Slot(QtNetwork.QNetworkReply)
 	def processNetworkReply(self, reply:QtNetwork.QNetworkReply):
+
+		# Restart timer
+		self._auto_check_timer.start()
 
 		# Unset current
 		self._current_request = None
@@ -217,9 +235,7 @@ class LBUpdateManager(QtCore.QObject):
 			date = latest_release.get("published_at")
 		)
 
-		if self.automaticallyCheckForUpdates() and not self._auto_check_timer.isActive():
-			print("Restarting")
-			self._auto_check_timer.start()
+
 
 		# New version available?
 		if self.currentVersion() != latest_release_info.version:
@@ -227,7 +243,7 @@ class LBUpdateManager(QtCore.QObject):
 			self.sig_newReleaseAvailable.emit(latest_release_info)
 
 	def checkForUpdates(self):
-		if self._current_request:
+		if self._current_request is not None or self._auto_check_timer.isActive():
 			print("Ignore")
 			return
 		print("Check")
@@ -249,5 +265,9 @@ if __name__ == "__main__":
 	wnd.show()
 
 	wnd._chk_automatic.checkStateChanged.connect(lambda: man.setAutomaticallyCheckForUpdates(wnd._chk_automatic.isChecked()))
+	wnd._btn_check.clicked.connect(man.checkForUpdates)
+
+	man.sig_networkCheckStarted.connect(lambda: wnd._btn_check.setEnabled(False))
+	man.sig_timeoutExpired.connect(lambda: wnd._btn_check.setEnabled(True))
 
 	app.exec()
