@@ -370,9 +370,10 @@ class LBUpdateManager(QtCore.QObject):
 		# Unset current
 		self._current_request = None
 
-		if reply.error() is not QtNetwork.QNetworkReply.NetworkError.NoError:
+		if reply.error() != QtNetwork.QNetworkReply.NetworkError.NoError:
 			self.sig_networkCheckError.emit(reply.error())
-			#print(reply.error())
+			if self.autoCheckEnabled():
+				self._autocheck_timer.start()
 			return
 
 		# Parse JSON for latest version
@@ -380,14 +381,20 @@ class LBUpdateManager(QtCore.QObject):
 		latest_release:dict = response.array().first().toObject()
 
 		# Latest version to `ReleaseInfo` struct
-		latest_release_info = ReleaseInfo(
-			name = latest_release.get("name"),
-			version = latest_release.get("tag_name")[1:], # Strip 'v'
-			release_notes = latest_release.get("body"),
-			release_url = latest_release.get("html_url"),
-			date = latest_release.get("published_at")
-		)
-
+		try:
+			latest_release_info = ReleaseInfo(
+				name = latest_release["name"],
+				version = latest_release["tag_name"][1:], # Strip 'v'
+				release_notes = latest_release["body"],
+				release_url = latest_release["html_url"],
+				date = latest_release["published_at"]
+			)
+		except KeyError:	# Maybe do this
+			self.sig_networkCheckError.emit(QtNetwork.QNetworkReply.NetworkError.UnknownContentError)
+			if self.autoCheckEnabled():
+				self._autocheck_timer.start()
+			return
+		
 		if self.currentVersion() != latest_release_info.version:
 			# Store and emit new release info
 			self._latest_release_info = latest_release_info
