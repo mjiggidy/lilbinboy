@@ -1,7 +1,7 @@
 import dataclasses
 from PySide6 import QtCore, QtGui, QtWidgets, QtNetwork
 
-URL_RELEASES = r"https://api.github.com/repos/mjiggidy/lilbinboy/releases"
+URL_RELEASES =  "https://api.github.com/repos/mjiggidy/lilbinboy/releases"
 
 @dataclasses.dataclass
 class ReleaseInfo:
@@ -25,18 +25,21 @@ class ReleaseInfo:
 class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 	"""Window for displaying LBB version update info"""
 
+	sig_requestCheckForUpdates = QtCore.Signal()
+	sig_requestSetAutoCheck    = QtCore.Signal(bool)
+
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
 		self.setWindowTitle("Check For Updates")
-
+		self.setMinimumWidth(375)
 		self.setLayout(QtWidgets.QVBoxLayout())
 		
 		# Version number displays
 		self._lbl_current_version = QtWidgets.QLabel()
 		self._lbl_latest_release_version = QtWidgets.QLabel()
 
-		self._btn_check = QtWidgets.QPushButton()
+		self._btn_checkForUpdates = QtWidgets.QPushButton()
 		self._btn_new_release_download = QtWidgets.QPushButton()
 		
 		# Loading bar
@@ -56,6 +59,7 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		self._chk_automatic = QtWidgets.QCheckBox()
 
 		self._setupWidgets()
+		self._setupSignals()
 		
 	def _setupWidgets(self):
 		
@@ -78,9 +82,9 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		self._btn_new_release_download.setToolTip("Download the latest release")
 		lay_release_compare.addWidget(self._btn_new_release_download, 2,2)
 
-		self._btn_check.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRefresh))
-		self._btn_check.setToolTip("Check 'er again")
-		lay_release_compare.addWidget(self._btn_check, 2,3)
+		self._btn_checkForUpdates.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRefresh))
+		self._btn_checkForUpdates.setToolTip("Check 'er again")
+		lay_release_compare.addWidget(self._btn_checkForUpdates, 2,3)
 	
 		self.layout().addLayout(lay_release_compare)
 		
@@ -124,7 +128,44 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		self._chk_automatic.setText("Automatically check for updates")
 		self.layout().addWidget(self._chk_automatic)
 
-	
+	def _setupSignals(self):
+		"""Bind initial signals"""
+		self._chk_automatic.checkStateChanged.connect(lambda: self.sig_requestSetAutoCheck.emit(self._chk_automatic.isChecked()))
+		self._btn_checkForUpdates.clicked.connect(self.sig_requestCheckForUpdates)
+
+	# ---
+	# Manager setup
+	# ---
+	def setUpdateManager(self, manager:"LBUpdateManager"):
+		"""Attach to an update manager"""
+
+		# Signals to manager
+		self.sig_requestSetAutoCheck.connect(manager.setAutoCheckEnabled)
+		self.sig_requestCheckForUpdates.connect(manager.checkForUpdates)
+
+		# Slots from manager
+		manager.sig_networkCheckStarted.connect(self.networkCheckStart)
+		manager.sig_networkCheckFinished.connect(self.networkCheckFinished)
+		manager.sig_cooldownExpired.connect(self.networkCheckAvailable)
+		manager.sig_newReleaseAvailable.connect(self.newReleaseAvailable)
+		manager.sig_networkCheckError.connect(self.networkCheckError)
+		manager.sig_releaseIsCurrent.connect(self.releaseIsCurrent)
+
+		# Initial state
+		self._lbl_current_version.setText(manager.currentVersion())
+		self._chk_automatic.setChecked(manager.autoCheckEnabled())
+		self._btn_checkForUpdates.setDisabled(manager.cooldownInProgress())
+
+		if manager.checkInProgress():
+			self.networkCheckStart()
+		elif manager.latestReleaseInfo():
+			self.newReleaseAvailable(manager.latestReleaseInfo)
+		else:
+			self.releaseIsCurrent()
+
+	# ---
+	# Network check states
+	# ---
 	@QtCore.Slot()
 	def networkCheckStart(self):
 		self._lbl_latest_release_version.setText("Checking...")
@@ -135,18 +176,23 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 
 		self._btn_new_release_download.setHidden(True)
 
-		self._btn_check.setEnabled(False)
-		self._btn_check.setToolTip("Cooling down...")
+		self._btn_checkForUpdates.setEnabled(False)
+		self._btn_checkForUpdates.setToolTip("Cooling down...")
 	
+		self.adjustSize()
+
 	@QtCore.Slot()
 	def networkCheckFinished(self):
 		self._prg_checking.setHidden(True)
-	
+
 	@QtCore.Slot()
 	def networkCheckAvailable(self):
-		self._btn_check.setEnabled(True)
-		self._btn_check.setToolTip("Check 'er again")
+		self._btn_checkForUpdates.setEnabled(True)
+		self._btn_checkForUpdates.setToolTip("Check 'er again")
 
+	# ---
+	# Result displays
+	# ---
 	@QtCore.Slot(QtNetwork.QNetworkReply.NetworkError)
 	def networkCheckError(self, error:QtNetwork.QNetworkReply.NetworkError):
 		"""Network check had an error"""
@@ -156,13 +202,8 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		else:
 			self._lbl_no_update_status.setText(f"Error checking for update: {error.name}")
 		self._grp_no_update.setVisible(True)
-		pass
-
-	def setCurrentVersion(self, version_string:str):
-		"""Set the current application version"""
-		self._lbl_current_version.setText(version_string)
-
-
+		
+		self.adjustSize()
 
 	@QtCore.Slot(ReleaseInfo)
 	def newReleaseAvailable(self, release_info:ReleaseInfo):
@@ -178,13 +219,18 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		
 		self._grp_new_release_info.setVisible(True)
 
-	@QtCore.Slot()
-	def releaseIsCurrent(self, release_info:ReleaseInfo):
+		self.adjustSize()
 
-		self._lbl_latest_release_version.setText(release_info.version)
+	@QtCore.Slot(ReleaseInfo)
+	def releaseIsCurrent(self, release_info:ReleaseInfo|None=None):
+
+		version_string = release_info.version if release_info else self._lbl_current_version.text()
+		self._lbl_latest_release_version.setText(version_string)
 		self._grp_new_release_info.setHidden(True)
-		self._lbl_no_update_status.setText("You are on the latest version.  That's nice!")
+		self._lbl_no_update_status.setText("You are on the latest version.  So that's nice!")
 		self._grp_no_update.setVisible(True)
+
+		self.adjustSize()
 
 	
 
@@ -196,6 +242,7 @@ class LBUpdateManager(QtCore.QObject):
 	sig_networkCheckFinished = QtCore.Signal()
 	sig_networkCheckError    = QtCore.Signal(QtNetwork.QNetworkReply.NetworkError)
 	sig_cooldownExpired      = QtCore.Signal()
+
 	sig_newReleaseAvailable  = QtCore.Signal(ReleaseInfo)
 	sig_releaseIsCurrent     = QtCore.Signal(ReleaseInfo)
 
@@ -204,11 +251,13 @@ class LBUpdateManager(QtCore.QObject):
 		self._netman = QtNetwork.QNetworkAccessManager()
 		self._url_releases = url_releases
 		self._current_request = None
+		self._cooldown_timer = QtCore.QTimer(interval=10000, singleShot=True)  # 10 seconds
 
-		self._autocheck_timer = QtCore.QTimer(interval=30000, singleShot=False) # 30 seconds, looping
+		self._autocheck_timer = QtCore.QTimer(interval=30000, singleShot=True) # 30 seconds
 		self._autocheck_enabled = False
 
-		self._cooldown_timer = QtCore.QTimer(interval=10000, singleShot=True)  # 10 seconds
+		self._latest_release_info = None
+		"""The last latest release found"""
 
 		super().__init__(*args, **kwargs)
 
@@ -217,9 +266,13 @@ class LBUpdateManager(QtCore.QObject):
 		self._autocheck_timer.timeout.connect(self.checkForUpdates)
 		self._autocheck_timer.timeout.connect(lambda: print("AUTOCHECK BOYYYY"))
 
-		self._netman.finished.connect(self.sig_networkCheckFinished)
+		self._netman.finished.connect(self._cooldown_timer.start)
 		self._netman.finished.connect(self.processNetworkReply)
+		self._netman.finished.connect(self.sig_networkCheckFinished)
 	
+	# ---
+	# Releases URL
+	# ---
 	def releasesUrl(self) -> QtCore.QUrl:
 		"""URL for Release Info JSON"""
 		return self._url_releases
@@ -227,13 +280,41 @@ class LBUpdateManager(QtCore.QObject):
 	def setReleasesUrl(self, url_releases:QtCore.QUrl):
 		"""Set the URL for Release Info JSON"""
 		self._url_releases = url_releases
+
+	# ---
+	# Cooldown timer for API rate limiting
+	# ---
+	def setCooldownInterval(self, milliseconds:int):
+		"""Set cooldown interval (in milliseconds) for API rate limiting"""
+		if milliseconds > self.autoCheckInterval():
+			raise ValueError(f"Cooldown interval must be less than autocheck interval")
+		self._cooldown_timer.setInterval(milliseconds)
 	
+	def cooldownInterval(self) -> int:
+		"""Cooldown interval (in milliseconds) for API rate limiting"""
+		return self._cooldown_timer.interval()
+	
+	def cooldownInProgress(self) -> bool:
+		"""Whether we coolin it"""
+		return self._cooldown_timer.isActive()
+	
+	# ---
+	# Autocheck
+	# ---
 	def setAutoCheckEnabled(self, autocheck:bool):
 		"""Set automatically check for updates"""
 		self._autocheck_enabled = autocheck
-		if self.autoCheckEnabled():
-			self._autocheck_timer.start()
-			self.checkForUpdates()
+
+		# Start autocheck if a new release hasn't already been found
+		if self.autoCheckEnabled() and self.latestReleaseInfo() is None:
+			if self._cooldown_timer.isActive():
+				print("Sched")
+				# Schedule autocheck
+				self._autocheck_timer.start()
+			else:
+				# or just do it
+				self.checkForUpdates()
+
 		else:
 			self._autocheck_timer.stop()
 
@@ -251,30 +332,41 @@ class LBUpdateManager(QtCore.QObject):
 		"""How often (in milliseconds) to check for updates if autocheck is enabled"""
 		return self._autocheck_timer.interval()
 	
-	def setCooldownInterval(self, milliseconds:int):
-		"""Set cooldown interval (in milliseconds) for API rate limiting"""
-		if milliseconds > self.autoCheckInterval():
-			raise ValueError(f"Cooldown interval must be less than autocheck interval")
-		self._cooldown_timer.setInterval(milliseconds)
-	
-	def cooldownInterval(self) -> int:
-		"""Cooldown interval (in milliseconds) for API rate limiting"""
-		return self._cooldown_timer.interval()
-	
+	# ---
+	# Version/Release info
+	# ---
 	def currentVersion(self) -> str:
 		"""Get Lil' Bin Boy current version"""
 		return QtWidgets.QApplication.instance().applicationVersion()
 	
-	def networkCheckFinished(self):
-		"""Check for updates is complete"""
-		pass
+	def latestReleaseInfo(self) -> ReleaseInfo|None:
+		"""The latest release info gathered from the last time network check succeeded"""
+		return self._latest_release_info
+
+	# ---
+	# Network Check
+	# ---
+
+	def checkInProgress(self) -> bool:
+		"""Indicates a current check is in progress"""
+		# Useful for setting window initial state
+		return self._current_request is not None
+	
+	@QtCore.Slot()
+	def checkForUpdates(self):
+		"""Initiate check for updates via network"""
+		
+		# Skip if we have an active QNetworkRequest or in cooldown period
+		if self.checkInProgress() or self._cooldown_timer.isActive():
+			return
+		
+		self.sig_networkCheckStarted.emit()
+		self._current_request = self._netman.get(QtNetwork.QNetworkRequest(self.releasesUrl()))
 
 	@QtCore.Slot(QtNetwork.QNetworkReply)
 	def processNetworkReply(self, reply:QtNetwork.QNetworkReply):
 		"""Read the ReleaseInfo JSON and determine if a new version is available"""
 
-		# Restart cooldown period
-		self._cooldown_timer.start()
 		# Unset current
 		self._current_request = None
 
@@ -296,23 +388,16 @@ class LBUpdateManager(QtCore.QObject):
 			date = latest_release.get("published_at")
 		)
 
-		# New version available?
 		if self.currentVersion() != latest_release_info.version:
+			# Store and emit new release info
+			self._latest_release_info = latest_release_info
 			self.sig_newReleaseAvailable.emit(latest_release_info)
+		
 		else:
+			# Restart autocheck
 			self.sig_releaseIsCurrent.emit(latest_release_info)
-
-	@QtCore.Slot()
-	def checkForUpdates(self):
-		"""Initiate check for updates via network"""
-		
-		# Skip if we have an active QNetworkRequest or in cooldown period
-		if self._current_request is not None or self._cooldown_timer.isActive():
-			return
-		
-		self.sig_networkCheckStarted.emit()
-		self._current_request = self._netman.get(QtNetwork.QNetworkRequest(self.releasesUrl()))
-
+			if self.autoCheckEnabled():
+				self._autocheck_timer.start()
 
 if __name__ == "__main__":
 
@@ -321,25 +406,10 @@ if __name__ == "__main__":
 	app.setApplicationVersion("0.1.8")
 
 	man = LBUpdateManager(QtCore.QUrl(URL_RELEASES))
-	wnd = LBCheckForUpdatesWindow()
-
-	man.setAutoCheckEnabled(True)
-
-	wnd._chk_automatic.checkStateChanged.connect(lambda: man.setAutoCheckEnabled(wnd._chk_automatic.isChecked()))
-	wnd._btn_check.clicked.connect(man.checkForUpdates)
-	wnd.setCurrentVersion(man.currentVersion())
-	wnd._chk_automatic.setChecked(man.autoCheckEnabled())
-
-	man.sig_networkCheckStarted.connect(wnd.networkCheckStart)
-	man.sig_networkCheckFinished.connect(wnd.networkCheckFinished)
-	man.sig_cooldownExpired.connect(wnd.networkCheckAvailable)
-	man.sig_newReleaseAvailable.connect(wnd.newReleaseAvailable)
-	man.sig_networkCheckError.connect(wnd.networkCheckError)
-	man.sig_releaseIsCurrent.connect(wnd.releaseIsCurrent)
-
 	man.checkForUpdates()
 
-#	man.checkForUpdates()
-#	man.setAutoCheckEnabled(True)
+	wnd = LBCheckForUpdatesWindow()
+	wnd.setUpdateManager(man)
+
 	wnd.show()
 	app.exec()
