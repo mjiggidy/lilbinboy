@@ -23,6 +23,7 @@ class ReleaseInfo:
 	"""Github Release Page"""
 
 class LBCheckForUpdatesWindow(QtWidgets.QWidget):
+	"""Window for displaying LBB version update info"""
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -30,63 +31,35 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		self.setWindowTitle("Check For Updates")
 
 		self.setLayout(QtWidgets.QVBoxLayout())
-
-		# Set up widgets
-		self._stack_status = QtWidgets.QStackedWidget()	# 
-
+		
+		# Version number displays
 		self._lbl_current_version = QtWidgets.QLabel()
+		self._lbl_latest_release_version = QtWidgets.QLabel()
 
 		self._btn_check = QtWidgets.QPushButton()
-		self._chk_automatic = QtWidgets.QCheckBox("Automatically check for updates")
+		self._btn_new_release_download = QtWidgets.QPushButton()
+		
+		# Loading bar
 		self._prg_checking = QtWidgets.QProgressBar()
 
-		self._prg_checking.setRange(0,0)
-		self._prg_checking.setFormat("Connecting to server...")
-
+		# New release info
 		self._grp_new_release_info = QtWidgets.QGroupBox()
-		self._grp_new_release_info.setLayout(QtWidgets.QVBoxLayout())
+		self._lbl_new_version_name = QtWidgets.QLabel()
+		self._lbl_new_release_date = QtWidgets.QLabel()
+		self._txt_new_release_notes = QtWidgets.QTextBrowser()
 
-		self._lay_new_version_info = QtWidgets.QHBoxLayout()
-
-
-		self._lay_new_version_info.addWidget(QtWidgets.QLabel("A new version is available!"))
-		#self._lay_new_version_info.addStretch()
-		
-		self._btn_new_release_download = QtWidgets.QPushButton()
-		self._btn_new_release_download.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.InsertLink))
-		self._btn_new_release_download.setText("Download")
-		self._btn_new_release_download.setHidden(True)
-		self._btn_new_release_download.setToolTip("Download the latest release")
-		#self._lay_new_version_info.addWidget(self._btn_new_release_download)
-
-		#self._grp_new_release_info.layout().addLayout(self._lay_new_version_info)
-
+		# No updates info
 		self._grp_no_update = QtWidgets.QGroupBox()
 		self._lbl_no_update_status = QtWidgets.QLabel()
-		self._grp_no_update.setLayout(QtWidgets.QHBoxLayout())
-
-		self._grp_no_update.layout().addWidget(self._lbl_no_update_status)
-
-		self._lbl_latest_release_version = QtWidgets.QLabel()
 		
-		self._lbl_new_version_name = QtWidgets.QLabel()
-		font = self._lbl_new_version_name.font()
-		font.setBold(True)
-		self._lbl_new_version_name.setFont(font)
+		# Auto check toggle
+		self._chk_automatic = QtWidgets.QCheckBox()
 
-		self._lbl_new_release_date = QtWidgets.QLabel()
-		self._lbl_new_release_url = QtWidgets.QLabel()
-		self._lbl_new_release_url.setOpenExternalLinks(True)
-		self._lbl_new_release_url.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.LinksAccessibleByKeyboard|QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse)
-
-		self._txt_new_release_notes = QtWidgets.QTextBrowser()
-		self._txt_new_release_notes.setReadOnly(True)
-		self._txt_new_release_notes.setOpenLinks(False)
-		self._txt_new_release_notes.setOpenExternalLinks(False)
-		self._txt_new_release_notes.anchorClicked.connect(QtGui.QDesktopServices.openUrl)
-
-		#self._txt_release_notes.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.LinksAccessibleByKeyboard|QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse)
-
+		self._setupWidgets()
+		
+	def _setupWidgets(self):
+		
+		# Version compare setup
 		lay_release_compare = QtWidgets.QGridLayout()
 		lbl_this_version = QtWidgets.QLabel("Installed Version:")
 		lbl_this_version.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
@@ -99,53 +72,58 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		lay_release_compare.addWidget(self._lbl_latest_release_version, 2, 1)
 		lay_release_compare.setColumnStretch(1,1)
 
-		#self._btn_check.setText("Refresh")
+		self._btn_new_release_download.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.InsertLink))
+		self._btn_new_release_download.setText("Download")
+		self._btn_new_release_download.setHidden(True)
+		self._btn_new_release_download.setToolTip("Download the latest release")
+		lay_release_compare.addWidget(self._btn_new_release_download, 2,2)
+
 		self._btn_check.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRefresh))
 		self._btn_check.setToolTip("Check 'er again")
-		#self._btn_check.setIconSize(QtCore.QSize(8,8))
-		lay_release_compare.addWidget(self._btn_new_release_download, 2,2)
 		lay_release_compare.addWidget(self._btn_check, 2,3)
-		
-
-
+	
 		self.layout().addLayout(lay_release_compare)
-
-		# Status..es
-		self.layout().addWidget(self._prg_checking)
-		self._prg_checking.setHidden(True)
-		self.layout().addWidget(self._grp_no_update)
-		self._grp_no_update.setHidden(True)
-		self.layout().addWidget(self._grp_new_release_info)
-		self._grp_new_release_info.setHidden(True)
-		#self._stack_status.addWidget(self._grp_new_release_info)
-		#self._stack_status.addWidget(self._grp_no_update)
-		#self.layout().addWidget(self._stack_status)
-
-		#self.layout().addStretch()
-
-		#self._grp_new_release_info = QtWidgets.QGroupBox()
-		self._grp_new_release_info.setLayout(QtWidgets.QVBoxLayout())
-		#elf._grp_release_info.layout().setSpacing(0)
-		#self._grp_release_info.layout().setContentsMargins(0,0,0,0)
-		#self._grp_release_info.setHidden(True)
-
-		#self._grp_release_info.layout().addWidget(self._btn_download)
 		
-		#frm_sep = QtWidgets.QFrame()
-		#frm_sep.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-		#self._grp_new_release_info.layout().addWidget(frm_sep)
+		# Progress bar setup
+		self._prg_checking.setRange(0,0)
+		self._prg_checking.setFormat("Connecting to server...")
+		self._prg_checking.setHidden(True)
 
+		self.layout().addWidget(self._prg_checking)
+
+		# New release info
+		self._grp_new_release_info.setLayout(QtWidgets.QVBoxLayout())
+
+		font = self._lbl_new_version_name.font()
+		font.setBold(True)
+		self._lbl_new_version_name.setFont(font)
+
+		self._txt_new_release_notes.setReadOnly(True)
+		self._txt_new_release_notes.setOpenLinks(False)
+		self._txt_new_release_notes.setOpenExternalLinks(False)
+		self._txt_new_release_notes.anchorClicked.connect(QtGui.QDesktopServices.openUrl)
+
+		self._grp_new_release_info.setLayout(QtWidgets.QVBoxLayout())
 		self._grp_new_release_info.layout().addWidget(self._lbl_new_version_name)
 		self._grp_new_release_info.layout().addWidget(self._lbl_new_release_date)
 		self._grp_new_release_info.layout().addWidget(self._txt_new_release_notes)
+		self._grp_new_release_info.setHidden(True)
 
 		self.layout().addWidget(self._grp_new_release_info)
 
-		self.layout().addStretch()
-		self.layout().addWidget(self._chk_automatic)
-	
+		# No update status info
+		self._grp_no_update.setLayout(QtWidgets.QHBoxLayout())
+		self._grp_no_update.layout().addWidget(self._lbl_no_update_status)
+		self._grp_no_update.setHidden(True)
+		
+		self.layout().addWidget(self._grp_no_update)
 
-		#self._prg_checking.setHidden(True)
+		self.layout().addStretch()
+
+		# Check for updates
+		self._chk_automatic.setText("Automatically check for updates")
+		self.layout().addWidget(self._chk_automatic)
+
 	
 	@QtCore.Slot()
 	def networkCheckStart(self):
@@ -172,7 +150,7 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 	@QtCore.Slot(QtNetwork.QNetworkReply.NetworkError)
 	def networkCheckError(self, error:QtNetwork.QNetworkReply.NetworkError):
 		"""Network check had an error"""
-		self._grp_new_release_info.setHidden(True)
+
 		if error is QtNetwork.QNetworkReply.NetworkError.HostNotFoundError:
 			self._lbl_no_update_status.setText(f"Cannot connect to updates server!")
 		else:
@@ -199,7 +177,6 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		self._txt_new_release_notes.setMarkdown(release_info.release_notes)
 		
 		self._grp_new_release_info.setVisible(True)
-		#self._grp_no_update.setHidden(True)
 
 	@QtCore.Slot()
 	def releaseIsCurrent(self, release_info:ReleaseInfo):
@@ -209,13 +186,11 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		self._lbl_no_update_status.setText("You are on the latest version.  That's nice!")
 		self._grp_no_update.setVisible(True)
 
-		#self._stack_status.setCurrentWidget(self._grp_new_release_info)
-	
-
 	
 
 
 class LBUpdateManager(QtCore.QObject):
+	"""Controller for checking for LBB version updates via Github releases"""
 
 	sig_networkCheckStarted  = QtCore.Signal()
 	sig_networkCheckFinished = QtCore.Signal()
@@ -323,7 +298,6 @@ class LBUpdateManager(QtCore.QObject):
 
 		# New version available?
 		if self.currentVersion() != latest_release_info.version:
-			print("Oh yeah")
 			self.sig_newReleaseAvailable.emit(latest_release_info)
 		else:
 			self.sig_releaseIsCurrent.emit(latest_release_info)
@@ -334,10 +308,8 @@ class LBUpdateManager(QtCore.QObject):
 		
 		# Skip if we have an active QNetworkRequest or in cooldown period
 		if self._current_request is not None or self._cooldown_timer.isActive():
-			print("Ignore")
 			return
 		
-		print("Check")
 		self.sig_networkCheckStarted.emit()
 		self._current_request = self._netman.get(QtNetwork.QNetworkRequest(self.releasesUrl()))
 
@@ -346,14 +318,17 @@ if __name__ == "__main__":
 
 	app = QtWidgets.QApplication()
 	app.setStyle("Fusion")
-	app.setApplicationVersion("0.1.9")
+	app.setApplicationVersion("0.1.8")
 
 	man = LBUpdateManager(QtCore.QUrl(URL_RELEASES))
 	wnd = LBCheckForUpdatesWindow()
 
+	man.setAutoCheckEnabled(True)
+
 	wnd._chk_automatic.checkStateChanged.connect(lambda: man.setAutoCheckEnabled(wnd._chk_automatic.isChecked()))
 	wnd._btn_check.clicked.connect(man.checkForUpdates)
 	wnd.setCurrentVersion(man.currentVersion())
+	wnd._chk_automatic.setChecked(man.autoCheckEnabled())
 
 	man.sig_networkCheckStarted.connect(wnd.networkCheckStart)
 	man.sig_networkCheckFinished.connect(wnd.networkCheckFinished)
@@ -361,6 +336,8 @@ if __name__ == "__main__":
 	man.sig_newReleaseAvailable.connect(wnd.newReleaseAvailable)
 	man.sig_networkCheckError.connect(wnd.networkCheckError)
 	man.sig_releaseIsCurrent.connect(wnd.releaseIsCurrent)
+
+	man.checkForUpdates()
 
 #	man.checkForUpdates()
 #	man.setAutoCheckEnabled(True)
