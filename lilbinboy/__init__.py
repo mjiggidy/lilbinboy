@@ -78,7 +78,7 @@ class LBBApplication(QtWidgets.QApplication):
 
 		self.act_updates = QtGui.QAction("Check For Updates...")
 		self.act_updates.setMenuRole(QtGui.QAction.MenuRole.ApplicationSpecificRole)
-		self.act_updates.triggered.connect(self.wnd_main.checkForUpdates)
+		self.act_updates.triggered.connect(self.showCheckForUpdatesWindow)
 		self.mnu_help.addAction(self.act_updates)
 
 		self.mnu_help.addSeparator()
@@ -97,11 +97,43 @@ class LBBApplication(QtWidgets.QApplication):
 			self.wnd_main.tabs.addTab(panel(), str(name))
 			self.wnd_main.tabs.setTabIcon(self.wnd_main.tabs.count()-1, QtGui.QIcon(panel.PATH_ICON))
 
+		# Check for Updates
+		self.updateManager = lbb_common.wnd_checkforupdates.LBUpdateManager()
+		self.updateManager.setReleasesUrl(QtCore.QUrl(app_settings.value("main/updates_manager/releases_url", lbb_common.wnd_checkforupdates.URL_RELEASES)))
+		self.updateManager.setCooldownInterval(int(app_settings.value("main/updates_manager/cooldown_interval_msec", 30 * 1000)))
+		self.updateManager.setAutoCheckInterval(int(app_settings.value("main/updates_manager/autocheck_interval_msec", 30 * 60 * 1000)))
+		self.updateManager.setAutoCheckEnabled(bool(app_settings.value("main/updates_manager/autocheck_enabled", True)))
+		self.updateManager.sig_autoCheckChanged.connect(lambda is_enabled: app_settings.setValue("main/updates_manager/autocheck_enabled", is_enabled))
+		self.updateManager.sig_newReleaseAvailable.connect(self.showCheckForUpdatesWindow)
+		self.wnd_check = None
+
+
 		# Coming soon...
 		self.wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Bin Snitch"))
 		self.wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Attic Scrounger"))
 		self.wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Batch Bin"))
 		self.wnd_main.tabs.addTab(QtWidgets.QWidget(), str("Porta-Nexis"))
+
+	@QtCore.Slot()
+	def showCheckForUpdatesWindow(self):
+		"""Show the "Check For Updates" window"""
+
+		if self.wnd_check is None:
+			# Create new window if it wasn't visible
+			self.wnd_check = lbb_common.wnd_checkforupdates.LBCheckForUpdatesWindow(parent=self.wnd_main)
+			self.wnd_check.setUpdateManager(self.updateManager)
+
+			# Unset instance once closed
+			self.wnd_check.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
+			self.wnd_check.destroyed.connect(lambda: setattr(self, "wnd_check", None))
+
+
+		# Check for updates on window open, unless a new release is already known
+		if self.updateManager.latestReleaseInfo() is None:
+			self.updateManager.checkForUpdates()
+			
+		self.wnd_check.show()
+		
 
 def main():
 	app = LBBApplication()

@@ -17,9 +17,6 @@ class LBMainWindow(QtWidgets.QMainWindow):
 		self.centralWidget().layout().setContentsMargins(3,3,3,3)
 		self.centralWidget().layout().addWidget(self.tabs)
 
-		self.updateManager = LBUpdateManager()
-		self.wnd_check = None
-
 		lay_id = QtWidgets.QHBoxLayout()
 
 		self.lbl_lbb = QtWidgets.QLabel(f"<strong>Lil' Bin Boy</strong><br/>Pre Alpha Nightmare v{QtWidgets.QApplication.instance().applicationVersion()}<br/>Report good and bad things to <a href=\"mailto:michael@glowingpixel.com\">michael@glowingpixel.com</a>")
@@ -40,10 +37,6 @@ class LBMainWindow(QtWidgets.QMainWindow):
 		lay_id.addStretch()
 		lay_id.addWidget(self.lbl_lbb)
 		self.centralWidget().layout().addLayout(lay_id)
-
-		self.updateManager.setAutoCheckEnabled(True)
-
-		self.updateManager.sig_newReleaseAvailable.connect(self.checkForUpdates)
 	
 	@QtCore.Slot()
 	def errorLogRequested(self):
@@ -55,20 +48,6 @@ class LBMainWindow(QtWidgets.QMainWindow):
 		super().moveEvent(event)
 		self.sig_resized.emit(self.geometry())
 
-
 	def resizeEvent(self, event):
 		super().resizeEvent(event)
 		self.sig_resized.emit(self.geometry())
-	
-	@QtCore.Slot()
-	def checkForUpdates(self):
-
-		if self.wnd_check is None or not self.wnd_check.isVisible():
-			self.wnd_check = LBCheckForUpdatesWindow(parent=self)
-			self.wnd_check.setWindowFlag(QtCore.Qt.WindowType.Tool)
-			self.wnd_check.setUpdateManager(self.updateManager)
-		
-		
-		self.wnd_check.show()
-		#self.wnd_check.checkForUpdates()
-		

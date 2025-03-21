@@ -31,6 +31,8 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 
 		self.setWindowTitle("Check For Updates")
 		self.setMinimumWidth(375)
+		self.setWindowFlag(QtCore.Qt.WindowType.Tool)
+
 		self.setLayout(QtWidgets.QVBoxLayout())
 		
 		# Version number displays
@@ -233,6 +235,8 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 class LBUpdateManager(QtCore.QObject):
 	"""Controller for checking for LBB version updates via Github releases"""
 
+	sig_autoCheckChanged     = QtCore.Signal(bool)
+
 	sig_networkCheckStarted  = QtCore.Signal()
 	sig_networkCheckFinished = QtCore.Signal()
 	sig_networkCheckError    = QtCore.Signal(QtNetwork.QNetworkReply.NetworkError)
@@ -298,6 +302,10 @@ class LBUpdateManager(QtCore.QObject):
 	# ---
 	def setAutoCheckEnabled(self, autocheck:bool):
 		"""Set automatically check for updates"""
+
+		if autocheck != self._autocheck_enabled:
+			self.sig_autoCheckChanged.emit(autocheck)
+
 		self._autocheck_enabled = autocheck
 
 		# Start autocheck if a new release hasn't already been found

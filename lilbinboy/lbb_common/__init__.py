@@ -2,7 +2,7 @@ import re, math, random
 import avbutils
 from PySide6 import QtWidgets, QtCore, QtGui
 from timecode import Timecode
-from lilbinboy.lbb_common import resources, wnd_about, wnd_main, dlg_errorlog
+from lilbinboy.lbb_common import resources, wnd_about, wnd_main, dlg_errorlog, wnd_checkforupdates
 from lilbinboy.lbb_common.wdg_clipcolorpicker import LBClipColorPicker
 
 
