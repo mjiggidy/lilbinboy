@@ -20,6 +20,8 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		super().__init__(*args, **kwargs)
 
+		self.setWindowTitle("History Viewer")
+		self.setWindowFlag(QtCore.Qt.WindowType.Tool)
 		self.setMinimumSize(QtCore.QSize(600,300))
 
 		self._db = database
@@ -89,7 +91,6 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		
 
-		self.setWindowTitle("History Viewer")
 		#self.setWindowFlag(QtCore.Qt.WindowType.Tool)
 		self.setLayout(QtWidgets.QVBoxLayout())
 		self.layout().setContentsMargins(2,2,2,2)

@@ -890,7 +890,7 @@ class LBTRTCalculator(LBUtilityTab):
 			print(path_db)
 		
 		
-		self.wnd_history = hist_main.TRTHistoryViewer(db)
+		self.wnd_history = hist_main.TRTHistoryViewer(db, parent=self)
 		self.wnd_history.setCurrentModel(self._treeview_model) # "Current" as in "Current Sequences in main Program"
 
 		# Keep er real up to date real nice.  Keep er fed.  Real nice.
