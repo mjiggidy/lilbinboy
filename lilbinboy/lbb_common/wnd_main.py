@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtWidgets
 from lilbinboy.lbb_common.dlg_errorlog import LBErrorLogWindow
-from lilbinboy.lbb_common.wnd_checkforupdates import LBCheckForUpdatesWindow
+from lilbinboy.lbb_common.wnd_checkforupdates import LBCheckForUpdatesWindow, LBUpdateManager
 
 class LBMainWindow(QtWidgets.QMainWindow):
 	"""Lil' Main Window Boy"""
@@ -16,6 +16,9 @@ class LBMainWindow(QtWidgets.QMainWindow):
 		self.centralWidget().setLayout(QtWidgets.QVBoxLayout())
 		self.centralWidget().layout().setContentsMargins(3,3,3,3)
 		self.centralWidget().layout().addWidget(self.tabs)
+
+		self.updateManager = LBUpdateManager()
+		self.wnd_check = None
 
 		lay_id = QtWidgets.QHBoxLayout()
 
@@ -37,6 +40,10 @@ class LBMainWindow(QtWidgets.QMainWindow):
 		lay_id.addStretch()
 		lay_id.addWidget(self.lbl_lbb)
 		self.centralWidget().layout().addLayout(lay_id)
+
+		self.updateManager.setAutoCheckEnabled(True)
+
+		self.updateManager.sig_newReleaseAvailable.connect(self.checkForUpdates)
 	
 	@QtCore.Slot()
 	def errorLogRequested(self):
@@ -55,10 +62,13 @@ class LBMainWindow(QtWidgets.QMainWindow):
 	
 	@QtCore.Slot()
 	def checkForUpdates(self):
-		self.wnd_check = LBCheckForUpdatesWindow()
+
+		if self.wnd_check is None or not self.wnd_check.isVisible():
+			self.wnd_check = LBCheckForUpdatesWindow(parent=self)
+			self.wnd_check.setWindowFlag(QtCore.Qt.WindowType.Tool)
+			self.wnd_check.setUpdateManager(self.updateManager)
 		
-		self.wnd_check.setWindowFlag(QtCore.Qt.WindowType.WindowStaysOnTopHint)
 		
 		self.wnd_check.show()
-		self.wnd_check.checkForUpdates()
+		#self.wnd_check.checkForUpdates()
 		
