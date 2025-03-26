@@ -48,7 +48,9 @@ class LBBApplication(QtWidgets.QApplication):
 		self.wnd_main = lbb_common.wnd_main.LBMainWindow()
 		self.wnd_main.setWindowTitle(self.applicationName())
 		self.wnd_main.setGeometry(app_settings.value("main/window_geometry", QtCore.QRect()))
-		self.wnd_main.sig_resized.connect(lambda rect: app_settings.setValue("main/window_geometry", rect))
+		#self.wnd_main.sig_resized.connect(lambda rect: app_settings.setValue("main/window_geometry", rect))
+
+		self._windowmanager = lbb_common.windowmanager.WindowManager(self.wnd_main, app_settings, "main")
 
 		self.wnd_main.show()
 
