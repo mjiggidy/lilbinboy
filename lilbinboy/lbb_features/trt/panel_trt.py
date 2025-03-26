@@ -229,8 +229,8 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().set_active_head_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_head"))
 		self.model().set_active_tail_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_tail"))
 
-		self.setColumnsHidden(QtCore.QSettings().value("trt/columns_hidden", []))
-		self.setFieldOrder(QtCore.QSettings().value("trt/column_field_order", []))
+		self.setColumnsHidden(QtCore.QSettings().value("trt/columns_hidden", [], type=list))
+		self.setFieldOrder(QtCore.QSettings().value("trt/column_field_order", [], type=list))
 		self.setSorting(
 			sort_field = QtCore.QSettings().value("trt/sort_column", "sequence_name"),
 			sort_order = QtCore.QSettings().value("trt/sort_order", QtCore.Qt.SortOrder.AscendingOrder)
@@ -255,7 +255,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().setSequenceSelectionProcess(sequenceSelectionSettings)
 			
 		
-		self.add_bins_from_paths(QtCore.QSettings().value("trt/bin_paths",[]))
+		self.add_bins_from_paths(list(QtCore.QSettings().value("trt/bin_paths",[], type=list)))
 
 	def _setupWidgets(self):
 		"""Setup the widgets and add them to the layout"""
