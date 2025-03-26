@@ -43,9 +43,6 @@ class WindowManager(QtCore.QObject):
 
 		self._settings.setValue(self._settings_name+"/window_geometry", self._window.geometry())
 
-		print("Oh I'm saving that geometry lemme tell ya")
-		print(self._window.frameGeometry())
-
 	def eventFilter(self, watched:QtCore.QObject, event:QtCore.QEvent):
 		"""Watch window events"""
 
