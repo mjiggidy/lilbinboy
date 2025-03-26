@@ -36,6 +36,8 @@ class WindowManager(QtCore.QObject):
 	@QtCore.Slot()
 	def restoreWindowGeometry(self):
 		"""Restore a window's position from settings (or default)"""
+
+		self._window.setGeometry(self._settings.value(self._settings_name+"/window_geometry", QtCore.QRect()))
 	
 	@QtCore.Slot()
 	def saveWindowGeometry(self):

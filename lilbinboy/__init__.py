@@ -47,10 +47,11 @@ class LBBApplication(QtWidgets.QApplication):
 		# Setup main window
 		self.wnd_main = lbb_common.wnd_main.LBMainWindow()
 		self.wnd_main.setWindowTitle(self.applicationName())
-		self.wnd_main.setGeometry(app_settings.value("main/window_geometry", QtCore.QRect()))
+		#self.wnd_main.setGeometry(app_settings.value("main/window_geometry", QtCore.QRect()))
 		#self.wnd_main.sig_resized.connect(lambda rect: app_settings.setValue("main/window_geometry", rect))
 
 		self._windowmanager = lbb_common.windowmanager.WindowManager(self.wnd_main, app_settings, "main")
+		self._windowmanager.restoreWindowGeometry()
 
 		self.wnd_main.show()
 
@@ -104,8 +105,8 @@ class LBBApplication(QtWidgets.QApplication):
 		self.updateManager.setReleasesUrl(QtCore.QUrl(app_settings.value("main/updates_manager/releases_url", lbb_common.wnd_checkforupdates.URL_RELEASES)))
 		self.updateManager.setCooldownInterval(int(app_settings.value("main/updates_manager/cooldown_interval_msec", 30 * 1000)))
 		self.updateManager.setAutoCheckInterval(int(app_settings.value("main/updates_manager/autocheck_interval_msec", 30 * 60 * 1000)))
-		self.updateManager.setAutoCheckEnabled(bool(app_settings.value("main/updates_manager/autocheck_enabled", True)))
-		self.updateManager.sig_autoCheckChanged.connect(lambda is_enabled: app_settings.setValue("main/updates_manager/autocheck_enabled", is_enabled))
+		self.updateManager.setAutoCheckEnabled(bool(int(app_settings.value("main/updates_manager/autocheck_enabled", 0))))
+		self.updateManager.sig_autoCheckChanged.connect(lambda is_enabled: app_settings.setValue("main/updates_manager/autocheck_enabled", int(is_enabled)))
 		self.updateManager.sig_newReleaseAvailable.connect(self.showCheckForUpdatesWindow)
 		self.wnd_check = None
 
