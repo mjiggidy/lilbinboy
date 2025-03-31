@@ -916,8 +916,11 @@ class LBTRTCalculator(LBUtilityTab):
 		"""TEST: Notes for pulling data"""
 
 		# Get header order (and if they're displayed or not)
-		source_headers = self.list_trts.model().sourceModel().headers()
-		view_headers = self.list_trts.model().headers()
+		
+		# NOTE: Not returned in order, I don't think.  Should.
+		headers_visible = self.list_trts.model().headers()
+		headers_all     = self.list_trts.model().sourceModel().headers()
+		headers_hidden  = [h for h in headers_all if h not in headers_visible]
 
 		# Get index order and map to OG index
 		displayed_sequence_info_list:list[dict] = []
