@@ -1,6 +1,8 @@
 .venv*
 *.webp
+.DS_Store
 example_projects
+screenshots
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
