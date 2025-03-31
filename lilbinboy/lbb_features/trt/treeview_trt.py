@@ -174,14 +174,14 @@ class TRTBinLockItem(TRTAbstractItem):
 
 class TRTTreeViewHeaderItem(QtCore.QObject):
 
-	def __init__(self, text:str, key:str, include_total:bool=False, display_delegate:QtWidgets.QStyledItemDelegate|None=None):
+	def __init__(self, text:str, key:str, is_accumulating_value:bool=False, display_delegate:QtWidgets.QStyledItemDelegate|None=None):
 
 		super().__init__()
 
 		self._text = str(text)
 		self._key  = str(key)
 		self._display_delegate = display_delegate
-		self._include_total = bool(include_total)
+		self._is_accumulating_value = bool(is_accumulating_value)
 
 	def header_data(self, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole):
 
@@ -203,9 +203,9 @@ class TRTTreeViewHeaderItem(QtCore.QObject):
 		"""Get the display delegate assigned to this header"""
 		return self._display_delegate
 	
-	def includeTotal(self) -> bool:
-		"""Does UserData contain data that can be summed"""
-		return self._include_total
+	def isAccumulatingValue(self) -> bool:
+		"""Does UserData contain data that can be useful when summed (such as durations or counts)"""
+		return self._is_accumulating_value
 	
 
 

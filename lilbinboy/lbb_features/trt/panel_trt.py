@@ -257,6 +257,7 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		self.add_bins_from_paths(list(QtCore.QSettings().value("trt/bin_paths",[], type=list)))
 
+
 	def _setupWidgets(self):
 		"""Setup the widgets and add them to the layout"""
 
@@ -636,6 +637,9 @@ class LBTRTCalculator(LBUtilityTab):
 	def bin_loading_complete(self, had_errors:bool):
 		"""Done loading bins"""
 		self.list_trts.doneLoadingSequences()
+		
+		# TEST
+		self.getDisplayedTreeViewData()
 	
 	def updateSequenceInfo(self):
 
@@ -907,3 +911,19 @@ class LBTRTCalculator(LBUtilityTab):
 		self.wnd_history.sig_is_closing.connect(self.wnd_history.deleteLater)
 		
 		self.wnd_history.show()
+	
+	def getDisplayedTreeViewData(self):
+		"""TEST: Notes for pulling data"""
+
+		# Get header order (and if they're displayed or not)
+		source_headers = self.list_trts.model().sourceModel().headers()
+		view_headers = self.list_trts.model().headers()
+
+		# Get index order and map to OG index
+		displayed_sequence_info_list:list[dict] = []
+		for rownum in range(self.list_trts.model().rowCount()):
+			src_row_num = self.list_trts.model().index(rownum, 0, QtCore.QModelIndex()).row()
+			data_dict = self._data_model.item_to_dict(self._data_model._data[src_row_num])
+			displayed_sequence_info_list.append(data_dict)
+		
+		print(displayed_sequence_info_list)

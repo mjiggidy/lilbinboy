@@ -333,7 +333,9 @@ class TRTDataModel(QtCore.QObject):
 	def __init__(self):
 		super().__init__()
 
-		self._data:list[self.CalculatedTimelineInfo] = []
+		from typing import Self
+
+		self._data:list[Self.CalculatedTimelineInfo] = []
 		self._marker_presets:dict[str, markers_trt.LBMarkerPreset] = dict()
 
 		# TODO: Deal with
@@ -426,17 +428,6 @@ class TRTDataModel(QtCore.QObject):
 		self._fps = rate
 		self.sig_rate_changed.emit(self.rate())
 		self.sig_data_changed.emit()
-	
-	#
-	#	Binz 'n' Sequencez/Timelinez
-	#
-	#def set_data(self, bin_info_list:list[logic_trt.TimelineInfo]):
-	#	# TODO: Deprecated I believe?
-	#	self._data = bin_info_list
-	#	self.sig_data_changed.emit()
-	#	self.sig_bins_changed.emit()
-	#
-	#	self.sig_trt_changed.emit(self.total_runtime())
 	
 	#
 	#	Global FFOA/LFOA trims
@@ -671,7 +662,7 @@ class TRTDataModel(QtCore.QObject):
 		) if tail_marker else "Using global \"Trim Each Tail\" value"
 
 
-		
+		# Prepare your anus
 
 		return {
 			"sequence_name":           treeview_trt.TRTStringItem(timeline_info.timelineName()),
@@ -712,18 +703,18 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		self.setHeaderItems([
 			treeview_trt.TRTTreeViewHeaderItem("","sequence_color", display_delegate=treeview_trt.TRTClipColorDisplayDelegate()),
 			treeview_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
-			treeview_trt.TRTTreeViewHeaderItem("Full Duration (TC)","duration_total_tc", include_total=True),
-			treeview_trt.TRTTreeViewHeaderItem("Full Duration (F+F)","duration_total_ff", include_total=True),
-			treeview_trt.TRTTreeViewHeaderItem("Full Duration (Frames)","duration_total_frames", include_total=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (TC)","duration_trimmed_tc", include_total=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (F+F)","duration_trimmed_ff", include_total=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (Frames)","duration_trimmed_frames", include_total=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (TC)", "head_trimmed_tc", include_total=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (F+F)", "head_trimmed_ff", include_total=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (Frames)", "head_trimmed_frames", include_total=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (TC)", "tail_trimmed_tc", include_total=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (F+F)", "tail_trimmed_ff", include_total=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (Frames)", "tail_trimmed_frames", include_total=True),
+			treeview_trt.TRTTreeViewHeaderItem("Full Duration (TC)","duration_total_tc", is_accumulating_value=True),
+			treeview_trt.TRTTreeViewHeaderItem("Full Duration (F+F)","duration_total_ff", is_accumulating_value=True),
+			treeview_trt.TRTTreeViewHeaderItem("Full Duration (Frames)","duration_total_frames", is_accumulating_value=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (TC)","duration_trimmed_tc", is_accumulating_value=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (F+F)","duration_trimmed_ff", is_accumulating_value=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (Frames)","duration_trimmed_frames", is_accumulating_value=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (TC)", "head_trimmed_tc", is_accumulating_value=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (F+F)", "head_trimmed_ff", is_accumulating_value=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (Frames)", "head_trimmed_frames", is_accumulating_value=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (TC)", "tail_trimmed_tc", is_accumulating_value=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (F+F)", "tail_trimmed_ff", is_accumulating_value=True),
+			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (Frames)", "tail_trimmed_frames", is_accumulating_value=True),
 			treeview_trt.TRTTreeViewHeaderItem("Sequence Start", "sequence_start_tc"),
 			treeview_trt.TRTTreeViewHeaderItem("FFOA (F+F)", "ffoa_ff"),
 			treeview_trt.TRTTreeViewHeaderItem("FFOA (TC)", "ffoa_tc"),
@@ -800,6 +791,7 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		return self._headers[section].header_data(role)
 	
 	def headers(self) -> list[treeview_trt.TRTTreeViewHeaderItem]:
+		"""Return all header items"""
 		return self._headers
 	
 class TRTViewSortModel(QtCore.QSortFilterProxyModel):
