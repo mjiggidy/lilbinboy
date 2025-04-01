@@ -499,6 +499,13 @@ class TRTDataModel(QtCore.QObject):
 		if self.activeTailMarkerPresetName() and self.activeTailMarkerPresetName() not in self.marker_presets():
 			self.set_active_tail_marker_preset_name(None)
 
+		# Maybe just re-apply to update?
+		# NOTE: Checking for None here to avoid initial setup None-ifying(?) saved settings before they're restored
+		if self.activeHeadMarkerPresetName():
+			self.set_active_head_marker_preset_name(self.activeHeadMarkerPresetName())
+		if self.activeTailMarkerPresetName():
+			self.set_active_tail_marker_preset_name(self.activeTailMarkerPresetName())
+
 		self.sig_marker_presets_model_changed.emit(self.marker_presets())
 
 	def activeHeadMarkerPresetName(self) -> str|None:
