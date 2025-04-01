@@ -39,6 +39,10 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self._is_dirty = False
 		self._current_marker_preset = self._default_marker_preset
 
+		# Updated from the model for them there "set as..." buttons
+		self._active_ffoa_preset_name = None
+		self._active_lfoa_preset_name = None
+
 		# Stack for toggling between "new preset" name editor & controls, vs "update existing" controls
 		self.stack_name_editor = QtWidgets.QStackedWidget()
 		self.stack_page_addnew = QtWidgets.QWidget()
@@ -202,7 +206,6 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		
 		return super().reject()
 	
-
 #	---
 #	Basic getters/setters
 #	---
@@ -229,6 +232,24 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 			comment = self.txt_marker_comment.text() or None,
 			author  = self.txt_marker_author.text() or None
 		)
+	
+	@QtCore.Slot(str)
+	def setActiveFFOAMarkerPresetName(self, preset_name:str):
+		self._active_ffoa_preset_name = preset_name
+		self.updateSetAsButtonStates()
+
+	def activeFFOAMarkerPresetName(self) -> str|None:
+		"""The currently active FFOA marker preset according to whatver"""
+		return self._active_ffoa_preset_name
+
+	@QtCore.Slot(str)
+	def setActiveLFOAMarkerPresetName(self, preset_name:str):
+		self._active_lfoa_preset_name = preset_name
+		self.updateSetAsButtonStates()
+	
+	def activeLFOAMarkerPresetName(self) -> str|None:
+		"""The currently active LFOA marker preset as far as we know"""
+		return self._active_lfoa_preset_name
 	
 #	---
 #	Actual quote-unquote "data model" stuff
@@ -383,7 +404,9 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 			
 			# Show "Update" tool stack
 			self.stack_name_editor.setCurrentWidget(self.stack_page_update)
-			#self.txt_preset_name.setVisible(False)
+			
+			# Set "Set As" button state
+			self.updateSetAsButtonStates()
 			
 			# Start off with no modifications
 			self.setIsDirty(False)
@@ -406,6 +429,26 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		"""The current editing mode"""
 		return self._editing_mode
 	
+	def updateSetAsButtonStates(self):
+		"""Let em know they active"""
+		
+		if self.activeFFOAMarkerPresetName() == self.cmb_marker_presets.currentText():
+			self.btn_set_as_ffoa.setEnabled(False)
+			self.btn_set_as_ffoa.setText("Current FFOA")
+			self.btn_set_as_ffoa.setToolTip("This preset is currently chosen as the FFOA match preset")
+		else:
+			self.btn_set_as_ffoa.setEnabled(True)
+			self.btn_set_as_ffoa.setText("Use For FFOA")
+			self.btn_set_as_ffoa.setToolTip("Use this preset to match FFOA markers")
+
+		if self.activeLFOAMarkerPresetName() == self.cmb_marker_presets.currentText():
+			self.btn_set_as_lfoa.setEnabled(False)
+			self.btn_set_as_lfoa.setText("Current LFOA")
+			self.btn_set_as_lfoa.setToolTip("This preset is currently chosen as the LFOA match preset")
+		else:
+			self.btn_set_as_lfoa.setEnabled(True)
+			self.btn_set_as_lfoa.setText("Use For LFOA")
+			self.btn_set_as_lfoa.setToolTip("Use this preset to match LFOA markers")
 
 	def setSaveButtonDescription(self, mode:EditingMode):
 		"""Set the Save Button verbiage depending on mode"""

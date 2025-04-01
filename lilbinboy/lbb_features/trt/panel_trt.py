@@ -521,9 +521,13 @@ class LBTRTCalculator(LBUtilityTab):
 
 		# Set current marker presets
 		wnd_marker.setMarkerPresets(self.model().marker_presets())
+		wnd_marker.setActiveFFOAMarkerPresetName(self.model().activeHeadMarkerPresetName())
+		wnd_marker.setActiveLFOAMarkerPresetName(self.model().activeTailMarkerPresetName())
 
 		# Setup signals & slots
 		self.model().sig_marker_presets_model_changed.connect(wnd_marker.setMarkerPresets)
+		self.model().sig_head_marker_preset_changed.connect(wnd_marker.setActiveFFOAMarkerPresetName)
+		self.model().sig_tail_marker_preset_changed.connect(wnd_marker.setActiveLFOAMarkerPresetName)
 		
 		wnd_marker.sig_save_preset.connect(self.save_marker_preset)
 		wnd_marker.sig_delete_preset.connect(self.remove_marker_preset)
