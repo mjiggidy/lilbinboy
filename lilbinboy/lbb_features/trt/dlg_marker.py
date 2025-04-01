@@ -14,6 +14,10 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		"""Editing an existing thing"""
 
 	sig_save_preset = QtCore.Signal(str, markers_trt.LBMarkerPreset)
+
+	sig_set_as_ffoa = QtCore.Signal(str)
+	sig_set_as_lfoa = QtCore.Signal(str)
+
 	sig_delete_preset = QtCore.Signal(str)
 
 	def __init__(self, *args, **kwargs):
@@ -47,6 +51,9 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.btn_save_preset = QtWidgets.QPushButton()	# Update existing preset
 		self.btn_duplicate_preset = QtWidgets.QPushButton()
 		self.btn_delete_preset = QtWidgets.QPushButton()
+
+		self.btn_set_as_ffoa = QtWidgets.QPushButton()
+		self.btn_set_as_lfoa = QtWidgets.QPushButton()
 
 		self.cmb_marker_color = QtWidgets.QComboBox()
 		self.txt_marker_comment = QtWidgets.QLineEdit()
@@ -130,6 +137,17 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		lay_btns = QtWidgets.QHBoxLayout()
 		
 		lay_btns.addWidget(self.btn_save_preset)
+		
+		self.btn_set_as_ffoa.setText("Use For FFOA")
+		self.btn_set_as_ffoa.setToolTip("Use this preset to match FFOA markers")
+		self.btn_set_as_ffoa.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.CallStart))
+		lay_btns.addWidget(self.btn_set_as_ffoa)
+
+		self.btn_set_as_lfoa.setText("Use For LFOA")
+		self.btn_set_as_lfoa.setToolTip("Use this preset to match LFOA markers")
+		self.btn_set_as_lfoa.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.CallStop))
+		lay_btns.addWidget(self.btn_set_as_lfoa)
+
 		self.btn_box.setStandardButtons(QtWidgets.QDialogButtonBox.StandardButton.Close)
 		lay_btns.addWidget(self.btn_box)
 
@@ -146,6 +164,9 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.btn_save_preset.clicked.connect(self.savePresetRequested)
 		self.btn_delete_preset.clicked.connect(lambda: self.sig_delete_preset.emit(self.cmb_marker_presets.currentText()))
 		self.btn_duplicate_preset.clicked.connect(self.duplicatePresetRequested)
+
+		self.btn_set_as_ffoa.clicked.connect(lambda: self.sig_set_as_ffoa.emit(self.cmb_marker_presets.currentText()))
+		self.btn_set_as_lfoa.clicked.connect(lambda: self.sig_set_as_lfoa.emit(self.cmb_marker_presets.currentText()))
 		
 		self.txt_preset_name.textChanged.connect(self.presetNameInputChanged)
 		self.cmb_marker_color.currentIndexChanged.connect(self.criteriaInputChanged)
