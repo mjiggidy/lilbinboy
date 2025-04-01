@@ -527,6 +527,10 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		wnd_marker.sig_save_preset.connect(self.save_marker_preset)
 		wnd_marker.sig_delete_preset.connect(self.remove_marker_preset)
+
+		wnd_marker.sig_set_as_ffoa.connect(self.model().set_active_head_marker_preset_name)
+		wnd_marker.sig_set_as_lfoa.connect(self.model().set_active_tail_marker_preset_name)
+
 		wnd_marker.finished.connect(self.marker_maker_dialog_closed)
 
 		return bool(wnd_marker.exec())
