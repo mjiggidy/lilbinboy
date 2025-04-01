@@ -43,6 +43,10 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.stack_name_editor = QtWidgets.QStackedWidget()
 		self.stack_page_addnew = QtWidgets.QWidget()
 		self.stack_page_update = QtWidgets.QWidget()
+
+		# Stack for saving or setting (the ones near the bottom left)
+		self.stack_save_set = QtWidgets.QStackedWidget()
+		self.stack_page_set_as   = QtWidgets.QWidget()
 		
 		self.cmb_marker_presets = markers_trt.LBMarkerPresetComboBox()
 		self.txt_preset_name = QtWidgets.QLineEdit()
@@ -134,20 +138,29 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 
 		self.layout().addWidget(self.grp_edit)
 
+		
+		# Lower left Save 'n' Set
 		lay_btns = QtWidgets.QHBoxLayout()
-		
-		lay_btns.addWidget(self.btn_save_preset)
-		
+
+		self.stack_page_set_as.setLayout(QtWidgets.QHBoxLayout())
+		self.stack_page_set_as.layout().setContentsMargins(0,0,0,0)
+
 		self.btn_set_as_ffoa.setText("Use For FFOA")
 		self.btn_set_as_ffoa.setToolTip("Use this preset to match FFOA markers")
 		self.btn_set_as_ffoa.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.CallStart))
-		lay_btns.addWidget(self.btn_set_as_ffoa)
 
 		self.btn_set_as_lfoa.setText("Use For LFOA")
 		self.btn_set_as_lfoa.setToolTip("Use this preset to match LFOA markers")
 		self.btn_set_as_lfoa.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.CallStop))
-		lay_btns.addWidget(self.btn_set_as_lfoa)
 
+		self.stack_page_set_as.layout().addWidget(self.btn_set_as_ffoa)
+		self.stack_page_set_as.layout().addWidget(self.btn_set_as_lfoa)
+
+		self.stack_save_set.addWidget(self.btn_save_preset)
+		self.stack_save_set.addWidget(self.stack_page_set_as)
+		
+		lay_btns.addWidget(self.stack_save_set)
+		
 		self.btn_box.setStandardButtons(QtWidgets.QDialogButtonBox.StandardButton.Close)
 		lay_btns.addWidget(self.btn_box)
 
@@ -165,6 +178,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		self.btn_delete_preset.clicked.connect(lambda: self.sig_delete_preset.emit(self.cmb_marker_presets.currentText()))
 		self.btn_duplicate_preset.clicked.connect(self.duplicatePresetRequested)
 
+		# Set selected preset as...
 		self.btn_set_as_ffoa.clicked.connect(lambda: self.sig_set_as_ffoa.emit(self.cmb_marker_presets.currentText()))
 		self.btn_set_as_lfoa.clicked.connect(lambda: self.sig_set_as_lfoa.emit(self.cmb_marker_presets.currentText()))
 		
@@ -441,7 +455,12 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 		
 		self._is_dirty = bool(is_dirty)
 		self.setWindowModified(is_dirty)
-		self.btn_save_preset.setVisible(is_dirty)
+		
+		
+		if is_dirty:
+			self.stack_save_set.setCurrentWidget(self.btn_save_preset)
+		else:
+			self.stack_save_set.setCurrentWidget(self.stack_page_set_as)
 
 		self.btn_save_preset.setDefault(is_dirty)
 		self.btn_box.button(QtWidgets.QDialogButtonBox.StandardButton.Close).setDefault(not is_dirty)
