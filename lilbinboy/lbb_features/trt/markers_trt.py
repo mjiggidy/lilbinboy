@@ -130,7 +130,9 @@ class LBMarkerPresetComboBox(QtWidgets.QComboBox):
 		self._last_selected_preset_name = None
 		self._allow_edit_option = True
 
-		self.currentIndexChanged.connect(self.processSelection)
+		#self.currentIndexChanged.connect(self.processSelection)
+		# NOTE: Trying this instead
+		self.activated.connect(self.processSelection)
 
 	def setAllowEditOption(self, allow_editing:bool):
 		self._allow_edit_option = bool(allow_editing)
