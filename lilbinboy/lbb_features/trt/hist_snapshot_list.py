@@ -12,10 +12,11 @@ class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 
 		painter.save()
 		
-		label_info = index.model().record(index.row())
+		label_info = index.model().data(index, role=QtCore.Qt.ItemDataRole.UserRole)
 
 		is_current = bool(label_info.field("is_current").value())
-		if label_info.field("label_color").isNull():
+		print("****", label_info.field("label_color").isNull(), label_info.field("label_color").value())
+		if not label_info.field("label_color").value():
 			clip_color = QtGui.QColor(None)
 		else:
 			clip_color = QtGui.QColor(*[int(x) for x in str(label_info.field("label_color").value()).split(",")])

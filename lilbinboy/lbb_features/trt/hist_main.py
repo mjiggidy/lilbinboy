@@ -1,5 +1,6 @@
 import timecode
 from lilbinboy.lbb_features.trt.model_trt import TRTViewModel
+from lilbinboy.lbb_features.trt.hist_models import TRTHistorySQLQueryModel
 from lilbinboy.lbb_features.trt.hist_snapshot_panel import TRTHistorySnapshotPanel, TRTHistorySnapshotDatabaseProxyModel
 from lilbinboy.lbb_features.trt.hist_snapshot_list  import TRTHistorySnapshotLabelDelegate
 from PySide6 import QtCore, QtGui, QtWidgets, QtSql
@@ -98,8 +99,10 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._lst_saved = QtWidgets.QListView()
 		self._snapshots_scroll = QtWidgets.QScrollArea()
 
-		self._snapshot_query_model = QtSql.QSqlQueryModel()
-		self._sequence_query_model = QtSql.QSqlQueryModel()
+		self._snapshot_query_model = TRTHistorySQLQueryModel()
+		"""List of available snapshots"""
+		self._sequence_query_model = TRTHistorySQLQueryModel()
+		"""Actual snapshot sequence data"""
 		self._current_model = TRTViewModel()
 		"""The "Current View" model from the main program"""
 
