@@ -1,0 +1,105 @@
+name: Test Wanders
+on:
+  workflow_dispatch:
+    inputs:
+      version_number:
+        required: true
+        default: "v0.0.1"
+        description: "Version number for this release"
+        type: string
+
+  release:
+    types:
+      - created
+
+jobs:
+
+  # Interpret semver tag info (v1.0.2-pre-release.001) for Windows versioning
+  version-info:
+    runs-on: ubuntu-latest
+
+    outputs:
+      semver:  ${{ steps.regex-match.outputs.group1 }}
+      classic: ${{ steps.regex-match.outputs.group2 }}
+      build_name: ${{ steps.regex-match.outputs.group3 }}
+      full_version: ${{ steps.regex-match.outputs.match }}
+
+    steps:
+
+      - name: Determine version source
+        id: determine-version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.version_number }}" != "" ]; then
+            echo "version=${{ github.event.inputs.version_number }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "Version number not provided and not triggered by release." >&2
+            exit 1
+          fi
+
+      - name: Parse semver with regex
+        uses: actions-ecosystem/action-regex-match@v2
+        id: regex-match
+        with:
+          text: ${{ steps.determine-version.outputs.version }}
+          regex: "^v(((?:[0-9]+\\.)*(?:[0-9]+))-?(.*))$"
+
+      - name: Results
+        run: |
+          echo "Semver:       ${{ steps.regex-match.outputs.group1 }}"
+          echo "Classic:      ${{ steps.regex-match.outputs.group2 }}"
+          echo "Build Name:   ${{ steps.regex-match.outputs.group3 }}"
+          echo "Full Version: ${{ steps.regex-match.outputs.match }}"
+
+
+  build-windows-x64:
+    needs: version-info
+    runs-on: "windows-latest"
+
+    permissions:
+      contents: write
+
+    steps:
+
+      - name: Gettin' Started
+        run: |
+          echo "currently running ${{ runner.os }} ${{ runner.arch }}"
+          echo "github ref is currently ${{ github.ref }}"
+          echo "inputs.version_number is currently ${{ needs.version-info.outputs.classic }}"
+
+      - name: Check-out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      # Installing lilbinboy itself, for dependencies and to bake in version info from setuptools-scm
+      - name: Install Dependencies
+        run: |
+          pip install .
+          choco install -y innosetup
+
+      - name: Build Executable
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: main
+          product-version: ${{ needs.version-info.outputs.classic }}
+          file-version: ${{ needs.version-info.outputs.classic }}
+          output-dir: build
+          script-name: main.py
+          mode: standalone
+      
+      - name: Build Installer
+        run: |
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" build_tools\installer\lbb_windows.iss /DAppVersion=${{ needs.version-info.outputs.classic }}
+
+
+      - name: GH Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ needs.version-info.outputs.semver }}"
+          files: |
+            installer/*
