@@ -1,10 +1,10 @@
 # Compilation configuration for Nuitka
 # ---
-# nuitka-project: --mode=app
-# nuitka-project: --onefile-tempdir-spec="{CACHE_DIR}/{COMPANY}/{PRODUCT}/{VERSION}"
+# nuitka-project: --mode=standalone
+# ;nuitka-project: --onefile-tempdir-spec="{CACHE_DIR}/{COMPANY}/{PRODUCT}/{VERSION}"
 # nuitka-project: --deployment
 # nuitka-project: --output-filename="lilbinboy"
-# nuitka-project: --output-dir="dist/"
+# nuitka-project: --output-dir="dist"
 # nuitka-project: --remove-output
 # nuitka-project: --plugin-enable=pyside6
 # nuitka-project: --include-qt-plugins=sqldrivers
