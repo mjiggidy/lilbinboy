@@ -1,4 +1,4 @@
-name: Build and Publish Binaries
+name: Test Win
 
 on:
   workflow_dispatch:
