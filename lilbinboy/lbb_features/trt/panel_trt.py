@@ -112,7 +112,7 @@ class TRTModeSelection(QtWidgets.QFrame):
 		self.setFrameShadow(QtWidgets.QFrame.Shadow.Plain)
 		self.updateStylesheet()
 
-		self.setSizePolicy(self.sizePolicy().horizontalPolicy(), QtWidgets.QSizePolicy.Policy.MinimumExpanding)
+		#self.setSizePolicy(self.sizePolicy().horizontalPolicy(), QtWidgets.QSizePolicy.Policy.Maximum)
 
 		self.setLayout(QtWidgets.QHBoxLayout())
 		self.layout().setContentsMargins(0,0,0,0)
@@ -147,9 +147,9 @@ class TRTModeSelection(QtWidgets.QFrame):
 	
 	def updateStylesheet(self):
 		# I hate using CSS for this
-		border_color = QtWidgets.QApplication.palette().color(QtGui.QPalette.ColorRole.Mid).name()
+		border_color = QtWidgets.QApplication.palette().color(QtGui.QPalette.ColorRole.Dark).name()
 		background_color = QtWidgets.QApplication.palette().color(QtGui.QPalette.ColorRole.Midlight).name()
-		self.setStyleSheet(f"QFrame {{ border-radius: 2px; border: 1px solid {border_color}; background-color: {background_color}}}") # Ugh
+		self.setStyleSheet(f"QFrame {{ border-radius: 2px; border: 1px solid {border_color}; }}") # Ugh
 	
 	@QtCore.Slot(QtWidgets.QAbstractButton)
 	def selectionChanged(self, button:QtWidgets.QAbstractButton):
@@ -297,7 +297,7 @@ class LBTRTCalculator(LBUtilityTab):
 		ctrl_layout.addWidget(self.btn_add_bins)
 		
 		#ctrl_layout.addWidget(self.prog_loading)
-		#self.stack_bin_loading.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Maximum))
+		self.stack_bin_loading.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Maximum))
 		self.stack_bin_loading.addWidget(self.prog_loading)
 		self.stack_bin_loading.addWidget(self.bin_mode)
 		self.stack_bin_loading.setCurrentWidget(self.bin_mode)
