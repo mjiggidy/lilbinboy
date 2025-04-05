@@ -2,7 +2,6 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Lil' Bin Boy"
-#define MyAppVersion GetStringParam("AppVersion", "1.0.0")
 #define MyAppPublisher "GlowingPixel"
 #define MyAppURL "https://github.com/mjiggidy/lilbinboy/"
 #define MyAppExeName "lilbinboy.exe"

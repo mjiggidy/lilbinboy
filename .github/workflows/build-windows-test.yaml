@@ -1,4 +1,5 @@
-name: Test Wanders
+name: Build and Publish Binaries
+
 on:
   workflow_dispatch:
     inputs:
@@ -80,7 +81,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install .
-          choco install -y innosetup
+#         choco install -y innosetup (comes pre-installed in windows-latest)
 
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
@@ -94,7 +95,7 @@ jobs:
       
       - name: Build Installer
         run: |
-          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" build_tools\installer\lbb_windows.iss /DAppVersion=${{ needs.version-info.outputs.classic }}
+          iscc /DMyAppVersion=${{ needs.version-info.outputs.classic }} build_tools\installer\lbb_windows.iss
 
 
       - name: GH Release
