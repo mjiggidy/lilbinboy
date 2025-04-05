@@ -98,7 +98,7 @@ class TRTThreadedBinGetter(QtCore.QRunnable):
 	def run(self):
 		self.signals().sig_got_bin_info.emit(logic_trt.get_timelines_from_bin(self._bin_path))
 
-class TRTModeSelection(QtWidgets.QGroupBox):
+class TRTModeSelection(QtWidgets.QFrame):
 	"""Select how sequences are chosen from bins"""
 
 	sig_sequence_selection_mode_changed = QtCore.Signal(model_trt.SequenceSelectionMode)
@@ -108,11 +108,18 @@ class TRTModeSelection(QtWidgets.QGroupBox):
 
 		super().__init__()
 
+		self.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+		self.setFrameShadow(QtWidgets.QFrame.Shadow.Plain)
+		self.updateStylesheet()
+
+		self.setSizePolicy(self.sizePolicy().horizontalPolicy(), QtWidgets.QSizePolicy.Policy.MinimumExpanding)
+
 		self.setLayout(QtWidgets.QHBoxLayout())
 		self.layout().setContentsMargins(0,0,0,0)
 
 		self._rdo_one_sequence = QtWidgets.QRadioButton()
 		self._btn_one_sequence_config = QtWidgets.QPushButton()
+		
 		self._rdo_all_sequence = QtWidgets.QRadioButton()
 
 		self._btn_group = QtWidgets.QButtonGroup()
@@ -125,6 +132,7 @@ class TRTModeSelection(QtWidgets.QGroupBox):
 		self.layout().addWidget(self._rdo_one_sequence)
 
 		self._btn_one_sequence_config.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentProperties))
+		self._btn_one_sequence_config.setIconSize(QtCore.QSize(8,8))
 		self.layout().addWidget(self._btn_one_sequence_config)
 
 		self.layout().addStretch()
@@ -136,6 +144,12 @@ class TRTModeSelection(QtWidgets.QGroupBox):
 
 		self._btn_group.buttonClicked.connect(self.selectionChanged)
 		self._btn_one_sequence_config.clicked.connect(self.sig_sequence_selection_settings_requested)
+	
+	def updateStylesheet(self):
+		# I hate using CSS for this
+		border_color = QtWidgets.QApplication.palette().color(QtGui.QPalette.ColorRole.Mid).name()
+		background_color = QtWidgets.QApplication.palette().color(QtGui.QPalette.ColorRole.Midlight).name()
+		self.setStyleSheet(f"QFrame {{ border-radius: 2px; border: 1px solid {border_color}; background-color: {background_color}}}") # Ugh
 	
 	@QtCore.Slot(QtWidgets.QAbstractButton)
 	def selectionChanged(self, button:QtWidgets.QAbstractButton):
@@ -283,7 +297,7 @@ class LBTRTCalculator(LBUtilityTab):
 		ctrl_layout.addWidget(self.btn_add_bins)
 		
 		#ctrl_layout.addWidget(self.prog_loading)
-		self.stack_bin_loading.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Maximum))
+		#self.stack_bin_loading.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Maximum))
 		self.stack_bin_loading.addWidget(self.prog_loading)
 		self.stack_bin_loading.addWidget(self.bin_mode)
 		self.stack_bin_loading.setCurrentWidget(self.bin_mode)
