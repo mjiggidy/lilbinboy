@@ -211,7 +211,7 @@ class LBCheckForUpdatesWindow(QtWidgets.QWidget):
 		self._lbl_latest_release_version.setText(release_info.version)
 
 		self._btn_new_release_download.setVisible(True)
-		self._btn_new_release_download.setFocus()
+		self._btn_new_release_download.setDefault(True)
 
 		self._lbl_new_version_name.setText(release_info.name)
 		self._lbl_new_release_date.setText("Released " + QtCore.QDateTime.fromString(release_info.date, QtCore.Qt.DateFormat.ISODate).toLocalTime().toString("dd MMMM yyyy"))
