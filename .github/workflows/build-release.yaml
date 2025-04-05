@@ -75,12 +75,13 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       # Installing lilbinboy itself, for dependencies and to bake in version info from setuptools-scm
       - name: Install Dependencies
         run: |
           pip install .
+#         choco install -y innosetup (comes pre-installed in windows-latest)
 
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
@@ -90,13 +91,11 @@ jobs:
           file-version: ${{ needs.version-info.outputs.classic }}
           output-dir: build
           script-name: main.py
-          mode: app
+          mode: standalone
       
       - name: Build Installer
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.5
-        with:
-          path: build_tools/win_create_installer.iss
-          options: /F"lilbinboy_windows_v${{ needs.version-info.outputs.semver }}_x86-64"
+        run: |
+          iscc /DMyAppVersion=${{ needs.version-info.outputs.classic }} build_tools\installer\lbb_windows.iss
 
 
       - name: GH Release
@@ -104,7 +103,7 @@ jobs:
         with:
           tag_name: "v${{ needs.version-info.outputs.semver }}"
           files: |
-            dist/*
+            installer/*
 
 
 
@@ -129,7 +128,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       # Installing lilbinboy itself, for dependencies and to bake in version info from setuptools-scm
       - name: Install Dependencies
@@ -181,7 +180,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.12'  # 3.12 for greater backward compatibility on intel machines
           architecture: x64
 
       # Installing lilbinboy itself, for dependencies and to bake in version info from setuptools-scm
