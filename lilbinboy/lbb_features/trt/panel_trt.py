@@ -2,7 +2,7 @@ from PySide6 import QtWidgets, QtGui, QtCore, QtSql
 from timecode import Timecode
 from concurrent import futures
 from lilbinboy.lbb_common import LBUtilityTab, LBSpinBoxTC, LBTimelineView
-from lilbinboy.lbb_features.trt import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt, wdg_stats, hist_main
+from lilbinboy.lbb_features.trt import dlg_choose_columns, dlg_marker, logic_trt, model_trt, markers_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt, wdg_sequence_treeview, wdg_sequence_trims, wdg_stats, hist_main
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 
@@ -201,14 +201,14 @@ class LBTRTCalculator(LBUtilityTab):
 		self.bin_mode = TRTModeSelection()
 
 		# Declare main treeview
-		self.list_trts = treeview_trt.TRTTreeView()
+		self.list_trts = wdg_sequence_treeview.TRTTreeView()
 		self.trt_summary = wdg_stats.TRTStatView()
 
 		# Longplay Layout
 		self.view_longplay = LBTimelineView()
 
 		# Declare trims
-		self.trt_trims = trims_trt.TRTControlsTrims()
+		self.trt_trims = wdg_sequence_trims.TRTControlsTrims()
 		self.trim_total = LBSpinBoxTC()
 
 		# Export TSV/CSV/JSON

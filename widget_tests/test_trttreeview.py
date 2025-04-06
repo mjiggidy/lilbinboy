@@ -1,4 +1,4 @@
-from lilbinboy.lbb_features.trt.treeview_trt import TRTTreeView
+from lilbinboy.lbb_features.trt.wdg_sequence_treeview import TRTTreeView
 from PySide6 import QtWidgets, QtGui, QtCore
 
 app = QtWidgets.QApplication()

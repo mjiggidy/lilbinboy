@@ -1,5 +1,5 @@
 from PySide6 import QtGui, QtWidgets
-from . import treeview_trt, wdg_stats, wdg_loadingbar, wdg_sequence_selection, trims_trt
+from . import wdg_sequence_treeview, wdg_sequence_trims, wdg_stats, wdg_loadingbar, wdg_sequence_selection
 from ...lbb_common import LBTimelineView, LBSpinBoxTC
 
 class LBBRuntimeMetricsPanel(QtWidgets.QWidget):
@@ -21,14 +21,14 @@ class LBBRuntimeMetricsPanel(QtWidgets.QWidget):
 		self.bin_mode = wdg_sequence_selection.TRTModeSelection()
 
 		# Declare main treeview
-		self.tree_sequenceview = treeview_trt.TRTTreeView()
+		self.tree_sequenceview = wdg_sequence_treeview.TRTTreeView()
 		self.stats_trt = wdg_stats.TRTStatView()
 
 		# Longplay view
 		self.timeline_longplay = LBTimelineView()
 
 		# Declare trims
-		self.trt_trims = trims_trt.TRTControlsTrims()
+		self.trt_trims = wdg_sequence_trims.TRTControlsTrims()
 		self.trim_total = LBSpinBoxTC()
 
 		# Exporters

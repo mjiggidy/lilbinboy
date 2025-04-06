@@ -4,7 +4,7 @@ import avbutils
 from datetime import datetime, timezone
 from PySide6 import QtCore, QtGui
 from timecode import Timecode, TimecodeRange
-from lilbinboy.lbb_features.trt import logic_trt, treeview_trt, markers_trt
+from lilbinboy.lbb_features.trt import logic_trt, markers_trt, wdg_sequence_treeview
 
 class SequenceSelectionMode(enum.Enum):
 	"""Modes for choosing sequences from a bin"""
@@ -672,78 +672,78 @@ class TRTDataModel(QtCore.QObject):
 		# Prepare your anus
 
 		return {
-			"sequence_name":           treeview_trt.TRTStringItem(timeline_info.timelineName()),
-			"sequence_color":          treeview_trt.TRTClipColorItem(timeline_info.timelineColor()),
-			"sequence_start_tc":       treeview_trt.TRTTimecodeItem(timeline_info.timelineTimecodeExtents().start),
-			"duration_total_tc":       treeview_trt.TRTDurationItem(timeline_info.timelineTimecodeExtents().duration),
-			"duration_total_ff":       treeview_trt.TRTFeetFramesItem(timeline_info.timelineTimecodeExtents().duration.frame_number),
-			"duration_total_frames":   treeview_trt.TRTNumericItem(timeline_info.timelineTimecodeExtents().duration.frame_number),
-			"duration_trimmed_tc":     treeview_trt.TRTDurationItem(timeline_info.timelineTimecodeTrimmed().duration),
-			"duration_trimmed_ff":     treeview_trt.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().duration.frame_number),
-			"duration_trimmed_frames": treeview_trt.TRTNumericItem(timeline_info.timelineTimecodeTrimmed().duration.frame_number),
-			"head_trimmed_tc":         treeview_trt.TRTDurationItem(timeline_info.ffoaOffset(), icon=head_icon, tooltip=head_tooltip),
-			"head_trimmed_ff":         treeview_trt.TRTFeetFramesItem(timeline_info.ffoaOffset().frame_number, icon=head_icon, tooltip=head_tooltip),
-			"head_trimmed_frames":     treeview_trt.TRTNumericItem(timeline_info.ffoaOffset().frame_number, icon=head_icon, tooltip=head_tooltip),
-			"tail_trimmed_tc":         treeview_trt.TRTDurationItem(timeline_info.lfoaOffset(), icon=tail_icon, tooltip=tail_tooltip),
-			"tail_trimmed_ff":         treeview_trt.TRTFeetFramesItem(timeline_info.lfoaOffset().frame_number, icon=tail_icon, tooltip=tail_tooltip),
-			"tail_trimmed_frames":     treeview_trt.TRTNumericItem(timeline_info.lfoaOffset().frame_number, icon=tail_icon, tooltip=tail_tooltip),
-			"ffoa_tc":                 treeview_trt.TRTTimecodeItem(timeline_info.timelineTimecodeTrimmed().start),
-			"ffoa_ff":                 treeview_trt.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().start.frame_number),
-			"lfoa_tc":                 treeview_trt.TRTTimecodeItem(timeline_info.timelineTimecodeTrimmed().end),
-			"lfoa_ff":                 treeview_trt.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().duration.frame_number),
-			"date_modified":           treeview_trt.TRTDateTimeItem(timeline_info.timelineDateModified()),
-			"date_created":            treeview_trt.TRTDateTimeItem(timeline_info.timelineDateCreated()),
-			"bin_path":                treeview_trt.TRTPathItem(timeline_info.binFilePath()),
-			"bin_lock":                treeview_trt.TRTBinLockItem(timeline_info.binLockInfo())
+			"sequence_name":           wdg_sequence_treeview.TRTStringItem(timeline_info.timelineName()),
+			"sequence_color":          wdg_sequence_treeview.TRTClipColorItem(timeline_info.timelineColor()),
+			"sequence_start_tc":       wdg_sequence_treeview.TRTTimecodeItem(timeline_info.timelineTimecodeExtents().start),
+			"duration_total_tc":       wdg_sequence_treeview.TRTDurationItem(timeline_info.timelineTimecodeExtents().duration),
+			"duration_total_ff":       wdg_sequence_treeview.TRTFeetFramesItem(timeline_info.timelineTimecodeExtents().duration.frame_number),
+			"duration_total_frames":   wdg_sequence_treeview.TRTNumericItem(timeline_info.timelineTimecodeExtents().duration.frame_number),
+			"duration_trimmed_tc":     wdg_sequence_treeview.TRTDurationItem(timeline_info.timelineTimecodeTrimmed().duration),
+			"duration_trimmed_ff":     wdg_sequence_treeview.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().duration.frame_number),
+			"duration_trimmed_frames": wdg_sequence_treeview.TRTNumericItem(timeline_info.timelineTimecodeTrimmed().duration.frame_number),
+			"head_trimmed_tc":         wdg_sequence_treeview.TRTDurationItem(timeline_info.ffoaOffset(), icon=head_icon, tooltip=head_tooltip),
+			"head_trimmed_ff":         wdg_sequence_treeview.TRTFeetFramesItem(timeline_info.ffoaOffset().frame_number, icon=head_icon, tooltip=head_tooltip),
+			"head_trimmed_frames":     wdg_sequence_treeview.TRTNumericItem(timeline_info.ffoaOffset().frame_number, icon=head_icon, tooltip=head_tooltip),
+			"tail_trimmed_tc":         wdg_sequence_treeview.TRTDurationItem(timeline_info.lfoaOffset(), icon=tail_icon, tooltip=tail_tooltip),
+			"tail_trimmed_ff":         wdg_sequence_treeview.TRTFeetFramesItem(timeline_info.lfoaOffset().frame_number, icon=tail_icon, tooltip=tail_tooltip),
+			"tail_trimmed_frames":     wdg_sequence_treeview.TRTNumericItem(timeline_info.lfoaOffset().frame_number, icon=tail_icon, tooltip=tail_tooltip),
+			"ffoa_tc":                 wdg_sequence_treeview.TRTTimecodeItem(timeline_info.timelineTimecodeTrimmed().start),
+			"ffoa_ff":                 wdg_sequence_treeview.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().start.frame_number),
+			"lfoa_tc":                 wdg_sequence_treeview.TRTTimecodeItem(timeline_info.timelineTimecodeTrimmed().end),
+			"lfoa_ff":                 wdg_sequence_treeview.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().duration.frame_number),
+			"date_modified":           wdg_sequence_treeview.TRTDateTimeItem(timeline_info.timelineDateModified()),
+			"date_created":            wdg_sequence_treeview.TRTDateTimeItem(timeline_info.timelineDateCreated()),
+			"bin_path":                wdg_sequence_treeview.TRTPathItem(timeline_info.binFilePath()),
+			"bin_lock":                wdg_sequence_treeview.TRTBinLockItem(timeline_info.binLockInfo())
 		}
 	
 
 class TRTViewModel(QtCore.QAbstractItemModel):
 	
-	def __init__(self, headers_list:list[treeview_trt.TRTTreeViewHeaderItem]=None):
+	def __init__(self, headers_list:list[wdg_sequence_treeview.TRTTreeViewHeaderItem]=None):
 		"""Create and setup a new model"""
 		super().__init__()
 
-		self._data:list[dict[str, treeview_trt.TRTAbstractItem]] = []
-		self._headers:list[treeview_trt.TRTTreeViewHeaderItem]   = headers_list or []
+		self._data:list[dict[str, wdg_sequence_treeview.TRTAbstractItem]] = []
+		self._headers:list[wdg_sequence_treeview.TRTTreeViewHeaderItem]   = headers_list or []
 
 		self.setHeaderItems([
-			treeview_trt.TRTTreeViewHeaderItem("","sequence_color", display_delegate=treeview_trt.TRTClipColorDisplayDelegate()),
-			treeview_trt.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
-			treeview_trt.TRTTreeViewHeaderItem("Full Duration (TC)","duration_total_tc", is_accumulating_value=True),
-			treeview_trt.TRTTreeViewHeaderItem("Full Duration (F+F)","duration_total_ff", is_accumulating_value=True),
-			treeview_trt.TRTTreeViewHeaderItem("Full Duration (Frames)","duration_total_frames", is_accumulating_value=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (TC)","duration_trimmed_tc", is_accumulating_value=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (F+F)","duration_trimmed_ff", is_accumulating_value=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed Duration (Frames)","duration_trimmed_frames", is_accumulating_value=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (TC)", "head_trimmed_tc", is_accumulating_value=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (F+F)", "head_trimmed_ff", is_accumulating_value=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Head (Frames)", "head_trimmed_frames", is_accumulating_value=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (TC)", "tail_trimmed_tc", is_accumulating_value=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (F+F)", "tail_trimmed_ff", is_accumulating_value=True),
-			treeview_trt.TRTTreeViewHeaderItem("Trimmed From Tail (Frames)", "tail_trimmed_frames", is_accumulating_value=True),
-			treeview_trt.TRTTreeViewHeaderItem("Sequence Start", "sequence_start_tc"),
-			treeview_trt.TRTTreeViewHeaderItem("FFOA (F+F)", "ffoa_ff"),
-			treeview_trt.TRTTreeViewHeaderItem("FFOA (TC)", "ffoa_tc"),
-			treeview_trt.TRTTreeViewHeaderItem("LFOA (F+F)", "lfoa_ff"),
-			treeview_trt.TRTTreeViewHeaderItem("LFOA (TC)", "lfoa_tc"),
-			treeview_trt.TRTTreeViewHeaderItem("Date Created","date_created"),
-			treeview_trt.TRTTreeViewHeaderItem("Date Modified","date_modified"),
-			treeview_trt.TRTTreeViewHeaderItem("From Bin","bin_path"),
-			treeview_trt.TRTTreeViewHeaderItem("Bin Lock","bin_lock"),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("","sequence_color", display_delegate=wdg_sequence_treeview.TRTClipColorDisplayDelegate()),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Full Duration (TC)","duration_total_tc", is_accumulating_value=True),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Full Duration (F+F)","duration_total_ff", is_accumulating_value=True),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Full Duration (Frames)","duration_total_frames", is_accumulating_value=True),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Trimmed Duration (TC)","duration_trimmed_tc", is_accumulating_value=True),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Trimmed Duration (F+F)","duration_trimmed_ff", is_accumulating_value=True),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Trimmed Duration (Frames)","duration_trimmed_frames", is_accumulating_value=True),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Trimmed From Head (TC)", "head_trimmed_tc", is_accumulating_value=True),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Trimmed From Head (F+F)", "head_trimmed_ff", is_accumulating_value=True),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Trimmed From Head (Frames)", "head_trimmed_frames", is_accumulating_value=True),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Trimmed From Tail (TC)", "tail_trimmed_tc", is_accumulating_value=True),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Trimmed From Tail (F+F)", "tail_trimmed_ff", is_accumulating_value=True),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Trimmed From Tail (Frames)", "tail_trimmed_frames", is_accumulating_value=True),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Sequence Start", "sequence_start_tc"),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("FFOA (F+F)", "ffoa_ff"),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("FFOA (TC)", "ffoa_tc"),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("LFOA (F+F)", "lfoa_ff"),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("LFOA (TC)", "lfoa_tc"),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Date Created","date_created"),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Date Modified","date_modified"),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("From Bin","bin_path"),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Bin Lock","bin_lock"),
 		])
 	
-	def setSequenceInfoList(self, trt_data:list[dict[str,treeview_trt.TRTAbstractItem]]):
+	def setSequenceInfoList(self, trt_data:list[dict[str,wdg_sequence_treeview.TRTAbstractItem]]):
 		self.beginResetModel()
 		self._data = trt_data
 		self.endResetModel()
 	
-	def addSequenceInfo(self, sequence_info:dict[str, treeview_trt.TRTAbstractItem]):
+	def addSequenceInfo(self, sequence_info:dict[str, wdg_sequence_treeview.TRTAbstractItem]):
 		self.beginInsertRows(QtCore.QModelIndex(), 0, 0)
 		self._data.insert(0, sequence_info)
 		self.endInsertRows()
 
-	def updateSequenceInfo(self, idx:int, sequence_info:dict[str, treeview_trt.TRTAbstractItem]):
+	def updateSequenceInfo(self, idx:int, sequence_info:dict[str, wdg_sequence_treeview.TRTAbstractItem]):
 		idx_start = self.index(idx, 2)
 		idx_end = self.index(idx, self.columnCount()-1)
 		self._data[idx] = sequence_info
@@ -755,10 +755,10 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		del self._data[idx]
 		self.endRemoveRows()
 	
-	def sequenceInfoList(self) -> list[dict[str, treeview_trt.TRTAbstractItem]]:
+	def sequenceInfoList(self) -> list[dict[str, wdg_sequence_treeview.TRTAbstractItem]]:
 		return self._data
 	
-	def setHeaderItems(self, headers:list[treeview_trt.TRTTreeViewHeaderItem]):
+	def setHeaderItems(self, headers:list[wdg_sequence_treeview.TRTTreeViewHeaderItem]):
 		self._headers = headers
 		self.headerDataChanged.emit(QtCore.Qt.Orientation.Horizontal, 0, len(self._headers)-1)
 	
@@ -797,7 +797,7 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		"""Returns the data for the given role and section in the header with the specified orientation."""
 		return self._headers[section].header_data(role)
 	
-	def headers(self) -> list[treeview_trt.TRTTreeViewHeaderItem]:
+	def headers(self) -> list[wdg_sequence_treeview.TRTTreeViewHeaderItem]:
 		"""Return all header items"""
 		return self._headers
 	
