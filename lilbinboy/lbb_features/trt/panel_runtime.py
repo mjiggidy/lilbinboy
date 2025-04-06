@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtGui, QtWidgets
-from . import treeview_trt, wdg_stats, trims_trt
-from .panel_trt import TRTBinLoadingProgressBar, TRTModeSelection
+from . import treeview_trt, wdg_stats, wdg_loadingbar, trims_trt
+from .panel_trt import TRTModeSelection
 from ...lbb_common import LBTimelineView, LBSpinBoxTC
 
 class LBBRuntimeMetricsPanel(QtWidgets.QWidget):
@@ -18,7 +18,7 @@ class LBBRuntimeMetricsPanel(QtWidgets.QWidget):
 		
 		# Stacked widget to toggle between progress bar and bin/sequence mode
 		self.stack_bin_loading = QtWidgets.QStackedWidget()
-		self.prog_loading = TRTBinLoadingProgressBar()
+		self.prog_loading = wdg_loadingbar.TRTBinLoadingProgressBar()
 		self.bin_mode = TRTModeSelection()
 
 		# Declare main treeview
@@ -87,7 +87,7 @@ class LBBRuntimeMetricsPanel(QtWidgets.QWidget):
 		# ---
 		# Exporters
 		self.btn_export_data.setText("Export As...")
-		self.btn_export_data.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSaveAs))
+		self.btn_export_data.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentSave))
 
 		self.btn_snapshots.setText("Show Snapshots...")
 		self.btn_snapshots.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRestore))
