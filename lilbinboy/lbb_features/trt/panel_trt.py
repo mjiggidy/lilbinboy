@@ -2,7 +2,7 @@ from PySide6 import QtWidgets, QtGui, QtCore, QtSql
 from timecode import Timecode
 from concurrent import futures
 from lilbinboy.lbb_common import LBUtilityTab, LBSpinBoxTC, LBTimelineView
-from lilbinboy.lbb_features.trt import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt, wdg_summary, hist_main
+from lilbinboy.lbb_features.trt import dlg_choose_columns, dlg_marker, logic_trt, model_trt, treeview_trt, markers_trt, trims_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt, wdg_stats, hist_main
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 
@@ -202,7 +202,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		# Declare main treeview
 		self.list_trts = treeview_trt.TRTTreeView()
-		self.trt_summary = wdg_summary.TRTSummary()
+		self.trt_summary = wdg_stats.TRTStatView()
 
 		# Longplay Layout
 		self.view_longplay = LBTimelineView()
@@ -331,29 +331,29 @@ class LBTRTCalculator(LBUtilityTab):
 		grp_summaries.layout().setContentsMargins(0,0,0,0)
 		
 		# Initial items
-		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(
+		self.trt_summary.add_stat_item(wdg_stats.TRTStatItem(
 			label="Sequences",
 			value="0"
 		))
 
-		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(
+		self.trt_summary.add_stat_item(wdg_stats.TRTStatItem(
 			label="Locked",
 			value="0"
 		))
 
-		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(
+		self.trt_summary.add_stat_item(wdg_stats.TRTStatItem(
 			label="FPS",
 			value="24"
 		))
 
 		self.trt_summary.add_spacer()
 
-		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(
+		self.trt_summary.add_stat_item(wdg_stats.TRTStatItem(
 			label="Total Running Length",
 			value="0+00"
 		))
 
-		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(
+		self.trt_summary.add_stat_item(wdg_stats.TRTStatItem(
 			label="Total Running Time",
 			value="00:00:00:00"
 		))
@@ -799,10 +799,10 @@ class LBTRTCalculator(LBUtilityTab):
 
 	@QtCore.Slot(Timecode)
 	def update_summary(self):
-		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(label="Locked", value=self.model().locked_bin_count()))
-		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(label="Sequences", value=self.model().sequence_count()))
-		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(label="Total Running Length", value=self.model().total_lfoa()))
-		self.trt_summary.add_summary_item(wdg_summary.TRTSummaryItem(label="Total Running Time",  value=self.model().total_runtime()))
+		self.trt_summary.add_stat_item(wdg_stats.TRTStatItem(label="Locked", value=self.model().locked_bin_count()))
+		self.trt_summary.add_stat_item(wdg_stats.TRTStatItem(label="Sequences", value=self.model().sequence_count()))
+		self.trt_summary.add_stat_item(wdg_stats.TRTStatItem(label="Total Running Length", value=self.model().total_lfoa()))
+		self.trt_summary.add_stat_item(wdg_stats.TRTStatItem(label="Total Running Time",  value=self.model().total_runtime()))
 	
 	@QtCore.Slot()
 	def update_control_buttons(self):

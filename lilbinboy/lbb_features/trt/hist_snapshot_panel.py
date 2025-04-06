@@ -2,7 +2,7 @@ import abc
 import timecode
 from lilbinboy.lbb_common import LBClipColorPicker
 from lilbinboy.lbb_common.paint_delegates import LBClipColorPainter
-from lilbinboy.lbb_features.trt import wdg_summary
+from lilbinboy.lbb_features.trt import wdg_stats
 from PySide6 import QtSql, QtCore, QtGui, QtWidgets
 
 class SnapshotClipColorDelegate(QtWidgets.QStyledItemDelegate):
@@ -222,16 +222,16 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		self._btn_clip_color.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.InstantPopup)
 
 		# Summary
-		self._summary = wdg_summary.TRTSummary()
-		self._summary.add_summary_item(wdg_summary.TRTSummaryItem(
+		self._summary = wdg_stats.TRTStatView()
+		self._summary.add_stat_item(wdg_stats.TRTStatItem(
 			label = "Rate",
 			value = "--"
 		))
-		self._summary.add_summary_item(wdg_summary.TRTSummaryItem(
+		self._summary.add_stat_item(wdg_stats.TRTStatItem(
 			label ="Final Adjustment",
 			value = "--"
 		))
-		self._summary.add_summary_item(wdg_summary.TRTSummaryItem(
+		self._summary.add_stat_item(wdg_stats.TRTStatItem(
 			label ="Total Running Time",
 			value = "--"
 		))
@@ -290,7 +290,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		if self._rate != trt.rate:
 			self.setRate(trt.rate)
 		
-		self._summary.add_summary_item(wdg_summary.TRTSummaryItem(
+		self._summary.add_stat_item(wdg_stats.TRTStatItem(
 			label = "Total Running Time",
 			value = timecode.Timecode(self._trt_frames, rate=self._rate)
 		))
@@ -303,7 +303,7 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 		if self._rate != adjustment.rate:
 			self.setRate(adjustment.rate)
 
-		self._summary.add_summary_item(wdg_summary.TRTSummaryItem(
+		self._summary.add_stat_item(wdg_stats.TRTStatItem(
 			label = "Final Adjustment",
 			value = timecode.Timecode(self._final_adjust_frames, rate=self._rate)
 		))

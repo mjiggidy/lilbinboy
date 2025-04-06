@@ -2,7 +2,7 @@ import dataclasses
 from PySide6 import QtGui, QtWidgets
 
 @dataclasses.dataclass(frozen=True)
-class TRTSummaryItem():
+class TRTStatItem():
 	"""Item to display in a `TRTSummary` bar"""
 
 	label:str
@@ -11,7 +11,7 @@ class TRTSummaryItem():
 	value:str
 	"""The value of this item"""
 
-class TRTSummary(QtWidgets.QWidget):
+class TRTStatView(QtWidgets.QWidget):
 
 
 	def __init__(self, *args, **kwargs):
@@ -22,7 +22,7 @@ class TRTSummary(QtWidgets.QWidget):
 		self._fnt_label = QtGui.QFont()
 		self._fnt_value = QtGui.QFont()
 
-		self._summary_items = dict()
+		self._stat_items = dict()
 
 		self._fnt_label.setCapitalization(QtGui.QFont.Capitalization.AllUppercase)
 		self._fnt_label.setPointSizeF(8)
@@ -33,10 +33,10 @@ class TRTSummary(QtWidgets.QWidget):
 		self.setLayout(QtWidgets.QGridLayout())
 		self.layout().setHorizontalSpacing(24)
 	
-	def add_summary_item(self, item:TRTSummaryItem):
+	def add_stat_item(self, item:TRTStatItem):
 
-		if str(item.label) in self._summary_items:
-			label, value = self._summary_items[str(item.label)]
+		if str(item.label) in self._stat_items:
+			label, value = self._stat_items[str(item.label)]
 			value.setText(str(item.value))
 		
 		else:
@@ -51,7 +51,7 @@ class TRTSummary(QtWidgets.QWidget):
 			lbl_label.setAlignment(QtGui.Qt.AlignmentFlag.AlignCenter)
 			lbl_label.setBuddy(lbl_value)
 
-			self._summary_items.update({
+			self._stat_items.update({
 				str(item.label): (lbl_label, lbl_value)
 			})
 			
