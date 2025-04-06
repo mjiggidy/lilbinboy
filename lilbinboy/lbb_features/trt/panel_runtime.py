@@ -1,6 +1,5 @@
-from PySide6 import QtCore, QtGui, QtWidgets
-from . import treeview_trt, wdg_stats, wdg_loadingbar, trims_trt
-from .panel_trt import TRTModeSelection
+from PySide6 import QtGui, QtWidgets
+from . import treeview_trt, wdg_stats, wdg_loadingbar, wdg_sequence_selection, trims_trt
 from ...lbb_common import LBTimelineView, LBSpinBoxTC
 
 class LBBRuntimeMetricsPanel(QtWidgets.QWidget):
@@ -19,7 +18,7 @@ class LBBRuntimeMetricsPanel(QtWidgets.QWidget):
 		# Stacked widget to toggle between progress bar and bin/sequence mode
 		self.stack_bin_loading = QtWidgets.QStackedWidget()
 		self.prog_loading = wdg_loadingbar.TRTBinLoadingProgressBar()
-		self.bin_mode = TRTModeSelection()
+		self.bin_mode = wdg_sequence_selection.TRTModeSelection()
 
 		# Declare main treeview
 		self.tree_sequenceview = treeview_trt.TRTTreeView()
