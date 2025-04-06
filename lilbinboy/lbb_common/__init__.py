@@ -45,6 +45,8 @@ class LBTimelineView(QtWidgets.QWidget):
 
 		super().__init__(*args, **kwargs)
 
+		self._items = []
+
 		# Calculation Stuff
 		self._total_adjust  = 0
 		"""Additional frame count adjustment to total duration"""
