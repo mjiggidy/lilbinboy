@@ -948,7 +948,20 @@ class LBTRTCalculator(LBUtilityTab):
 		displayed_sequence_info_list:list[dict] = []
 		for rownum in range(self.list_trts.model().rowCount()):
 			src_row_num = self.list_trts.model().index(rownum, 0, QtCore.QModelIndex()).row()
-			data_dict = self._data_model.item_to_dict(self._data_model._data[src_row_num])
+			data_calc = self._data_model._data[src_row_num]
+			data_dict = self._data_model.item_to_dict(data_calc)
 			displayed_sequence_info_list.append(data_dict)
 		
-		print(displayed_sequence_info_list)
+		# Displayed data IN ORDER
+
+		json_formatted:list[dict] = []
+
+		for sequence_info in displayed_sequence_info_list:
+
+			sequence_json = dict()
+			for header in headers_all:
+				sequence_json[header.field()] = sequence_info.get(header.field()).to_json()
+			json_formatted.append(sequence_json)
+		
+		import json
+		print(json.dumps(json_formatted))

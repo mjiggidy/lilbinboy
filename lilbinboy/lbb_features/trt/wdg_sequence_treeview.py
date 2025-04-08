@@ -24,18 +24,22 @@ class TRTAbstractItem(QtCore.QObject):
 		self._prepare_data()
 	
 	def _prepare_data(self):
-		"""Precalculate data for all them roles"""
+		"""Precalculate them datas for all them roles"""
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole:				str(self._data),
-			QtCore.Qt.ItemDataRole.InitialSortOrderRole: 	avbutils.human_sort(str(self._data)),
-			QtCore.Qt.ItemDataRole.UserRole:				self._data,
-			QtCore.Qt.ItemDataRole.DecorationRole:			self._icon,
-			QtCore.Qt.ItemDataRole.ToolTipRole:				self._tooltip
+			QtCore.Qt.ItemDataRole.DisplayRole:          str(self._data),
+			QtCore.Qt.ItemDataRole.ToolTipRole:          self._tooltip,
+			QtCore.Qt.ItemDataRole.DecorationRole:       self._icon,
+			QtCore.Qt.ItemDataRole.InitialSortOrderRole: avbutils.human_sort(str(self._data)),
+			QtCore.Qt.ItemDataRole.UserRole:             self._data,
 		})
 
 	def data(self, role:QtCore.Qt.ItemDataRole) -> typing.Any:
 		"""Get item data for a given role.  By default, returns the raw data as a string."""
 		return self._data_roles.get(role, None)
+	
+	def to_json(self) -> str:
+		"""Format as JSON object"""
+		return self.data(QtCore.Qt.ItemDataRole.DisplayRole)
 	
 class TRTStringItem(TRTAbstractItem):
 	"""A standard string"""
@@ -55,8 +59,11 @@ class TRTNumericItem(TRTAbstractItem):
 		self._data_roles.update({
 			QtCore.Qt.ItemDataRole.DisplayRole:          str(self._data),
 			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data,
-			QtCore.Qt.ItemDataRole.FontRole:				QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
+			QtCore.Qt.ItemDataRole.FontRole:             QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
 		})
+	
+	def to_json(self) -> int:
+		return self.data(QtCore.Qt.ItemDataRole.UserRole)
 
 class TRTPathItem(TRTAbstractItem):
 	"""A file path"""
@@ -68,10 +75,10 @@ class TRTPathItem(TRTAbstractItem):
 		super()._prepare_data()
 
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole:				self._data.fileName(),
-			QtCore.Qt.ItemDataRole.InitialSortOrderRole: 	avbutils.human_sort(self._data.fileName()),
-			QtCore.Qt.ItemDataRole.DecorationRole:			QtWidgets.QFileIconProvider().icon(self._data),
-			QtCore.Qt.ItemDataRole.ToolTipRole:				QtCore.QDir.toNativeSeparators(self._data.absoluteFilePath()),
+			QtCore.Qt.ItemDataRole.DisplayRole:          self._data.fileName(),
+			QtCore.Qt.ItemDataRole.InitialSortOrderRole: avbutils.human_sort(self._data.fileName()),
+			QtCore.Qt.ItemDataRole.DecorationRole:       QtWidgets.QFileIconProvider().icon(self._data),
+			QtCore.Qt.ItemDataRole.ToolTipRole:          QtCore.QDir.toNativeSeparators(self._data.absoluteFilePath()),
 		})
 
 class TRTDateTimeItem(TRTAbstractItem):
@@ -84,8 +91,15 @@ class TRTDateTimeItem(TRTAbstractItem):
 		super()._prepare_data()
 	
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole:		self._data.toLocalTime().toString("dd MMM yyyy hh:mm:ss AP")
+			QtCore.Qt.ItemDataRole.DisplayRole: self._data.toLocalTime().toString("dd MMM yyyy hh:mm:ss AP")
 		})
+	
+	def to_json(self) -> dict:
+		return {
+			"type": "datetime",
+			"timestamp": self.data(QtCore.Qt.ItemDataRole.UserRole).toSecsSinceEpoch(),
+			"formatted": self.data(QtCore.Qt.ItemDataRole.DisplayRole)
+		}
 
 class TRTTimecodeItem(TRTAbstractItem):
 	"""A timecode"""
@@ -98,10 +112,20 @@ class TRTTimecodeItem(TRTAbstractItem):
 	def _prepare_data(self):
 		super()._prepare_data()
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole:				str(self._data).rjust(12),
-			QtCore.Qt.ItemDataRole.InitialSortOrderRole:	self._data.frame_number,
-			QtCore.Qt.ItemDataRole.FontRole:				QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
+			QtCore.Qt.ItemDataRole.DisplayRole:          str(self._data).rjust(12),
+			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data.frame_number,
+			QtCore.Qt.ItemDataRole.FontRole:             QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
 		})
+	
+	def to_json(self) -> dict:
+		tc = self.data(QtCore.Qt.ItemDataRole.UserRole)
+		return {
+			"type": "timecode",
+			"frames": tc.frame_number,
+			"rate": tc.rate,
+			"formatted": self.data(QtCore.Qt.ItemDataRole.DisplayRole).strip()
+		}
+		
 	
 class TRTDurationItem(TRTTimecodeItem):
 	"""A duration (hh:mm:ss:ff), a subset of timecode"""
@@ -109,7 +133,7 @@ class TRTDurationItem(TRTTimecodeItem):
 	def _prepare_data(self):
 		super()._prepare_data()
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole:	str("-" if str(self._data).startswith("-") else "" + str(self._data).lstrip("-00:")).rjust(12),
+			QtCore.Qt.ItemDataRole.DisplayRole: str("-" if str(self._data).startswith("-") else "" + str(self._data).lstrip("-00:")).rjust(12),
 		})
 
 class TRTFeetFramesItem(TRTAbstractItem):
@@ -123,10 +147,19 @@ class TRTFeetFramesItem(TRTAbstractItem):
 	def _prepare_data(self):
 		super()._prepare_data()
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole:	str(str(self._data // 16) + "+" + str(self._data % 16).zfill(2)).rjust(9),
+			QtCore.Qt.ItemDataRole.DisplayRole:          str(str(self._data // 16) + "+" + str(self._data % 16).zfill(2)).rjust(9),
 			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data,
-			QtCore.Qt.ItemDataRole.FontRole: 	QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont),
+			QtCore.Qt.ItemDataRole.FontRole:             QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont),
 		})
+	
+	def to_json(self) -> dict:
+		return {
+			"type":      "feet_frames",
+			"format":    "35mm",
+			"perfs":     4,
+			"frames":    self.data(QtCore.Qt.ItemDataRole.UserRole),
+			"formatted": self.data(QtCore.Qt.ItemDataRole.DisplayRole).strip()
+		}
 
 class TRTClipColorItem(TRTAbstractItem):
 	"""A clip color"""
@@ -145,13 +178,29 @@ class TRTClipColorItem(TRTAbstractItem):
 	def _prepare_data(self):
 		# Not calling super, would be weird
 
-		color_8b = QtGui.QColor(self._data)
+		color = QtGui.QColor(self._data)
 
 		self._data_roles.update({
 			QtCore.Qt.ItemDataRole.UserRole: self._data,
-			QtCore.Qt.ItemDataRole.ToolTipRole: f"R: {color_8b.red()} G: {color_8b.green()} B: {color_8b.blue()}" if color_8b.isValid() else None,
-			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data.getRgb() if self._data is not None else QtGui.QColor.rgb()
+			QtCore.Qt.ItemDataRole.ToolTipRole: f"R: {color.red()} G: {color.green()} B: {color.blue()}" if color.isValid() else None,
+			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data.getRgb()
 		})
+	
+	def to_json(self) -> dict|None:
+
+		color = self.data(QtCore.Qt.ItemDataRole.UserRole)
+		
+		if not color.isValid():
+			return None
+		
+		color_64 = color.rgba64()
+
+		return {
+			"type": "color",
+			"rgb16": [color_64.red(), color_64.green(), color_64.blue()],
+			"rgb8": [color.red(), color.green(), color.blue()],
+			"hex": self.data(QtCore.Qt.ItemDataRole.UserRole).name()
+		}
 
 class TRTBinLockItem(TRTAbstractItem):
 	"""Bin lock info"""
@@ -166,6 +215,9 @@ class TRTBinLockItem(TRTAbstractItem):
 			QtCore.Qt.ItemDataRole.DisplayRole:    self._data.name if self._data else "",
 			QtCore.Qt.ItemDataRole.DecorationRole: QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.SystemLockScreen if self._data else None)
 		})
+	
+	def to_json(self) -> str|None:
+		return self.data(QtCore.Qt.ItemDataRole.DisplayRole) or None
 
 
 #

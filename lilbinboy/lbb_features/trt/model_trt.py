@@ -631,14 +631,14 @@ class TRTDataModel(QtCore.QObject):
 	#
 	# Item To Dict Methods
 	#
-	def item_to_dict(self, timeline_info:CalculatedTimelineInfo):
+	def item_to_dict(self, timeline_info:CalculatedTimelineInfo) -> dict[str, wdg_sequence_treeview.TRTAbstractItem]:
 
-		self._marker_icons = markers_trt.LBMarkerIcons()
+		_marker_icons = markers_trt.LBMarkerIcons()
 
 		head_marker = timeline_info.markerFFOA()
 		tail_marker = timeline_info.markerLFOA()
 
-		head_icon = self._marker_icons.ICONS.get(head_marker.color.value).pixmap(10,10) if head_marker else QtGui.QPixmap(":/trt/icons/icon_mark_in.svg").scaledToHeight(10, QtCore.Qt.TransformationMode.SmoothTransformation)
+		head_icon = _marker_icons.ICONS.get(head_marker.color.value).pixmap(10,10) if head_marker else QtGui.QPixmap(":/trt/icons/icon_mark_in.svg").scaledToHeight(10, QtCore.Qt.TransformationMode.SmoothTransformation)
 		head_tooltip = str(
 			f"""
 			<b>Matched FFOA Marker Criteria</b>
@@ -653,7 +653,7 @@ class TRTDataModel(QtCore.QObject):
 			"""
 		) if head_marker else "Using global \"Trim Each Head\" value"
 
-		tail_icon = self._marker_icons.ICONS.get(tail_marker.color.value).pixmap(10,10) if tail_marker else QtGui.QPixmap(":/trt/icons/icon_mark_out.svg").scaledToHeight(10, QtCore.Qt.TransformationMode.SmoothTransformation)
+		tail_icon = _marker_icons.ICONS.get(tail_marker.color.value).pixmap(10,10) if tail_marker else QtGui.QPixmap(":/trt/icons/icon_mark_out.svg").scaledToHeight(10, QtCore.Qt.TransformationMode.SmoothTransformation)
 		tail_tooltip = str(
 			f"""
 			<b>Matched LFOA Marker Criteria</b>
