@@ -1,8 +1,17 @@
-from PySide6 import QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 from . import wdg_sequence_treeview, wdg_sequence_trims, wdg_stats, wdg_loadingbar, wdg_sequence_selection
 from ...lbb_common import LBTimelineView, LBSpinBoxTC
 
 class LBBRuntimeMetricsPanel(QtWidgets.QWidget):
+
+	sig_request_add_bins = QtCore.Signal(list)
+	"""Request to add bin paths"""
+
+	sig_request_reload_bins = QtCore.Signal(list)
+	"""Request to reload bins"""
+
+	sig_request_remove_sequences = QtCore.Signal(list)
+	"""Request to remove sequences"""
 
 	def __init__(self, *args, **kwargs):
 
@@ -36,6 +45,7 @@ class LBBRuntimeMetricsPanel(QtWidgets.QWidget):
 		self.btn_snapshots = QtWidgets.QPushButton()
 
 		self._setupWidgets()
+		self._setupSignals()
 	
 	def _setupWidgets(self):
 
@@ -99,3 +109,20 @@ class LBBRuntimeMetricsPanel(QtWidgets.QWidget):
 		# ---
 		# Trim controls
 		self.layout().addWidget(self.trt_trims)
+	
+	def _setupSignals(self):
+
+		self.btn_add_bins.clicked.connect(lambda: self.sig_request_add_bins.emit([]))
+		self.tree_sequenceview.sig_bins_dragged_dropped.connect(self.sig_request_add_bins)
+	
+	@QtCore.Slot(list)
+	def beginLoadingSequences(self, bin_paths:list[str]):
+		"""Beginning to load sequences from bin paths"""
+		
+		self.tree_sequenceview.beginLoadingSequences()
+	
+	@QtCore.Slot()
+	def doneLoadingSequences(self):
+		"""Done loading sequences from bin paths (done with `beginLoadingSequences()`)"""
+
+		self.tree_sequenceview.doneLoadingSequences()
