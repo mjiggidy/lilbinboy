@@ -80,6 +80,9 @@ class TRTPathItem(TRTAbstractItem):
 			QtCore.Qt.ItemDataRole.DecorationRole:       QtWidgets.QFileIconProvider().icon(self._data),
 			QtCore.Qt.ItemDataRole.ToolTipRole:          QtCore.QDir.toNativeSeparators(self._data.absoluteFilePath()),
 		})
+	
+	def to_json(self) -> str:
+		return QtCore.QDir.toNativeSeparators(self.data(QtCore.Qt.ItemDataRole.UserRole).absoluteFilePath())
 
 class TRTDateTimeItem(TRTAbstractItem):
 	"""A datetime entry"""
