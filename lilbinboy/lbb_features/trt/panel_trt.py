@@ -661,7 +661,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.list_trts.doneLoadingSequences()
 		
 		# TEST
-		self.getDisplayedTreeViewData()
+		self.formatSequenceInfoAsJSON()
 	
 	def updateSequenceInfo(self):
 
@@ -933,8 +933,23 @@ class LBTRTCalculator(LBUtilityTab):
 		self.wnd_history.sig_is_closing.connect(self.wnd_history.deleteLater)
 		
 		self.wnd_history.show()
+
+	def sortedCalculatedTimelineInfo(self) -> list[model_trt.TRTDataModel.CalculatedTimelineInfo]:
+		"""Get calculated timeline info sorted by the `QTreeView`"""
+
+		sorted_timeline_info:list[model_trt.TRTDataModel.CalculatedTimelineInfo] = []
+
+		# From QTreeView rows, resolve the index for the original model
+		for rownum in range(self.list_trts.model().rowCount()):
+			src_row_num = self.list_trts.model().mapToSource(
+				self.list_trts.model().index(rownum, 0, QtCore.QModelIndex())
+			).row()
+			sorted_timeline_info.append(self.model().data()[src_row_num])
+		
+		return sorted_timeline_info
+			
 	
-	def getDisplayedTreeViewData(self):
+	def formatSequenceInfoAsJSON(self):
 		"""TEST: Notes for pulling data"""
 
 		# Get header order (and if they're displayed or not)
@@ -945,17 +960,8 @@ class LBTRTCalculator(LBUtilityTab):
 		headers_hidden  = [h for h in headers_all if h not in headers_visible]
 
 		# Get index order and map to OG index for proper display order of original data
-		displayed_sequence_info_list:list[dict] = []
-		for rownum in range(self.list_trts.model().rowCount()):
-			src_row_num = self.list_trts.model().mapToSource(
-				self.list_trts.model().index(rownum, 0, QtCore.QModelIndex())
-			).row()
-			data_calc = self._data_model._data[src_row_num]
-			data_dict = self._data_model.item_to_dict(data_calc)
-			displayed_sequence_info_list.append(data_dict)
+		sorted_timeline_info = self.sortedCalculatedTimelineInfo()
 		
-		# Displayed data IN ORDER
-
 		gen_time = QtCore.QDateTime.currentDateTime()
 
 		json_formatted = {
@@ -995,11 +1001,11 @@ class LBTRTCalculator(LBUtilityTab):
 
 		json_sequences:list[dict] = []
 
-		for sequence_info in displayed_sequence_info_list:
+		for timeline_info in [self.model().item_to_dict(t) for t in sorted_timeline_info]:
 
 			sequence_json = dict()
 			for header in headers_all:
-				sequence_json[header.field()] = sequence_info.get(header.field()).to_json()
+				sequence_json[header.field()] = timeline_info.get(header.field()).to_json()
 			json_sequences.append(sequence_json)
 		
 		json_formatted["sequence_count"] = len(json_sequences)
