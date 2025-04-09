@@ -467,6 +467,10 @@ class TRTDataModel(QtCore.QObject):
 	def trimTotal(self) -> Timecode:
 		"""Final adjustment to the TRT (not reel-specific)"""
 		return self._trim_total
+	
+	def trimTotalFF(self) -> str:
+		"""Final adjustments to TRT in F+F"""
+		return self.tc_to_lfoa(self.trimTotal())
 
 	def setTrimTotal(self, timecode:Timecode):
 		"""Specify final adjustments to the TRT (not reel-specific)"""
