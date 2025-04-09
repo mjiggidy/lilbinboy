@@ -944,24 +944,66 @@ class LBTRTCalculator(LBUtilityTab):
 		headers_all     = self.list_trts.model().sourceModel().headers()
 		headers_hidden  = [h for h in headers_all if h not in headers_visible]
 
-		# Get index order and map to OG index
+		# Get index order and map to OG index for proper display order of original data
 		displayed_sequence_info_list:list[dict] = []
 		for rownum in range(self.list_trts.model().rowCount()):
-			src_row_num = self.list_trts.model().index(rownum, 0, QtCore.QModelIndex()).row()
+			src_row_num = self.list_trts.model().mapToSource(
+				self.list_trts.model().index(rownum, 0, QtCore.QModelIndex())
+			).row()
 			data_calc = self._data_model._data[src_row_num]
 			data_dict = self._data_model.item_to_dict(data_calc)
 			displayed_sequence_info_list.append(data_dict)
 		
 		# Displayed data IN ORDER
 
-		json_formatted:list[dict] = []
+		gen_time = QtCore.QDateTime.currentDateTime()
+
+		json_formatted = {
+			"schema_version": 1,
+			"total_runtime_tc": {
+				"type":"timecode",
+				"frames": self.model().total_runtime().frame_number,
+				"rate": self.model().total_runtime().rate,
+				"formatted": str(self.model().total_runtime()),
+			},
+			"total_runtime_ff": {
+				"type": "feet_frames",
+				"format": "35mm",
+				"perfs": 4,
+				"frames": self.model().total_runtime().frame_number,
+				"formatted": self.model().total_lfoa()
+			},
+			"total_adjustment_tc": {
+				"type": "timecode",
+				"frames": self.model().trimTotal().frame_number,
+				"rate": self.model().trimTotal().rate,
+				"formatted": str(self.model().trimTotal())
+			},
+			"total_adjustment_ff": {
+				"type": "feet_frames",
+				"format": "35mm",
+				"perfs": 4,
+				"frames": self.model().trimTotal().frame_number,
+				"formatted": self.model().trimTotalFF()
+			},
+			"datetime_output": {
+				"type": "datetime",
+				"timestamp": gen_time.toSecsSinceEpoch(),
+				"formatted": gen_time.toLocalTime().toString("dd MMM yyyy hh:mm:ss AP")
+			}
+		}
+
+		json_sequences:list[dict] = []
 
 		for sequence_info in displayed_sequence_info_list:
 
 			sequence_json = dict()
 			for header in headers_all:
 				sequence_json[header.field()] = sequence_info.get(header.field()).to_json()
-			json_formatted.append(sequence_json)
+			json_sequences.append(sequence_json)
+		
+		json_formatted["sequence_count"] = len(json_sequences)
+		json_formatted["sequences"] = json_sequences
 		
 		import json
 		print(json.dumps(json_formatted))
