@@ -1006,4 +1006,4 @@ class LBTRTCalculator(LBUtilityTab):
 		json_formatted["sequences"] = json_sequences
 		
 		import json
-		print(json.dumps(json_formatted))
+		print(json.dumps(json_formatted, indent=4))
