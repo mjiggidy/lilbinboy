@@ -243,12 +243,13 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().set_active_head_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_head"))
 		self.model().set_active_tail_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_tail"))
 
-		self.setColumnsHidden(QtCore.QSettings().value("trt/columns_hidden", [], type=list))
-		self.setFieldOrder(QtCore.QSettings().value("trt/column_field_order", [], type=list))
-		self.setSorting(
-			sort_field = QtCore.QSettings().value("trt/sort_column", "sequence_name"),
-			sort_order = QtCore.QSettings().value("trt/sort_order", QtCore.Qt.SortOrder.AscendingOrder)
-		)
+		self.list_trts.header().restoreState(QtCore.QSettings().value("trt/list_header_State", QtCore.QByteArray))
+		#self.setColumnsHidden(QtCore.QSettings().value("trt/columns_hidden", [], type=list))
+		#self.setFieldOrder(QtCore.QSettings().value("trt/column_field_order", [], type=list))
+		#self.setSorting(
+		#	sort_field = QtCore.QSettings().value("trt/sort_column", "sequence_name"),
+		#	sort_order = QtCore.QSettings().value("trt/sort_order", QtCore.Qt.SortOrder.AscendingOrder)
+		#)
 
 		sequenceSelectionSettings = model_trt.SingleSequenceSelectionProcess()
 		sequenceSelectionSettings.setSortColumn(QtCore.QSettings().value("trt/sequence_selection/sort_column/name","Name"))
@@ -419,8 +420,12 @@ class LBTRTCalculator(LBUtilityTab):
 		# Treeview requests for add/remove bins (drag and drop or selection delete)
 		self.list_trts.sig_bins_dragged_dropped.connect(self.add_bins_from_paths)
 		self.list_trts.sig_remove_rows_requested.connect(self.remove_bins)
-		self.list_trts.sig_field_order_changed.connect(self.saveFieldOrder)
-		self.list_trts.sig_sorting_changed.connect(self.saveSorting)
+		
+		
+		self.list_trts.header().sectionResized.connect(self.saveFieldOrder)
+		self.list_trts.header().sectionMoved.connect(self.saveFieldOrder)
+		#self.list_trts.sig_field_order_changed.connect(self.saveFieldOrder)
+		#self.list_trts.sig_sorting_changed.connect(self.saveSorting)
 
 		# Hook in to the sort/filter model to update the LP timeline view
 		self.list_trts.model().layoutChanged.connect(self.update_lp_layout)
@@ -733,8 +738,9 @@ class LBTRTCalculator(LBUtilityTab):
 	def showColumnChooserWindow(self, *args):
 		wnd_choosecolumns = dlg_choose_columns.TRTChooseColumnsDialog(self.list_trts)
 		
-		for idx, header in enumerate(self._treeview_model.headers()):
-			wnd_choosecolumns.addColumn(header, is_hidden=not self.list_trts.model().filterAcceptsColumn(idx, QtCore.QModelIndex()))
+		for idx in range(self._treeview_model.columnCount()):
+			header = self._treeview_model.headers()[idx]
+			wnd_choosecolumns.addColumn(header, is_hidden=self.list_trts.isColumnHidden(idx))
 		wnd_choosecolumns.sig_columns_chosen.connect(self.processColumnChooserSelection)
 		wnd_choosecolumns.exec()
 	
@@ -748,24 +754,24 @@ class LBTRTCalculator(LBUtilityTab):
 		# Note to self: Sorry, self.
 
 		# Somtimes the indexes come in as strings ugh
-		idx_visible = [int(x) for x in list(idx_visible)]
-		
-		fields_hidden = []
 
-		for idx, header in enumerate(self._treeview_model.headers()):
-			if idx not in idx_visible:
-				fields_hidden.append(header.field())
+		# UPDATE: MAYBE NOT LOL, IN PROGRESS
+
+		idx_visible = [int(x) for x in list(idx_visible)]
+
+		for idx in range(self._treeview_model.columnCount()):
+			self.list_trts.setColumnHidden(idx, idx not in idx_visible)
 		
-		self.setColumnsHidden(fields_hidden)
+		self.saveFieldOrder()
 		
 	
-	@QtCore.Slot(list)
-	def setColumnsHidden(self, fields:list[str]):
-		"""Set hidden columns in proxy view, by field name"""
-		self.list_trts.model().setHiddenFields(fields)
-		[self.list_trts.resizeColumnToContents(col) for col in range(self.list_trts.header().count())]
-		self.saveFieldOrder(self.list_trts.displayedFields())
-		QtCore.QSettings().setValue("trt/columns_hidden", fields)
+	#@QtCore.Slot(list)
+	#def setColumnsHidden(self, fields:list[str]):
+	#	"""Set hidden columns in proxy view, by field name"""
+	#	self.list_trts.model().setHiddenFields(fields)
+	#	[self.list_trts.resizeColumnToContents(col) for col in range(self.list_trts.header().count())]
+	#	self.saveFieldOrder(self.list_trts.displayedFields())
+	#	QtCore.QSettings().setValue("trt/columns_hidden", fields)
 
 	@QtCore.Slot(list)
 	def setFieldOrder(self, field_order:list[str]):
@@ -776,7 +782,11 @@ class LBTRTCalculator(LBUtilityTab):
 	@QtCore.Slot(list)
 	def saveFieldOrder(self, fields:list[str]):
 		"""Save the field order of the Sequence TreeView"""
-		QtCore.QSettings().setValue("trt/column_field_order", fields)
+
+		QtCore.QSettings().setValue("trt/list_header_State", self.list_trts.header().saveState())
+		print("Saved:", str(self.list_trts.header().saveState()))
+		
+		#QtCore.QSettings().setValue("trt/column_field_order", fields)
 #		print(QtCore.QSettings().value("trt/column_field_order"))
 	
 	def choose_folder(self):
