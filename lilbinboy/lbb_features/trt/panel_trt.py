@@ -830,22 +830,26 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		unsorted_durs:list[tuple[str,int]] = []
 
-		for row_idx in range(self.list_trts.model().rowCount()):
-			
-			# NOTE on the try:
-			# Need to test this further -- at one point I messed this up
-			try:
-				prx_index = self.list_trts.model().index(row_idx, 0, QtCore.QModelIndex())
-				main_index = self.list_trts.model().mapToSource(prx_index)
+		timeline_infos = self.sortedCalculatedTimelineInfo()
 
-				mapped_idx = main_index.row()
+		unsorted_durs = [(t.timelineName(), t.timelineTimecodeTrimmed().duration.frame_number) for t in timeline_infos]
 
-				bin_info = self.model().data()[mapped_idx]
-				bin_dict = self.model().item_to_dict(bin_info)
-				unsorted_durs.append((bin_dict.get("sequence_name").data(QtCore.Qt.ItemDataRole.UserRole), bin_dict.get("duration_trimmed_tc").data(QtCore.Qt.ItemDataRole.UserRole).frame_number))
-			except Exception as e:
-				print(f"Proxy out of sync with data ({self.list_trts.model().rowCount()} vs {len(self._data_model.data())})")
-		
+		#for row_idx in range(self.list_trts.model().rowCount()):
+		#	
+		#	# NOTE on the try:
+		#	# Need to test this further -- at one point I messed this up
+		#	try:
+		#		prx_index = self.list_trts.model().index(row_idx, 0, QtCore.QModelIndex())
+		#		main_index = self.list_trts.model().mapToSource(prx_index)
+
+		#		mapped_idx = main_index.row()
+
+		#		bin_info = self.model().data()[mapped_idx]
+		#		bin_dict = self.model().item_to_dict(bin_info)
+		#		unsorted_durs.append((bin_dict.get("sequence_name").data(QtCore.Qt.ItemDataRole.UserRole), bin_dict.get("duration_trimmed_tc").data(QtCore.Qt.ItemDataRole.UserRole).frame_number))
+		#	except Exception as e:
+		#		print(f"Proxy out of sync with data ({self.list_trts.model().rowCount()} vs {len(self._data_model.data())})")
+		#
 		self.view_longplay.setItems(unsorted_durs)
 
 	#

@@ -832,7 +832,7 @@ class TRTViewSortModel(QtCore.QSortFilterProxyModel):
 	
 	def lessThan(self, left_idx:QtCore.QModelIndex, right_idx:QtCore.QModelIndex) -> bool:
 		"""Reimplemented sort function to use InitialSortOrderRole"""
-		return left_idx.data(QtCore.Qt.ItemDataRole.InitialSortOrderRole) < right_idx.data(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
+		return left_idx.data(self.sortRole()) < right_idx.data(self.sortRole())
 	
 	def headers(self) -> list:
 		"""Header items"""
