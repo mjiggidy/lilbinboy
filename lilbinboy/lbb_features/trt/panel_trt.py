@@ -243,9 +243,9 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().set_active_head_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_head"))
 		self.model().set_active_tail_marker_preset_name(QtCore.QSettings().value("trt/trim_marker_preset_tail"))
 
-		self.list_trts.header().restoreState(QtCore.QSettings().value("trt/list_header_State", QtCore.QByteArray))
+		#self.list_trts.header().restoreState(QtCore.QSettings().value("trt/list_header_State", QtCore.QByteArray))
 		#self.setColumnsHidden(QtCore.QSettings().value("trt/columns_hidden", [], type=list))
-		#self.setFieldOrder(QtCore.QSettings().value("trt/column_field_order", [], type=list))
+		self.setFieldVisibility(QtCore.QSettings().value("trt/columns_order", [], type=list), QtCore.QSettings().value("trt/columns_hidden", [], type=list))
 		#self.setSorting(
 		#	sort_field = QtCore.QSettings().value("trt/sort_column", "sequence_name"),
 		#	sort_order = QtCore.QSettings().value("trt/sort_order", QtCore.Qt.SortOrder.AscendingOrder)
@@ -422,8 +422,8 @@ class LBTRTCalculator(LBUtilityTab):
 		self.list_trts.sig_remove_rows_requested.connect(self.remove_bins)
 		
 		
-		self.list_trts.header().sectionResized.connect(self.saveFieldOrder)
-		self.list_trts.header().sectionMoved.connect(self.saveFieldOrder)
+		#self.list_trts.header().sectionResized.connect(self.saveFieldVisibility)
+		self.list_trts.header().sectionMoved.connect(self.saveFieldVisibility)
 		#self.list_trts.sig_field_order_changed.connect(self.saveFieldOrder)
 		#self.list_trts.sig_sorting_changed.connect(self.saveSorting)
 
@@ -762,7 +762,7 @@ class LBTRTCalculator(LBUtilityTab):
 		for idx in range(self._treeview_model.columnCount()):
 			self.list_trts.setColumnHidden(idx, idx not in idx_visible)
 		
-		self.saveFieldOrder()
+		self.saveFieldVisibility()
 		
 	
 	#@QtCore.Slot(list)
@@ -774,19 +774,56 @@ class LBTRTCalculator(LBUtilityTab):
 	#	QtCore.QSettings().setValue("trt/columns_hidden", fields)
 
 	@QtCore.Slot(list)
-	def setFieldOrder(self, field_order:list[str]):
+	def setFieldVisibility(self, field_order:list[str], fields_hidden:list[str]):
 		"""Set the field order"""
-		if field_order:
-			self.list_trts.setFieldOrder(field_order)
+
+		# TODO: MESSY
+		#print("FIELDS HIDDEN IS/ARE:", fields_hidden)
+
+		reversed_field_order = field_order[::-1]
+
+		current_field_order:list[str] = []
+
+		for vis_idx in range(self._treeview_model.columnCount()):
+			logical_idx = self.list_trts.header().logicalIndex(vis_idx)
+			current_field_order.append(self._treeview_model.headers()[logical_idx].field())
+		
+		for field in reversed_field_order:
+			print(f"Move {field} to 0")
+			idx_curr = current_field_order.index(field)
+			self.list_trts.header().moveSection(idx_curr, 0)
+			current_field_order.insert(0, current_field_order.pop(idx_curr))
+
+			if field in fields_hidden:
+		#		print("HIDING", field)
+				
+				self.list_trts.hideColumn(self.list_trts.header().logicalIndex(0))
+
+		
+		
 	
 	@QtCore.Slot(list)
-	def saveFieldOrder(self, fields:list[str]):
-		"""Save the field order of the Sequence TreeView"""
+	def saveFieldVisibility(self):
+		"""Save the field order and visibility of the Sequence TreeView"""
 
-		QtCore.QSettings().setValue("trt/list_header_State", self.list_trts.header().saveState())
-		print("Saved:", str(self.list_trts.header().saveState()))
+		field_order:list[str] = []
+		fields_hidden:list[str] = []
 		
-		#QtCore.QSettings().setValue("trt/column_field_order", fields)
+		for idx in range(self._treeview_model.columnCount()):
+
+			logical_idx = self.list_trts.header().logicalIndex(idx)
+			header_field = self._treeview_model.headers()[logical_idx].field()
+			
+			field_order.append(header_field)
+			
+			if self.list_trts.isColumnHidden(logical_idx):
+				fields_hidden.append(header_field)
+		
+		#print("Field order:", field_order)
+		#print("Field hidden:", fields_hidden)
+		
+		QtCore.QSettings().setValue("trt/columns_order",  field_order)
+		QtCore.QSettings().setValue("trt/columns_hidden", fields_hidden)
 #		print(QtCore.QSettings().value("trt/column_field_order"))
 	
 	def choose_folder(self):
@@ -1026,4 +1063,4 @@ class LBTRTCalculator(LBUtilityTab):
 		json_formatted["sequences"] = json_sequences
 		
 		import json
-		print(json.dumps(json_formatted, indent=4))
+		#print(json.dumps(json_formatted, indent=4))
