@@ -802,7 +802,7 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		return self._headers[section].header_data(role)
 	
 	def headers(self) -> list[wdg_sequence_treeview.TRTTreeViewHeaderItem]:
-		"""Return all header items"""
+		"""Return all `TRTTreeViewHeaderItem` objects in logical order"""
 		return self._headers
 	
 class TRTViewSortModel(QtCore.QSortFilterProxyModel):
