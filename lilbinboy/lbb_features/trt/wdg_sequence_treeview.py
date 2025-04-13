@@ -135,8 +135,21 @@ class TRTDurationItem(TRTTimecodeItem):
 
 	def _prepare_data(self):
 		super()._prepare_data()
+
+		tc_str = str(self._data)
+		is_neg =tc_str.startswith("-")
+		
+		# Get the index of the last separator
+		leading_chars = 1
+		sep = ":"
+		idx_last_sep = tc_str.rfind(sep) - leading_chars
+		pre, post = tc_str[:idx_last_sep], tc_str[idx_last_sep:]
+		pre = pre.lstrip("-00" + sep)
+
+		stripped_tc = f"{'-' if is_neg else ''}{pre}{post}".rjust(12)
+
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole: str("-" if str(self._data).startswith("-") else "" + str(self._data).lstrip("-00:")).rjust(12),
+			QtCore.Qt.ItemDataRole.DisplayRole: stripped_tc,
 		})
 
 class TRTFeetFramesItem(TRTAbstractItem):

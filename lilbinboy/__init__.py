@@ -42,6 +42,9 @@ class LBBApplication(QtWidgets.QApplication):
 		self.setApplicationName(Config.APP_NAME)
 		self.setApplicationVersion(Config.APP_VERSION)
 		self.setWindowIcon(main_icon)
+
+		
+		QtCore.QSettings.setDefaultFormat(QtCore.QSettings.IniFormat)
 		app_settings = QtCore.QSettings()
 
 		# Setup main window
