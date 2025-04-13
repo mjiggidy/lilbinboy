@@ -748,83 +748,61 @@ class LBTRTCalculator(LBUtilityTab):
 	def processColumnChooserSelection(self, idx_visible:list[int]):
 		"""Columns hidden/shown were chosen"""
 
-		# Boy this is really backwards, but basically,
-		# Getting SELECTED column indexes, and then taking
-		# the field names of the inverse of that
-		# Note to self: Sorry, self.
-
-		# Somtimes the indexes come in as strings ugh
-
-		# UPDATE: MAYBE NOT LOL, IN PROGRESS
-
 		idx_visible = [int(x) for x in list(idx_visible)]
 
 		for idx in range(self._treeview_model.columnCount()):
 			self.list_trts.setColumnHidden(idx, idx not in idx_visible)
 		
 		self.saveFieldVisibility()
-		
-	
-	#@QtCore.Slot(list)
-	#def setColumnsHidden(self, fields:list[str]):
-	#	"""Set hidden columns in proxy view, by field name"""
-	#	self.list_trts.model().setHiddenFields(fields)
-	#	[self.list_trts.resizeColumnToContents(col) for col in range(self.list_trts.header().count())]
-	#	self.saveFieldOrder(self.list_trts.displayedFields())
-	#	QtCore.QSettings().setValue("trt/columns_hidden", fields)
 
 	@QtCore.Slot(list)
 	def setFieldVisibility(self, field_order:list[str], fields_hidden:list[str]):
 		"""Set the field order"""
 
-		# TODO: MESSY
-		#print("FIELDS HIDDEN IS/ARE:", fields_hidden)
-
-		reversed_field_order = field_order[::-1]
-
 		current_field_order:list[str] = []
 
+		# First build a list of the current fields in visual position
 		for vis_idx in range(self._treeview_model.columnCount()):
 			logical_idx = self.list_trts.header().logicalIndex(vis_idx)
 			current_field_order.append(self._treeview_model.headers()[logical_idx].field())
 		
-		for field in reversed_field_order:
-			print(f"Move {field} to 0")
+		# Move backwards through desired field order, move that field to the front
+		for field in field_order[::-1]:
+
+			# Skip any unknown/old fields
+			if field not in current_field_order:
+				continue
+			
+			# Move column to front and update our little inner model
 			idx_curr = current_field_order.index(field)
 			self.list_trts.header().moveSection(idx_curr, 0)
 			current_field_order.insert(0, current_field_order.pop(idx_curr))
 
-			if field in fields_hidden:
-		#		print("HIDING", field)
-				
-				self.list_trts.hideColumn(self.list_trts.header().logicalIndex(0))
-
-		
-		
+			# Set visibility
+			self.list_trts.setColumnHidden(self.list_trts.header().logicalIndex(0), field in fields_hidden)
 	
 	@QtCore.Slot(list)
 	def saveFieldVisibility(self):
 		"""Save the field order and visibility of the Sequence TreeView"""
 
-		field_order:list[str] = []
+		fields_order: list[str] = []
 		fields_hidden:list[str] = []
 		
-		for idx in range(self._treeview_model.columnCount()):
+		for vis_idx in range(self._treeview_model.columnCount()):
 
-			logical_idx = self.list_trts.header().logicalIndex(idx)
+			# Get the field name at visual index
+			logical_idx = self.list_trts.header().logicalIndex(vis_idx)
 			header_field = self._treeview_model.headers()[logical_idx].field()
 			
-			field_order.append(header_field)
+			# Save its position
+			fields_order.append(header_field)
 			
+			# Save its visibility
 			if self.list_trts.isColumnHidden(logical_idx):
 				fields_hidden.append(header_field)
 		
-		#print("Field order:", field_order)
-		#print("Field hidden:", fields_hidden)
-		
-		QtCore.QSettings().setValue("trt/columns_order",  field_order)
+		QtCore.QSettings().setValue("trt/columns_order",  fields_order)
 		QtCore.QSettings().setValue("trt/columns_hidden", fields_hidden)
-#		print(QtCore.QSettings().value("trt/column_field_order"))
 	
 	def choose_folder(self):
 		last_bin_path = QtCore.QSettings().value("trt/last_bin")
