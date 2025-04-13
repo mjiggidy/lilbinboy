@@ -752,6 +752,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		for idx in range(self._treeview_model.columnCount()):
 			self.list_trts.setColumnHidden(idx, idx not in idx_visible)
+			self.list_trts.resizeColumnToContents(idx)
 		
 		self.saveFieldVisibility()
 
