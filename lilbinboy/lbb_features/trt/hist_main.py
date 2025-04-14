@@ -232,6 +232,9 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 			if snapshot.field("is_current").value() == 1:
 				history_panel.setModel(self._current_model)
+				history_panel.setTrtFrames(self._live_trt)
+				history_panel.setFinalAdjustmentFrames(self._live_adjust)
+				history_panel.setRate(self._live_rate)
 				self.sig_live_trt_changed.connect(history_panel.setTrtFrames)
 				self.sig_live_total_adjust_changed.connect(history_panel.setFinalAdjustmentFrames)
 				self.sig_live_rate_changed.connect(history_panel.setRate)
@@ -241,9 +244,21 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			history_panel.sig_save_current_requested.connect(self.saveLiveToSnapshot)
 			self._snapshots_parent.layout().addWidget(history_panel)
 	
-	def setCurrentModel(self, datamodel:TRTViewModel):
+	def setLiveModel(self, datamodel:TRTViewModel):
 		"""Set the "Current sequences" model from the main program"""
 		self._current_model = datamodel
+	
+	def setLiveRate(self, rate:int):
+		self._live_rate = rate
+		self.sig_live_rate_changed.emit(self._live_rate)
+
+	def setLiveTotalAdjustment(self, adjustment:timecode.Timecode):
+		self._live_adjust = adjustment
+		self.sig_live_total_adjust_changed.emit(self._live_adjust)
+	
+	def setLiveRuntime(self, trt:timecode.Timecode):
+		self._live_trt = trt
+		self.sig_live_trt_changed.emit(self._live_trt)
 
 	def saveLiveToSnapshot(self, snapshot_name:str, clip_color:QtGui.QColor, rate:int, adjust_frames:int, duration_frames:int, timeline_info_list:list):
 

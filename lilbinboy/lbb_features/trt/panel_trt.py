@@ -853,29 +853,10 @@ class LBTRTCalculator(LBUtilityTab):
 
 	@QtCore.Slot()
 	def update_lp_layout(self):
-		
-		unsorted_durs:list[tuple[str,int]] = []
+		"""Update the LP view to reflect current sequences in QTreeView order"""
 
 		timeline_infos = self.sortedCalculatedTimelineInfo()
-
 		unsorted_durs = [(t.timelineName(), t.timelineTimecodeTrimmed().duration.frame_number) for t in timeline_infos]
-
-		#for row_idx in range(self.list_trts.model().rowCount()):
-		#	
-		#	# NOTE on the try:
-		#	# Need to test this further -- at one point I messed this up
-		#	try:
-		#		prx_index = self.list_trts.model().index(row_idx, 0, QtCore.QModelIndex())
-		#		main_index = self.list_trts.model().mapToSource(prx_index)
-
-		#		mapped_idx = main_index.row()
-
-		#		bin_info = self.model().data()[mapped_idx]
-		#		bin_dict = self.model().item_to_dict(bin_info)
-		#		unsorted_durs.append((bin_dict.get("sequence_name").data(QtCore.Qt.ItemDataRole.UserRole), bin_dict.get("duration_trimmed_tc").data(QtCore.Qt.ItemDataRole.UserRole).frame_number))
-		#	except Exception as e:
-		#		print(f"Proxy out of sync with data ({self.list_trts.model().rowCount()} vs {len(self._data_model.data())})")
-		#
 		self.view_longplay.setItems(unsorted_durs)
 
 	#
@@ -947,17 +928,19 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		
 		self.wnd_history = hist_main.TRTHistoryViewer(db, parent=self)
-		self.wnd_history.setCurrentModel(self._treeview_model) # "Current" as in "Current Sequences in main Program"
-
+		
+		# Set "Current" card to use the same sorted view as our main list_trts
+		self.wnd_history.setLiveModel(self.list_trts.model()) # "Current" as in "Current Sequences in main Program"
+		
 		# Keep er real up to date real nice.  Keep er fed.  Real nice.
-		self.wnd_history.sig_live_trt_changed.emit(self.model().total_runtime())
-		self.model().sig_trt_changed.connect(self.wnd_history.sig_live_trt_changed)
+		self.wnd_history.setLiveRuntime(self.model().total_runtime())
+		self.model().sig_trt_changed.connect(self.wnd_history.setLiveRuntime)
 
-		self.wnd_history.sig_live_total_adjust_changed.emit(self.model().trimTotal())
-		self.model().sig_total_trim_tc_changed.connect(self.wnd_history.sig_live_total_adjust_changed)
+		self.wnd_history.setLiveTotalAdjustment(self.model().trimTotal())
+		self.model().sig_total_trim_tc_changed.connect(self.wnd_history.setLiveTotalAdjustment)
 
-		self.wnd_history.sig_live_rate_changed.emit(self.model().rate())
-		self.model().sig_rate_changed.connect(self.wnd_history.sig_live_rate_changed)
+		self.wnd_history.setLiveRate(self.model().rate())
+		self.model().sig_rate_changed.connect(self.wnd_history.setLiveRate)
 		
 		# Just really try to delete this thing
 		self.wnd_history.sig_is_closing.connect(self.wnd_history.deleteLater)

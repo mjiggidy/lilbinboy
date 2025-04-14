@@ -313,6 +313,11 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 	def setRate(self, rate:int):
 		#print("Ayy I'm setting the thing to ", str(rate))
 		self._rate = rate
+
+		self._summary.add_stat_item(wdg_stats.TRTStatItem(
+			label = "Rate",
+			value = self._rate
+		))
 	
 	def setSnapshotRecord(self, snapshot_record:QtSql.QSqlRecord):
 		
@@ -351,9 +356,9 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 				rate = snapshot_record.field("rate").value()
 			))
 
-			self.setRate(timecode.Timecode(
+			self.setRate(
 				snapshot_record.field("rate").value()
-			))
+			)
 
 		self._tree_sequences.setItemDelegateForColumn(0, SnapshotClipColorDelegate())
 		self._tree_sequences.model().rowsInserted.connect(lambda: print("Ayyy"))
