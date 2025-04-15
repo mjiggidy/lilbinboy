@@ -14,44 +14,84 @@ class SnapshotListProxyModel(QtCore.QIdentityProxyModel):
 		super().__init__(*args, **kwargs)
 
 		self._live_name = "Current Sequences"
-		self._rate = 24
-		self._duration = timecode.Timecode(0, rate=self._rate)
-		self._current_date = QtCore.QDateTime.currentDateTime().toString(QtCore.Qt.DateFormat.ISODate)
+		#self._rate = 24
+		#self._duration = timecode.Timecode(0, rate=self._rate)
+		#self._current_date = QtCore.QDateTime.currentDateTime().toString(QtCore.Qt.DateFormat.ISODate)
+		
+		self._live_record = QtSql.QSqlRecord()
 
-	def rowCount(self, parent:QtCore.QModelIndex) -> int:
+	def rowCount(self, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> int:
 		return super().rowCount(parent) + self.CUSTOM_ITEM_COUNT
 	
-	def index(self, row:int, column:int, /, parent:QtCore.QModelIndex) -> QtCore.QModelIndex:
+	def index(self, row:int, column:int, /, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> QtCore.QModelIndex:
 		# Lemme see
 		if row < self.CUSTOM_ITEM_COUNT:
 			return self.createIndex(row, column, self.record(row))
 		
-		print(super().index(row-self.CUSTOM_ITEM_COUNT, column, parent))
+		#print(super().index(row-self.CUSTOM_ITEM_COUNT, column, parent))
 		return super().index(row-self.CUSTOM_ITEM_COUNT, column, parent)
 	
 	def record(self, row:int) -> QtSql.QSqlRecord:
 		if row < self.CUSTOM_ITEM_COUNT:
-			live_record = self.sourceModel().record()
-			#live_record = QtSql.QSqlRecord()
-			#live_record.append(QtSql.QSqlField("is_current"))
-			live_record.setValue("is_current", True)
-			live_record.setNull("label_color")
-			live_record.setValue("label_name", self._live_name)
-			live_record.setValue("duration_trimmed_tc", str(self._duration))
-			live_record.setValue("datetime_created_local", self._current_date)
-			#print("I return", live_record, live_record.field("label_name").value())
-			return live_record
+			#live_record = self.sourceModel().record()
+#
+			#live_record.setValue("is_current", True)
+			#live_record.setNull("label_color")
+			#live_record.setValue("label_name", self._live_name)
+			#live_record.setValue("duration_trimmed_tc", str(self._duration))
+			#live_record.setValue("datetime_created_local", self._current_date)
+			#
+			#print(live_record.field("label_name"))
+			#
+			return self._live_record
 		return self.sourceModel().record(row-self.CUSTOM_ITEM_COUNT)
 	
 	@QtCore.Slot(int)
 	def setRate(self, rate:int):
-		self._rate = rate
-		self.dataChanged.emit(0,0)
+		self._live_record.setValue("rate", rate)
+		#self._rate = rate
+		self.liveRecordUpdated()
 
 	@QtCore.Slot(timecode.Timecode)
 	def setDuration(self, duration:timecode.Timecode):
-		self._duration = duration
-		self.dataChanged.emit(0,0)
+		self._live_record.setValue("duration_trimmed_tc", str(duration))
+		self._live_record.setValue("duration_trimmed_frames", duration.frame_number)
+		#self._duration = str(duration)
+		self.liveRecordUpdated()
+
+	def sourceModel(self) -> QtSql.QSqlQueryModel:
+		"""Source `QSqlQueryModel"""
+		return super().sourceModel()
+
+	def setSourceModel(self, sourceModel:QtSql.QSqlQueryModel):
+		
+		if not isinstance(sourceModel, QtSql.QSqlQueryModel):
+			raise TypeError("Source model must be of type `QtSql.QSqlQueryModel`")
+		
+		super().setSourceModel(sourceModel)
+		#self.sourceModel().select()
+
+		# Set defaults for live record
+		# NOTE: sourceModel() needs to have already run the Query for this to work (handled in updateModelQueries())
+		self._live_record = self.sourceModel().record()
+
+		self._live_record.setValue("is_current", True)
+		self._live_record.setValue("label_name", "Current")
+		self._live_record.setValue("rate", 24)
+		self._live_record.setValue("duration_trimmed_tc", "00:00:00:00")
+		self._live_record.setValue("duration_trimmed_frames", 0)
+		self._live_record.setValue("datetime_created_local", QtCore.QDateTime.currentDateTime().toString(QtCore.Qt.DateFormat.ISODate))
+		self._live_record.setNull("label_color")
+
+		self.liveRecordUpdated()
+	
+	@QtCore.Slot()
+	def liveRecordUpdated(self):
+		"""Live record was updated"""
+		self._live_record.setValue("datetime_created_local", QtCore.QDateTime.currentDateTime().toString(QtCore.Qt.DateFormat.ISODate))
+		self.dataChanged.emit(self.index(0, 0, QtCore.QModelIndex()), self.index(0, self.columnCount(), QtCore.QModelIndex()))
+
+
 	
 	
 	
@@ -222,9 +262,9 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		
 		model = self._lst_saved.model()
 		selected_indexes = self._lst_saved.selectionModel().selectedIndexes()
-		print(selected_indexes)
+		#print(selected_indexes)
 		
-		selected_snapshots = [model.record(idx.row()) for idx in selected_indexes]
+		selected_snapshots = [model.record(idx.row()) for idx in selected_indexes if idx.column() == 0]
 
 		self.updateSnapshotCard(selected_snapshots)
 		self.updateStatusBarDelta(selected_snapshots)
@@ -371,7 +411,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		
 		id_snapsphot_new = query.lastInsertId()
 
-		print("Inserted into ", id_snapsphot_new)
+	#	print("Inserted into ", id_snapsphot_new)
 		
 		# Copy sequences
 		for timeline_info in timeline_info_list:
@@ -397,7 +437,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 			if not query.exec():
 				print(query.lastError().text())
-			print("I insert")
+	#		print("I insert")
 
 		#if not self._db.commit():
 		#	print(self._db.lastError().text())
@@ -432,6 +472,8 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			ORDER BY is_current DESC, datetime_created DESC
 			""",
 			self._db))
+		
+		self._snapshot_query_proxy_model.setSourceModel(self._snapshot_query_model)
 	
 	def deleteSnapshotLabelsRequested(self):
 		"""User requested to delete snapshots"""
