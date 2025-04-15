@@ -4,6 +4,59 @@ from lilbinboy.lbb_features.trt.hist_snapshot_panel import TRTHistorySnapshotPan
 from lilbinboy.lbb_features.trt.hist_snapshot_list  import TRTHistorySnapshotLabelDelegate
 from PySide6 import QtCore, QtGui, QtWidgets, QtSql
 
+class SnapshotListProxyModel(QtCore.QIdentityProxyModel):
+	"""Snapshot list with "Current" live option up top"""
+
+	CUSTOM_ITEM_COUNT:int = 1
+
+	def __init__(self, *args, **kwargs):
+
+		super().__init__(*args, **kwargs)
+
+		self._live_name = "Current Sequences"
+		self._rate = 24
+		self._duration = timecode.Timecode(0, rate=self._rate)
+		self._current_date = QtCore.QDateTime.currentDateTime().toString(QtCore.Qt.DateFormat.ISODate)
+
+	def rowCount(self, parent:QtCore.QModelIndex) -> int:
+		return super().rowCount(parent) + self.CUSTOM_ITEM_COUNT
+	
+	def index(self, row:int, column:int, /, parent:QtCore.QModelIndex) -> QtCore.QModelIndex:
+		# Lemme see
+		if row < self.CUSTOM_ITEM_COUNT:
+			return self.createIndex(row, column, self.record(row))
+		
+		print(super().index(row-self.CUSTOM_ITEM_COUNT, column, parent))
+		return super().index(row-self.CUSTOM_ITEM_COUNT, column, parent)
+	
+	def record(self, row:int) -> QtSql.QSqlRecord:
+		if row < self.CUSTOM_ITEM_COUNT:
+			live_record = self.sourceModel().record()
+			#live_record = QtSql.QSqlRecord()
+			#live_record.append(QtSql.QSqlField("is_current"))
+			live_record.setValue("is_current", True)
+			live_record.setNull("label_color")
+			live_record.setValue("label_name", self._live_name)
+			live_record.setValue("duration_trimmed_tc", str(self._duration))
+			live_record.setValue("datetime_created_local", self._current_date)
+			#print("I return", live_record, live_record.field("label_name").value())
+			return live_record
+		return self.sourceModel().record(row-self.CUSTOM_ITEM_COUNT)
+	
+	@QtCore.Slot(int)
+	def setRate(self, rate:int):
+		self._rate = rate
+		self.dataChanged.emit(0,0)
+
+	@QtCore.Slot(timecode.Timecode)
+	def setDuration(self, duration:timecode.Timecode):
+		self._duration = duration
+		self.dataChanged.emit(0,0)
+	
+	
+	
+
+
 
 class TRTHistoryViewer(QtWidgets.QWidget):
 	"""View and admire your favorite TRTs of olde"""
@@ -65,29 +118,29 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		):
 			print("Error setting up snapshot sequences: ", self._db.lastError().text())
 
-		if not QtSql.QSqlQuery(self._db).exec(
-			"""
-			INSERT INTO trt_snapshot_labels (
-				"label_name",
-				"rate",
-				"duration_trimmed_frames",
-				"duration_trimmed_tc",
-				"duration_trimmed_ff",
-				"is_current"
-			) SELECT
-				"Current",
-				24,
-				0,
-				"00:00:00:00",
-				"0+00",
-				1
-			WHERE NOT EXISTS (
-				SELECT 1 FROM trt_snapshot_labels
-				WHERE is_current = 1
-			)
-			"""
-		):
-			print("Error adding Current label:", self._db.lastError().text())
+		#if not QtSql.QSqlQuery(self._db).exec(
+		#	"""
+		#	INSERT INTO trt_snapshot_labels (
+		#		"label_name",
+		#		"rate",
+		#		"duration_trimmed_frames",
+		#		"duration_trimmed_tc",
+		#		"duration_trimmed_ff",
+		#		"is_current"
+		#	) SELECT
+		#		"Current",
+		#		24,
+		#		0,
+		#		"00:00:00:00",
+		#		"0+00",
+		#		1
+		#	WHERE NOT EXISTS (
+		#		SELECT 1 FROM trt_snapshot_labels
+		#		WHERE is_current = 1
+		#	)
+		#	"""
+		#):
+		#	print("Error adding Current label:", self._db.lastError().text())
 
 		
 
@@ -100,8 +153,14 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._snapshots_scroll = QtWidgets.QScrollArea()
 
 		self._snapshot_query_model = QtSql.QSqlQueryModel()
+		self._snapshot_query_proxy_model = SnapshotListProxyModel()
+		self._snapshot_query_proxy_model.setSourceModel(self._snapshot_query_model)
+
+		self.sig_live_rate_changed.connect(self._snapshot_query_proxy_model.setRate)
+		self.sig_live_trt_changed.connect(self._snapshot_query_proxy_model.setDuration)
+
 		self._sequence_query_model = QtSql.QSqlQueryModel()
-		self._current_model = TRTViewModel()
+		self._live_model = TRTViewModel()
 		"""The "Current View" model from the main program"""
 
 		self._status_bar = QtWidgets.QStatusBar()
@@ -119,7 +178,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._lst_saved.setSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum, self.sizePolicy().verticalPolicy())
 		self._lst_saved.setItemDelegate(TRTHistorySnapshotLabelDelegate())
 		self._lst_saved.setAlternatingRowColors(True)
-		self._lst_saved.setModel(self._snapshot_query_model)
+		self._lst_saved.setModel(self._snapshot_query_proxy_model)
 		self._lst_saved.selectionModel().selectionChanged.connect(self.snapshotSelectionChanged)
 		self._lst_saved.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
 
@@ -163,6 +222,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		
 		model = self._lst_saved.model()
 		selected_indexes = self._lst_saved.selectionModel().selectedIndexes()
+		print(selected_indexes)
 		
 		selected_snapshots = [model.record(idx.row()) for idx in selected_indexes]
 
@@ -231,7 +291,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 			history_panel.setSnapshotRecord(snapshot)
 
 			if snapshot.field("is_current").value() == 1:
-				history_panel.setModel(self._current_model)
+				history_panel.setModel(self._live_model)
 				history_panel.setTrtFrames(self._live_trt)
 				history_panel.setFinalAdjustmentFrames(self._live_adjust)
 				history_panel.setRate(self._live_rate)
@@ -246,7 +306,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 	
 	def setLiveModel(self, datamodel:TRTViewModel):
 		"""Set the "Current sequences" model from the main program"""
-		self._current_model = datamodel
+		self._live_model = datamodel
 	
 	def setLiveRate(self, rate:int):
 		self._live_rate = rate
