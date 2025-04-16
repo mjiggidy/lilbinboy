@@ -28,8 +28,9 @@ class SnapshotListProxyModel(QtCore.QIdentityProxyModel):
 		
 		super().setSourceModel(sourceModel)
 
-		# NOTE: sourceModel() needs to have already run the Query
-		# to provide a valid record here.  Handled in the controller via updateModelQueries()
+		# Get an empty record with rows defined for the table so we can fill it in
+		# NOTE: sourceModel() needs to have already run the Query to provide a valid record here.
+		# Handled in the controller via updateModelQueries()
 		self._live_record = self.sourceModel().query().record()
 		self._setLiveRecordDefaults()
 	
@@ -52,7 +53,7 @@ class SnapshotListProxyModel(QtCore.QIdentityProxyModel):
 	# ---
 	# Adding that live record up top there
 	# ---
-	def rowCount(self, /, parent:QtCore.QModelIndex) -> int:
+	def rowCount(self, /, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> int:
 		"""Row Count which includes the live row"""
 
 		return super().rowCount(parent) + self.CUSTOM_ITEM_COUNT
@@ -65,7 +66,7 @@ class SnapshotListProxyModel(QtCore.QIdentityProxyModel):
 			return QtCore.QModelIndex()
 		
 		# Otherwise offset the row by the live record count
-		return self.sourceModel().index(proxyIndex.row() - self.CUSTOM_ITEM_COUNT, proxyIndex.column(), QtCore.QModelIndex())
+		return self.sourceModel().index(proxyIndex.row() - self.CUSTOM_ITEM_COUNT, proxyIndex.column())
 	
 	def mapFromSource(self, sourceIndex:QtCore.QModelIndex) -> QtCore.QModelIndex:
 		"""Adjust source indexes to offset for live records"""
@@ -76,22 +77,36 @@ class SnapshotListProxyModel(QtCore.QIdentityProxyModel):
 		return self.createIndex(sourceIndex.row() + self.CUSTOM_ITEM_COUNT, sourceIndex.column())
 	
 	def data(self, proxyIndex:QtCore.QModelIndex, /, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole):
+		"""Return data, including the live row"""
+
 		if not proxyIndex.isValid():
 			return None
 		
 		if proxyIndex.row() < self.CUSTOM_ITEM_COUNT:
-			return self._live_record.field(self.sourceModel().headerData(proxyIndex.column()))
+			if role == QtCore.Qt.ItemDataRole.DisplayRole:
+				return self._live_record.value(self.sourceModel().headerData(proxyIndex.column(), QtCore.Qt.Orientation.Horizontal, role=QtCore.Qt.ItemDataRole.DisplayRole))
 		
 		else:
 			return super().data(proxyIndex, role)
 	
-	def index(self, row:int, column:int, /, parent:QtCore.QModelIndex) -> QtCore.QModelIndex:
+	def index(self, row:int, column:int, /, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> QtCore.QModelIndex:
+		"""Create a valid index for the live row; pass through the rest"""
+		
+		if parent.isValid() or not self.hasIndex(row, column, parent):
+			return QtCore.QModelIndex()
 		
 		if not parent.isValid() and row < self.CUSTOM_ITEM_COUNT:
 			return self.createIndex(row, column, parent)
 		
-		
 		return super().index(row-self.CUSTOM_ITEM_COUNT, column, parent)
+	
+	def flags(self, index:QtCore.QModelIndex) -> QtCore.Qt.ItemFlag:
+		"""Set standard flags for the live record; passthrough the rest"""
+
+		if index.row() < self.CUSTOM_ITEM_COUNT:
+			return QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled
+
+		return super().flags(index)
 
 	# ---
 	# Live record updates
@@ -134,11 +149,6 @@ class SnapshotListProxyModel(QtCore.QIdentityProxyModel):
 		self._live_record.setValue("datetime_created_local", QtCore.QDateTime.currentDateTime().toString(QtCore.Qt.DateFormat.ISODate))
 		
 		self.dataChanged.emit(self.index(0, 0, QtCore.QModelIndex()), self.index(0, self.columnCount()-1, QtCore.QModelIndex()))
-	
-	
-	
-
-
 
 class TRTHistoryViewer(QtWidgets.QWidget):
 	"""View and admire your favorite TRTs of olde"""
