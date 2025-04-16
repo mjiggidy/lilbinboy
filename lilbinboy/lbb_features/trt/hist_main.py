@@ -8,72 +8,114 @@ class SnapshotListProxyModel(QtCore.QIdentityProxyModel):
 	"""Snapshot list with "Current" live option up top"""
 
 	CUSTOM_ITEM_COUNT:int = 1
+	"""Number of custom records at the top of the view"""
 
 	def __init__(self, *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
 
-		self._live_name = "Current Sequences"
-		#self._rate = 24
-		#self._duration = timecode.Timecode(0, rate=self._rate)
-		#self._current_date = QtCore.QDateTime.currentDateTime().toString(QtCore.Qt.DateFormat.ISODate)
-		
 		self._live_record = QtSql.QSqlRecord()
+		self._live_name = "Current Sequences"
 
-	def rowCount(self, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> int:
-		return super().rowCount(parent) + self.CUSTOM_ITEM_COUNT
-	
-	def index(self, row:int, column:int, /, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> QtCore.QModelIndex:
-		# Lemme see
-		if row < self.CUSTOM_ITEM_COUNT:
-			return self.createIndex(row, column, self.record(row))
-		
-		#print(super().index(row-self.CUSTOM_ITEM_COUNT, column, parent))
-		return super().index(row-self.CUSTOM_ITEM_COUNT, column, parent)
-	
-	def record(self, row:int) -> QtSql.QSqlRecord:
-		if row < self.CUSTOM_ITEM_COUNT:
-			#live_record = self.sourceModel().record()
-#
-			#live_record.setValue("is_current", True)
-			#live_record.setNull("label_color")
-			#live_record.setValue("label_name", self._live_name)
-			#live_record.setValue("duration_trimmed_tc", str(self._duration))
-			#live_record.setValue("datetime_created_local", self._current_date)
-			#
-			#print(live_record.field("label_name"))
-			#
-			return self._live_record
-		return self.sourceModel().record(row-self.CUSTOM_ITEM_COUNT)
-	
-	@QtCore.Slot(int)
-	def setRate(self, rate:int):
-		self._live_record.setValue("rate", rate)
-		#self._rate = rate
-		self.liveRecordUpdated()
-
-	@QtCore.Slot(timecode.Timecode)
-	def setDuration(self, duration:timecode.Timecode):
-		self._live_record.setValue("duration_trimmed_tc", str(duration))
-		self._live_record.setValue("duration_trimmed_frames", duration.frame_number)
-		#self._duration = str(duration)
-		self.liveRecordUpdated()
-
-	def sourceModel(self) -> QtSql.QSqlQueryModel:
-		"""Source `QSqlQueryModel"""
-		return super().sourceModel()
-
+	# ---
+	# Source model as QSqlQueryModel
+	# ---
 	def setSourceModel(self, sourceModel:QtSql.QSqlQueryModel):
+		"""Set the source `QtSql.QSqlQueryModel` model"""
 		
 		if not isinstance(sourceModel, QtSql.QSqlQueryModel):
 			raise TypeError("Source model must be of type `QtSql.QSqlQueryModel`")
 		
 		super().setSourceModel(sourceModel)
-		#self.sourceModel().select()
 
-		# Set defaults for live record
-		# NOTE: sourceModel() needs to have already run the Query for this to work (handled in updateModelQueries())
-		self._live_record = self.sourceModel().record()
+		# NOTE: sourceModel() needs to have already run the Query
+		# to provide a valid record here.  Handled in the controller via updateModelQueries()
+		self._live_record = self.sourceModel().query().record()
+		self._setLiveRecordDefaults()
+	
+	def sourceModel(self) -> QtSql.QSqlQueryModel:
+		"""Returns, specifically, a QSqlQueryModel"""
+
+		return super().sourceModel()
+
+	# ---
+	# QSqlQueryModel compliance
+	# ---
+	def record(self, row:int) -> QtSql.QSqlRecord:
+		"""Return an SQL record for a given row"""
+
+		if row < self.CUSTOM_ITEM_COUNT:
+			return self._live_record
+
+		return self.sourceModel().record(row-self.CUSTOM_ITEM_COUNT)
+	
+	# ---
+	# Adding that live record up top there
+	# ---
+	def rowCount(self, /, parent:QtCore.QModelIndex) -> int:
+		"""Row Count which includes the live row"""
+
+		return super().rowCount(parent) + self.CUSTOM_ITEM_COUNT
+	
+	def mapToSource(self, proxyIndex:QtCore.QModelIndex) -> QtCore.QModelIndex:
+		"""Map back to source model, accounting for offsets from live records"""
+
+		# Live row doesn't exist in source
+		if not proxyIndex.isValid() or proxyIndex.row() < self.CUSTOM_ITEM_COUNT:
+			return QtCore.QModelIndex()
+		
+		# Otherwise offset the row by the live record count
+		return self.sourceModel().index(proxyIndex.row() - self.CUSTOM_ITEM_COUNT, proxyIndex.column(), QtCore.QModelIndex())
+	
+	def mapFromSource(self, sourceIndex:QtCore.QModelIndex) -> QtCore.QModelIndex:
+		"""Adjust source indexes to offset for live records"""
+
+		if not sourceIndex.isValid():
+			return QtCore.QModelIndex()
+		
+		return self.createIndex(sourceIndex.row() + self.CUSTOM_ITEM_COUNT, sourceIndex.column())
+	
+	def data(self, proxyIndex:QtCore.QModelIndex, /, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole):
+		if not proxyIndex.isValid():
+			return None
+		
+		if proxyIndex.row() < self.CUSTOM_ITEM_COUNT:
+			return self._live_record.field(self.sourceModel().headerData(proxyIndex.column()))
+		
+		else:
+			return super().data(proxyIndex, role)
+	
+	def index(self, row:int, column:int, /, parent:QtCore.QModelIndex) -> QtCore.QModelIndex:
+		
+		if not parent.isValid() and row < self.CUSTOM_ITEM_COUNT:
+			return self.createIndex(row, column, parent)
+		
+		
+		return super().index(row-self.CUSTOM_ITEM_COUNT, column, parent)
+
+	# ---
+	# Live record updates
+	# ---
+	@QtCore.Slot(int)
+	def setRate(self, rate:int):
+		"""Set the current rate of the live record"""
+
+		self._live_record.setValue("rate", rate)
+
+		self.liveRecordUpdated()
+
+	@QtCore.Slot(timecode.Timecode)
+	def setDuration(self, duration:timecode.Timecode):
+		"""Set the current duration of the live record"""
+
+		self._live_record.setValue("duration_trimmed_tc", str(duration))
+		self._live_record.setValue("duration_trimmed_frames", duration.frame_number)
+
+		self.liveRecordUpdated()
+
+	@QtCore.Slot()
+	def _setLiveRecordDefaults(self):
+		"""Set the default fields on the live record"""
 
 		self._live_record.setValue("is_current", True)
 		self._live_record.setValue("label_name", "Current")
@@ -88,10 +130,10 @@ class SnapshotListProxyModel(QtCore.QIdentityProxyModel):
 	@QtCore.Slot()
 	def liveRecordUpdated(self):
 		"""Live record was updated"""
+
 		self._live_record.setValue("datetime_created_local", QtCore.QDateTime.currentDateTime().toString(QtCore.Qt.DateFormat.ISODate))
-		self.dataChanged.emit(self.index(0, 0, QtCore.QModelIndex()), self.index(0, self.columnCount(), QtCore.QModelIndex()))
-
-
+		
+		self.dataChanged.emit(self.index(0, 0, QtCore.QModelIndex()), self.index(0, self.columnCount()-1, QtCore.QModelIndex()))
 	
 	
 	
@@ -265,7 +307,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		#print(selected_indexes)
 		
 		selected_snapshots = [model.record(idx.row()) for idx in selected_indexes if idx.column() == 0]
-
+		print(selected_snapshots)
 		self.updateSnapshotCard(selected_snapshots)
 		self.updateStatusBarDelta(selected_snapshots)
 	
@@ -294,9 +336,9 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._status_bar.showMessage(f"Duration from {snap_first.field("label_name").value()} to {snap_last.field("label_name").value()} changed by {pos}{timecode_delta}")
 
 	@QtCore.Slot(list)
-	def updateSnapshotCard(self, snapshots:list[QtSql.QSqlRecord]):
+	def updateSnapshotCard(self, records:list[QtSql.QSqlRecord]):
 
-		snapshot_ids = [row.field("id_snapshot").value() for row in snapshots]
+		snapshot_ids = [record.field("id_snapshot").value() for record in records]
 		#print(snapshot_ids)
 
 		query = QtSql.QSqlQuery(self._db)
@@ -323,25 +365,29 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		# Clear old panels
 		while self._snapshots_parent.layout().count():
+			self._snapshots_parent.layout().itemAt(0).widget().deleteLater()
 			self._snapshots_parent.layout().itemAt(0).widget().setParent(None)
 
 		# Load in new panels
-		for snapshot in snapshots:
+		for snapshot in records:
 			history_panel = TRTHistorySnapshotPanel()
 			history_panel.setSnapshotRecord(snapshot)
 
 			if snapshot.field("is_current").value() == 1:
 				history_panel.setModel(self._live_model)
+				
 				history_panel.setTrtFrames(self._live_trt)
 				history_panel.setFinalAdjustmentFrames(self._live_adjust)
 				history_panel.setRate(self._live_rate)
+				
+				history_panel.sig_save_current_requested.connect(self.saveLiveToSnapshot)
+				
 				self.sig_live_trt_changed.connect(history_panel.setTrtFrames)
 				self.sig_live_total_adjust_changed.connect(history_panel.setFinalAdjustmentFrames)
 				self.sig_live_rate_changed.connect(history_panel.setRate)
 			else:
 				history_panel.setModel(self._sequence_query_model)
 				
-			history_panel.sig_save_current_requested.connect(self.saveLiveToSnapshot)
 			self._snapshots_parent.layout().addWidget(history_panel)
 	
 	def setLiveModel(self, datamodel:TRTViewModel):
