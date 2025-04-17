@@ -272,6 +272,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._lst_saved.setAlternatingRowColors(True)
 		self._lst_saved.setModel(self._snapshot_query_proxy_model)
 		self._lst_saved.selectionModel().selectionChanged.connect(self.snapshotSelectionChanged)
+		self._lst_saved.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
 		self._lst_saved.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
 
 		self._splt_pane.addWidget(self._lst_saved)
@@ -311,13 +312,12 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 	@QtCore.Slot(QtCore.QItemSelection, QtCore.QItemSelection)
 	def snapshotSelectionChanged(self, selected:QtCore.QItemSelection, deselected:QtCore.QItemSelection):
 		
-		
 		model = self._lst_saved.model()
-		selected_indexes = self._lst_saved.selectionModel().selectedIndexes()
-		#print(selected_indexes)
 		
-		selected_snapshots = [model.record(idx.row()) for idx in selected_indexes if idx.column() == 0]
-		print(selected_snapshots)
+		# NOTE: selectionBehavor needs to be SelectRows for this to work (and it is. I'm just sayin.)
+		selected_rows = [idx.row() for idx in self._lst_saved.selectionModel().selectedRows()]	
+		selected_snapshots = [model.record(row) for row in selected_rows]
+		
 		self.updateSnapshotCard(selected_snapshots)
 		self.updateStatusBarDelta(selected_snapshots)
 	
