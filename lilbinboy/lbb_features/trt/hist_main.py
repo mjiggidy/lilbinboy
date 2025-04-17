@@ -274,6 +274,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._lst_saved.selectionModel().selectionChanged.connect(self.snapshotSelectionChanged)
 		self._lst_saved.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
 		self._lst_saved.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
+		self._lst_saved.model().dataChanged.connect(lambda: self.updateStatusBarDelta(self.getSelectedSnapshotRecords()))
 
 		self._splt_pane.addWidget(self._lst_saved)
 
@@ -309,14 +310,17 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self.sig_is_closing.emit()
 		event.accept()
 
+	def getSelectedSnapshotRecords(self) -> QtSql.QSqlRecord:
+		"""Resolve the selected records from the list"""
+
+		# NOTE: selectionBehavor needs to be SelectRows for this to work (...and it is... but... I'm just sayin. y'know.)
+		selected_rows = [idx.row() for idx in self._lst_saved.selectionModel().selectedRows()]	
+		return [self._lst_saved.model().record(row) for row in selected_rows]
+
 	@QtCore.Slot(QtCore.QItemSelection, QtCore.QItemSelection)
 	def snapshotSelectionChanged(self, selected:QtCore.QItemSelection, deselected:QtCore.QItemSelection):
 		
-		model = self._lst_saved.model()
-		
-		# NOTE: selectionBehavor needs to be SelectRows for this to work (and it is. I'm just sayin.)
-		selected_rows = [idx.row() for idx in self._lst_saved.selectionModel().selectedRows()]	
-		selected_snapshots = [model.record(row) for row in selected_rows]
+		selected_snapshots = self.getSelectedSnapshotRecords()
 		
 		self.updateSnapshotCard(selected_snapshots)
 		self.updateStatusBarDelta(selected_snapshots)
@@ -534,11 +538,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 	def deleteSnapshotLabelsRequested(self):
 		"""User requested to delete snapshots"""
 
-		model = self._lst_saved.model()
-		
-		# NOTE: selectionBehavor needs to be SelectRows for this to work (and it is. I'm just sayin.)
-		selected_rows = [idx.row() for idx in self._lst_saved.selectionModel().selectedRows()]	
-		selected_snapshots = [model.record(row) for row in selected_rows]
+		selected_snapshots = self.getSelectedSnapshotRecords()
 
 		records_selected = [snap for snap in selected_snapshots if not snap.field("is_current").value()]
 
