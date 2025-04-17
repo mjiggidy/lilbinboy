@@ -534,8 +534,13 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 	def deleteSnapshotLabelsRequested(self):
 		"""User requested to delete snapshots"""
 
-		model = self._snapshot_query_model
-		records_selected = [model.record(r.row()) for r in self._lst_saved.selectedIndexes() if not bool(model.record(r.row()).field("is_current").value())]
+		model = self._lst_saved.model()
+		
+		# NOTE: selectionBehavor needs to be SelectRows for this to work (and it is. I'm just sayin.)
+		selected_rows = [idx.row() for idx in self._lst_saved.selectionModel().selectedRows()]	
+		selected_snapshots = [model.record(row) for row in selected_rows]
+
+		records_selected = [snap for snap in selected_snapshots if not snap.field("is_current").value()]
 
 		if not records_selected:
 			QtWidgets.QApplication.beep()
