@@ -1,4 +1,5 @@
 import timecode
+from .db_hist_sqlite import SnapshotDatabaseManager
 from lilbinboy.lbb_features.trt.model_trt import TRTViewModel
 from lilbinboy.lbb_features.trt.hist_snapshot_panel import TRTHistorySnapshotPanel, TRTHistorySnapshotDatabaseProxyModel
 from lilbinboy.lbb_features.trt.hist_snapshot_list  import TRTHistorySnapshotLabelDelegate
@@ -169,71 +170,9 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self.setWindowFlag(QtCore.Qt.WindowType.Tool)
 		self.setMinimumSize(QtCore.QSize(600,300))
 
-		self._db = database
-		if not QtSql.QSqlQuery(self._db).exec("PRAGMA foreign_keys = ON;"):
-			print("Error enabling foregin keys: ", self._db.lastError().text())
+		self._db = SnapshotDatabaseManager(database)
 
-		if not QtSql.QSqlQuery(self._db).exec(
-			"""
-			CREATE TABLE IF NOT EXISTS "trt_snapshot_labels" (
-				"id_snapshot"	INTEGER NOT NULL UNIQUE,
-				"label_name"	TEXT NOT NULL,
-				"datetime_created"	TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-				"label_color"	TEXT,
-				"rate"	INTEGER NOT NULL DEFAULT 24,
-				"duration_trimmed_frames"	INTEGER NOT NULL DEFAULT 0,
-				"duration_trimmed_tc"	TEXT NOT NULL DEFAULT '00:00:00:00',
-				"duration_trimmed_ff"	TEXT NOT NULL DEFAULT '0+00',
-				"duration_offset_frames"	INTEGER NOT NULL DEFAULT 0,
-				"is_current"	INTEGER NOT NULL DEFAULT 0,
-				PRIMARY KEY("id_snapshot" AUTOINCREMENT)
-			)
-			"""
-		):
-			print("Error setting up snapshot labels: ", self._db.lastError().text())
-
-		if not QtSql.QSqlQuery(self._db).exec(
-			"""
-			CREATE TABLE IF NOT EXISTS "trt_snapshot_sequences" (
-				"id_snapshot"	INTEGER NOT NULL,
-				"id_sequence"	INTEGER NOT NULL UNIQUE,
-				"sequence_color"	TEXT,
-				"sequence_name"	TEXT NOT NULL,
-				"duration_trimmed_frames"	INTEGER NOT NULL,
-				"duration_trimmed_tc"	TEXT NOT NULL,
-				"duration_trimmed_ff"	TEXT NOT NULL,
-				"datetime_created"	TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-				PRIMARY KEY("id_sequence" AUTOINCREMENT),
-				FOREIGN KEY("id_snapshot") REFERENCES "trt_snapshot_labels"("id_snapshot") ON DELETE CASCADE
-			)
-			"""
-		):
-			print("Error setting up snapshot sequences: ", self._db.lastError().text())
-
-		#if not QtSql.QSqlQuery(self._db).exec(
-		#	"""
-		#	INSERT INTO trt_snapshot_labels (
-		#		"label_name",
-		#		"rate",
-		#		"duration_trimmed_frames",
-		#		"duration_trimmed_tc",
-		#		"duration_trimmed_ff",
-		#		"is_current"
-		#	) SELECT
-		#		"Current",
-		#		24,
-		#		0,
-		#		"00:00:00:00",
-		#		"0+00",
-		#		1
-		#	WHERE NOT EXISTS (
-		#		SELECT 1 FROM trt_snapshot_labels
-		#		WHERE is_current = 1
-		#	)
-		#	"""
-		#):
-		#	print("Error adding Current label:", self._db.lastError().text())
-
+		self._db.initializeDatabase()
 		
 
 		#self.setWindowFlag(QtCore.Qt.WindowType.Tool)
@@ -352,28 +291,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 	@QtCore.Slot(list)
 	def updateSnapshotCard(self, records:list[QtSql.QSqlRecord]):
 
-		snapshot_ids = [record.field("id_snapshot").value() for record in records]
-		#print(snapshot_ids)
-
-		query = QtSql.QSqlQuery(self._db)
-
-		query_placeholders = ",".join(["?"]*len(snapshot_ids))
-		query.prepare(
-			f"""
-			SELECT
-				"id_snapshot",
-				"sequence_color",
-				"sequence_name",
-				"duration_trimmed_tc",
-				"duration_trimmed_ff",
-				"duration_trimmed_frames"
-			FROM trt_snapshot_sequences
-			WHERE id_snapshot IN ({query_placeholders})
-			"""
-		)
-		for place, snapshot_id in enumerate(snapshot_ids):
-			query.bindValue(place, snapshot_id)
-		query.exec()
+		query = self._db.getSnapshotRecords(records)
 
 		self._sequence_query_model.setQuery(query)
 
@@ -422,116 +340,23 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 	def saveLiveToSnapshot(self, snapshot_name:str, clip_color:QtGui.QColor, rate:int, adjust_frames:int, duration_frames:int, timeline_info_list:list):
 
-		query = QtSql.QSqlQuery(self._db)
-
-		if clip_color.isValid():
-			clip_color_str = ",".join(str(x) for x in [
-				clip_color.red(),
-				clip_color.green(),
-				clip_color.blue()
-			])
-		else:
-			clip_color_str = None
-
-		# Copy "Current" snapshot label to new label
-		query.prepare(
-			"""
-			INSERT INTO trt_snapshot_labels (
-				"label_name",
-				"label_color",
-				"rate",
-				"duration_trimmed_frames",
-				"duration_trimmed_tc",
-				"duration_trimmed_ff",
-				"duration_offset_frames",
-				"is_current"
-			)
-
-			VALUES (
-				?,
-				?,
-				?,
-				?,
-				?,
-				?,
-				?,
-				0
-			)
-			"""
+		id_snapsphot_new = self._db.saveLiveToSnapshot(snapshot_name,
+			clip_color,
+			rate,
+			adjust_frames,
+			duration_frames,
+			timeline_info_list
 		)
-		query.addBindValue(snapshot_name)
-		query.addBindValue(clip_color_str)
-		query.addBindValue(rate)
-		query.addBindValue(duration_frames)
-		query.addBindValue(str(timecode.Timecode(duration_frames, rate=rate)))
-		query.addBindValue(str(duration_frames)) # TODO: F+F
-		query.addBindValue(adjust_frames)
-		if not query.exec():
-			print(query.lastError().text())
-		
-		id_snapsphot_new = query.lastInsertId()
-
-	#	print("Inserted into ", id_snapsphot_new)
-		
-		# Copy sequences
-		for timeline_info in timeline_info_list:
-			query.prepare(
-				"""
-				INSERT INTO trt_snapshot_sequences(
-					"id_snapshot",
-					"sequence_color",
-					"sequence_name",
-					"duration_trimmed_frames",
-					"duration_trimmed_tc",
-					"duration_trimmed_ff"
-				) VALUES (
-					?,?,?,?,?,?
-				)
-				""")
-			query.addBindValue(id_snapsphot_new)
-			query.addBindValue(timeline_info.clip_color)
-			query.addBindValue(timeline_info.name)
-			query.addBindValue(timeline_info.duration_frames)
-			query.addBindValue(timeline_info.duration_tc)
-			query.addBindValue(timeline_info.duration_ff)
-
-			if not query.exec():
-				print(query.lastError().text())
-	#		print("I insert")
-
-		#if not self._db.commit():
-		#	print(self._db.lastError().text())
-		#print(self._db.isOpen())
-
 
 		self.updateModelQueries()
 
 		for row in range(self._lst_saved.model().rowCount()):
 			if self._lst_saved.model().record(row).field("id_snapshot").value() == id_snapsphot_new:
 				self._lst_saved.setCurrentIndex(self._lst_saved.model().index(row,0))
-				print("Yee")
 				break
-		#self._snapshot_query_model.setQuery("SELECT * FROM trt_snapshot_labels", QtSql.QSqlDatabase.database("trt"))
-		#self._sequence_query_model.setQuery(self._sequence_query_model.query(), QtSql.QSqlDatabase.database("trt"))
 
 	def updateModelQueries(self):
-		self._snapshot_query_model.setQuery(QtSql.QSqlQuery(
-			"""
-			SELECT
-				"id_snapshot",
-				"label_name",
-				"label_color",
-				"rate",
-				"duration_trimmed_frames",
-				"duration_trimmed_tc",
-				"duration_trimmed_ff",
-				"duration_offset_frames",
-				"is_current",
-				datetime(datetime_created, "localtime") as "datetime_created_local"
-			FROM trt_snapshot_labels
-			ORDER BY is_current DESC, datetime_created DESC
-			""",
-			self._db))
+		self._snapshot_query_model.setQuery(self._db.getModelQuery())
 		
 		self._snapshot_query_proxy_model.setSourceModel(self._snapshot_query_model)
 	
@@ -559,27 +384,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 	def deleteSnapshotLabels(self, records:list[QtSql.QSqlRecord]):
 		"""Delete a snapshot"""
 
-		if not records:
-			return
-
-		id_snapshots = [record.field("id_snapshot").value() for record in records]
-
-		query = QtSql.QSqlQuery(self._db)
-
-		# Build placeholders
-		placeholders = ",".join(["?"] * len(id_snapshots))
-
-		query.prepare(
-			f"""
-			DELETE FROM trt_snapshot_labels
-			WHERE id_snapshot IN ({placeholders})
-			"""
-		)
-		for id_snapshot in id_snapshots:
-			query.addBindValue(id_snapshot)
-		
-		if not query.exec():
-			print(query.lastError().text())
+		self._db.deleteSnapshotRecords(records)
 
 		self.updateModelQueries()
 		self.updateSnapshotCard([])
