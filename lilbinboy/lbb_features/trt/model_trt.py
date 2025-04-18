@@ -712,7 +712,7 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		self._headers:list[wdg_sequence_treeview.TRTTreeViewHeaderItem]   = headers_list or []
 
 		self.setHeaderItems([
-			wdg_sequence_treeview.TRTTreeViewHeaderItem("","sequence_color", display_delegate=wdg_sequence_treeview.TRTClipColorDisplayDelegate()),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Sequence Color","sequence_color", show_label=False, display_delegate=wdg_sequence_treeview.TRTClipColorDisplayDelegate),
 			wdg_sequence_treeview.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
 			wdg_sequence_treeview.TRTTreeViewHeaderItem("Full Duration (TC)","duration_total_tc", is_accumulating_value=True),
 			wdg_sequence_treeview.TRTTreeViewHeaderItem("Full Duration (F+F)","duration_total_ff", is_accumulating_value=True),

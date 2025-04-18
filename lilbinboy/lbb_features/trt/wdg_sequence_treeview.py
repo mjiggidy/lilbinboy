@@ -242,39 +242,59 @@ class TRTBinLockItem(TRTAbstractItem):
 
 class TRTTreeViewHeaderItem(QtCore.QObject):
 
-	def __init__(self, text:str, key:str, is_accumulating_value:bool=False, display_delegate:QtWidgets.QStyledItemDelegate|None=None):
+	def __init__(self, text:str, key:str, /, show_label:bool=True, is_accumulating_value:bool=False, is_frozen_header:bool=False, item_type:type[TRTAbstractItem]|None=None, display_delegate:type[QtWidgets.QStyledItemDelegate]|None=None):
 
 		super().__init__()
 
 		self._text = str(text)
 		self._key  = str(key)
-		self._display_delegate = display_delegate
+
+		self._show_label = bool(show_label)
 		self._is_accumulating_value = bool(is_accumulating_value)
+		self._is_frozen_header = bool(is_frozen_header)
+		
+		self._item_type = item_type or TRTStringItem
+		self._display_delegate = display_delegate
 
 	def header_data(self, role:QtCore.Qt.ItemDataRole=QtCore.Qt.ItemDataRole.DisplayRole):
 
 		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return self.name()
+			return self.name() if self.showLabel() else ""
 		
 		elif role == QtCore.Qt.ItemDataRole.UserRole:
 			return self.field()
+
+		elif role == QtCore.Qt.ItemDataRole.UserRole+1:
+			return self
 	
 	def name(self) -> str:
 		"""Get the title of this header"""
 		return self._text
 	
+	def showLabel(self) -> bool:
+		"""Display the label in the header, or leave it blank"""
+		return self._show_label
+	
 	def field(self) -> str:
 		"""Get the field of item data this header will display"""
 		return self._key
 	
-	def displayDelegate(self) -> QtWidgets.QStyledItemDelegate|None:
+	def isAccumulatingValue(self) -> bool:
+		"""Does UserData contain data that can be useful when summed (such as durations or counts)"""
+		# lol my terminology
+		return self._is_accumulating_value
+	
+	def isFrozenHeader(self) -> bool:
+		"""Is this header forbidden from being hidden or moved"""
+		return self._is_frozen_header
+	
+	def displayDelegate(self) -> type[QtWidgets.QStyledItemDelegate]|None:
 		"""Get the display delegate assigned to this header"""
 		return self._display_delegate
 	
-	def isAccumulatingValue(self) -> bool:
-		"""Does UserData contain data that can be useful when summed (such as durations or counts)"""
-		return self._is_accumulating_value
-	
+	def itemType(self) -> type[TRTAbstractItem]:
+		"""Get the `TRTAbstractItem` type recommended for this column"""
+		return self._item_type
 
 
 #
@@ -476,7 +496,7 @@ class TRTTreeView(QtWidgets.QTreeView):
 		for idx_header in range(idx_first, idx_last+1):
 			header = self.model().sourceModel().headers()[idx_header]
 			if header.displayDelegate():
-				self.setItemDelegateForColumn(idx_header, header.displayDelegate())
+				self.setItemDelegateForColumn(idx_header, header.displayDelegate()())
 
 	@QtCore.Slot(QtCore.QModelIndex, int, int)
 	def rowsInserted(self, parent:QtCore.QModelIndex, start:int, end:int):
