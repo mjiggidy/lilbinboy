@@ -1,4 +1,5 @@
 from PySide6 import QtWidgets, QtGui, QtCore
+#from .wdg_sequence_treeview import TRTTreeViewHeaderItem
 
 class TRTChooseColumnsList(QtWidgets.QListWidget):
 
@@ -55,18 +56,25 @@ class TRTChooseColumnsDialog(QtWidgets.QDialog):
 		self.selectionChanged()
 	
 	def addColumn(self, header, is_hidden:bool):
-		item = QtWidgets.QListWidgetItem(header.name() or header.field().title(), )
+		"""Add a header item to the list"""
+		item = QtWidgets.QListWidgetItem(header.name() or header.field().title())
 		self.list_headers.addItem(item)
-		item.setSelected(not is_hidden)
+		
+		item.setSelected(header.isFrozenHeader() or not is_hidden)
+		#if header.isFrozenHeader():
+		#	item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEnabled)
+		
 
 	@QtCore.Slot()
 	def selectionChanged(self):
+		"""List selection changed"""
 		count_selected = len(self.list_headers.selectedItems())
 		self.txt_summary.setText(f"{count_selected} Visible   {self.list_headers.count() - count_selected} Hidden")
 		self.btn_box.button(QtWidgets.QDialogButtonBox.StandardButton.Save).setEnabled(bool(count_selected))
 	
 	@QtCore.Slot()
 	def toggleSelection(self):
+		"""Select All or None"""
 		if self.list_headers.selectedItems():
 			self.list_headers.clearSelection()
 		else:
