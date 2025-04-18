@@ -184,6 +184,7 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 		self._snapshots_scroll = QtWidgets.QScrollArea()
 
 		self._snapshot_query_model = QtSql.QSqlQueryModel()
+		self._snapshot_query_model.setQuery(self._db.getModelQuery())
 		self._snapshot_query_proxy_model = SnapshotListProxyModel()
 		self._snapshot_query_proxy_model.setSourceModel(self._snapshot_query_model)
 
@@ -356,9 +357,13 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 				break
 
 	def updateModelQueries(self):
-		self._snapshot_query_model.setQuery(self._db.getModelQuery())
+		"""Refresh the data model"""
 		
-		self._snapshot_query_proxy_model.setSourceModel(self._snapshot_query_model)
+		self._snapshot_query_model.refresh()
+		
+		# NOTE: Keep an eye on the above -- re: Live Snapshot card.  Old code below, but resets Live Record to defaults
+		#self._snapshot_query_model.setQuery(self._db.getModelQuery())
+		#self._snapshot_query_proxy_model.setSourceModel(self._snapshot_query_model)
 	
 	def deleteSnapshotLabelsRequested(self):
 		"""User requested to delete snapshots"""
