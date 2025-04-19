@@ -374,8 +374,6 @@ class TRTTreeView(QtWidgets.QTreeView):
 
 		self.model().setSortRole(QtCore.Qt.ItemDataRole.InitialSortOrderRole)
 
-		#self.setColumnWidth(0, 24)
-		#self.setColumnWidth(1, 128)
 		self.setUniformRowHeights(True)
 		self.setAllColumnsShowFocus(True)
 		self.setAlternatingRowColors(True)
@@ -386,11 +384,10 @@ class TRTTreeView(QtWidgets.QTreeView):
 		self.setAcceptDrops(True)
 		self.setDropIndicatorShown(True)
 		self.setTextElideMode(QtCore.Qt.TextElideMode.ElideMiddle)
+		
 		self.model().headerDataChanged.connect(self.headerDataChanged)
 		self.header().sectionMoved.connect(self.sectionMoved)
 		self.header().sortIndicatorChanged.connect(self.sortingChanged)
-
-#		print(self.dragDropMode())
 
 	def status(self) -> TRTTreeViewDisplayStatus:
 		"""The state of the data being displayed in the TreeView"""
