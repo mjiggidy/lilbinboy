@@ -42,8 +42,8 @@ class TRTControlsTrims(QtWidgets.QWidget):
 		self._from_head_marker = markers_trt.LBMarkerPresetComboBox()
 		self._from_tail_marker = markers_trt.LBMarkerPresetComboBox()
 
-		self._icon_mark_in  = QtWidgets.QLabel(pixmap=QtGui.QPixmap(self.PATH_MARK_IN).scaledToHeight(16, QtCore.Qt.TransformationMode.SmoothTransformation))
-		self._icon_mark_out = QtWidgets.QLabel(pixmap=QtGui.QPixmap(self.PATH_MARK_OUT).scaledToHeight(16, QtCore.Qt.TransformationMode.SmoothTransformation))
+		self._icon_mark_in  = QtWidgets.QLabel(pixmap=QtGui.QIcon(self.PATH_MARK_IN).pixmap(QtCore.QSize(16,16)))
+		self._icon_mark_out = QtWidgets.QLabel(pixmap=QtGui.QIcon(self.PATH_MARK_OUT).pixmap(QtCore.QSize(16,16)))
 
 		self._lbl_total_note = QtWidgets.QLabel()
 

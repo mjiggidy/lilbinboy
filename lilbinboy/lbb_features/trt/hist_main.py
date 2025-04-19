@@ -242,6 +242,10 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		self.layout().addWidget(self._status_bar)
 
+		lbl_deltaicon = QtWidgets.QLabel()
+		lbl_deltaicon.setPixmap(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.AppointmentSoon).pixmap(QtCore.QSize(16,16) ))
+		self._status_bar.addPermanentWidget(lbl_deltaicon)
+
 		## Initial State
 		self.updateModelQueries()
 		#print(self._snapshot_query_model.query())
