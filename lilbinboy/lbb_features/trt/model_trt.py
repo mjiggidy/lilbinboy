@@ -253,11 +253,11 @@ class TRTDataModel(QtCore.QObject):
 			"""Set the frame offset to the FFOA"""
 			# Call this after any potential changes to LFOA criteria
 
-			frame_offset = (self.timelineTimecodeExtents().duration - self.markerLFOA().frm_offset) if self.markerLFOA() else self._global_lfoa.frame_number
+			frame_offset = (self.timelineTimecodeExtents().duration - self.markerLFOA().frm_offset - 1) if self.markerLFOA() else self._global_lfoa.frame_number
 
 			self._active_lfoa_offset = Timecode(frame_offset, rate=self._timecode_trimmed.rate)
 
-			print("Set to", self._timecode_trimmed.start, "End", self.timelineTimecodeExtents().start + frame_offset)
+			#print("Set to", self._timecode_trimmed.start, "End", self.timelineTimecodeExtents().start + frame_offset)
 
 			self._timecode_trimmed = TimecodeRange(
 				start = self._timecode_trimmed.start,
