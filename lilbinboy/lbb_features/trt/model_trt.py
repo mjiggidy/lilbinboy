@@ -642,7 +642,7 @@ class TRTDataModel(QtCore.QObject):
 		head_marker = timeline_info.markerFFOA()
 		tail_marker = timeline_info.markerLFOA()
 
-		head_icon = _marker_icons.ICONS.get(head_marker.color.value).pixmap(10,10) if head_marker else QtGui.QIcon(":/trt/icons/icon_mark_in.svg").pixmap(QtCore.QSize(8,8))
+		head_icon = _marker_icons.ICONS.get(head_marker.color.value).pixmap(10,10) if head_marker else QtGui.QIcon(":/trt/icons/icon_mark_in.svg").pixmap(QtCore.QSize(10,10))
 		head_tooltip = str(
 			f"""
 			<b>Matched FFOA Marker Criteria</b>
@@ -655,9 +655,9 @@ class TRTDataModel(QtCore.QObject):
 			<b>Date Created</b>: {head_marker.date_created}<br/>
 			<b>Date Modified</b>: {head_marker.date_modified}
 			"""
-		) if head_marker else "Using global \"Trim Each Head\" value"
+		) if head_marker else f"Using global Per-Sequence FFOA: {timeline_info.ffoaOffset()} from head"
 
-		tail_icon = _marker_icons.ICONS.get(tail_marker.color.value).pixmap(10,10) if tail_marker else QtGui.QIcon(":/trt/icons/icon_mark_out.svg").pixmap(QtCore.QSize(8,8))
+		tail_icon = _marker_icons.ICONS.get(tail_marker.color.value).pixmap(10,10) if tail_marker else QtGui.QIcon(":/trt/icons/icon_mark_out.svg").pixmap(QtCore.QSize(10,10))
 		tail_tooltip = str(
 			f"""
 			<b>Matched LFOA Marker Criteria</b>
@@ -670,7 +670,7 @@ class TRTDataModel(QtCore.QObject):
 			<b>Date Created</b>: {tail_marker.date_created}<br/>
 			<b>Date Modified</b>: {tail_marker.date_modified}
 			"""
-		) if tail_marker else "Using global \"Trim Each Tail\" value"
+		) if tail_marker else f"Using global Per-Sequence LFOA value: {timeline_info.lfoaOffset()} from tail"
 
 
 		# Prepare your anus
