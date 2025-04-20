@@ -40,6 +40,14 @@ def export_delimited(model:QtCore.QAbstractItemModel, path:str, format:str):
 		for row in rows:
 			writer.writerow(row)
 
+def export_json(json_info:dict, path:str):
+	import json
+	#print("Ok to ", path, json_info)
+
+	with open(path, "w") as json_handle:
+		json.dump(json_info, json_handle, indent='\t')
+
+
 
 
 def exportToSnapshot(proxy_model:QtCore.QAbstractProxyModel):

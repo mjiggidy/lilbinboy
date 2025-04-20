@@ -906,6 +906,8 @@ class LBTRTCalculator(LBUtilityTab):
 		try:
 			if format in ["tsv","csv"]:
 				exporters_trt.export_delimited(self.list_trts.model(), path_file, format)
+			if format == "json":
+				exporters_trt.export_json(self.formatSequenceInfoAsJSON(), path_file)
 		except Exception as e:
 			print("Prolem:",str(e))
 	
@@ -962,7 +964,7 @@ class LBTRTCalculator(LBUtilityTab):
 		return sorted_timeline_info
 			
 	
-	def formatSequenceInfoAsJSON(self):
+	def formatSequenceInfoAsJSON(self) -> dict:
 		"""TEST: Notes for pulling data"""
 
 		# Get header order (and if they're displayed or not)
@@ -1023,6 +1025,5 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		json_formatted["sequence_count"] = len(json_sequences)
 		json_formatted["sequences"] = json_sequences
-		
-		import json
-		#print(json.dumps(json_formatted, indent=4))
+
+		return json_formatted
