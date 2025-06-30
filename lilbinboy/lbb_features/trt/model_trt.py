@@ -694,7 +694,7 @@ class TRTDataModel(QtCore.QObject):
 			"ffoa_tc":                 wdg_sequence_treeview.TRTTimecodeItem(timeline_info.timelineTimecodeTrimmed().start),
 			"ffoa_ff":                 wdg_sequence_treeview.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().start.frame_number),
 			"lfoa_tc":                 wdg_sequence_treeview.TRTTimecodeItem(timeline_info.timelineTimecodeTrimmed().end),
-			"lfoa_ff":                 wdg_sequence_treeview.TRTFeetFramesItem(timeline_info.timelineTimecodeTrimmed().duration.frame_number),
+			"lfoa_ff":                 wdg_sequence_treeview.TRTFeetFramesItem(timeline_info.ffoaOffset().frame_number + timeline_info.timelineTimecodeTrimmed().duration.frame_number),
 			"date_modified":           wdg_sequence_treeview.TRTDateTimeItem(timeline_info.timelineDateModified()),
 			"date_created":            wdg_sequence_treeview.TRTDateTimeItem(timeline_info.timelineDateCreated()),
 			"bin_path":                wdg_sequence_treeview.TRTPathItem(timeline_info.binFilePath()),
