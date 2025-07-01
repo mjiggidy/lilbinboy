@@ -246,7 +246,7 @@ class TRTDataModel(QtCore.QObject):
 
 			self._timecode_trimmed = TimecodeRange(
 				start = self.timelineTimecodeExtents().start + frame_offset,
-				end   = self._timecode_trimmed.end
+				end   = max(self._timecode_trimmed.end,self.timelineTimecodeExtents().start + frame_offset)
 			)
 
 		def _updateLFOAOffset(self):
@@ -261,7 +261,7 @@ class TRTDataModel(QtCore.QObject):
 
 			self._timecode_trimmed = TimecodeRange(
 				start = self._timecode_trimmed.start,
-				end   = self.timelineTimecodeExtents().end - frame_offset
+				end   = max(self.timelineTimecodeExtents().end - frame_offset, self._timecode_trimmed.start)
 			)
 
 		@classmethod
