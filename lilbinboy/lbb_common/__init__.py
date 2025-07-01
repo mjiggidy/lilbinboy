@@ -144,6 +144,10 @@ class LBTimelineView(QtWidgets.QWidget):
 
 		painter.setFont(self._font)
 
+		# TODO: Avoiding DivideByZero below -- probably should do things differently
+		if not self.adjustedTotal():
+			return
+
 		for idx, thing in enumerate(self._items):
 
 			sequence_name, sequence_duration = thing
