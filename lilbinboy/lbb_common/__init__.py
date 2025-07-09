@@ -6,5 +6,6 @@ from lilbinboy.lbb_common.wdg_clipcolorpicker import LBClipColorPicker
 from lilbinboy.lbb_common.wdg_timelineview import LBTimelineView
 from lilbinboy.lbb_common.wdg_timecodespinbox import LBSpinBoxTC
 from lilbinboy.lbb_common.wdg_utilitytab import LBUtilityTab
+from lilbinboy.lbb_common.settings_manager import LBSettingsManager
 
 from lilbinboy.lbb_common.helper_funcs import *
