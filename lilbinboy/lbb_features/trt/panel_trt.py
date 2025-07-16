@@ -261,15 +261,29 @@ class LBTRTCalculator(LBUtilityTab):
 		#self.list_trts.header().restoreState(self.settingsManager().value("trt/list_header_State", QtCore.QByteArray))
 		#self.setColumnsHidden(self.settingsManager().value("list_view/columns_hidden", [], type=list))
 		self.setFieldVisibility(self.settingsManager().value(TRTSettingsKeys.LIST_FIELDS_ORDER, [], type=list), self.settingsManager().value(TRTSettingsKeys.LIST_FIELDS_HIDDEN, [], type=list))
-		self.setSorting(
-			sort_field = self.settingsManager().value(TRTSettingsKeys.LIST_SORT_FIELD, "sequence_name"),
-			sort_order = self.settingsManager().value(TRTSettingsKeys.LIST_SORT_DIRECTION, QtCore.Qt.SortOrder.AscendingOrder)
-		)
+		
+		try:
+			sort_order = QtCore.Qt.SortOrder[self.settingsManager().value(TRTSettingsKeys.LIST_SORT_DIRECTION, QtCore.Qt.SortOrder.AscendingOrder.name)]
+		except KeyError:
+			sort_order = QtCore.Qt.SortOrder.AscendingOrder
+		finally:			
+			self.setSorting(
+				sort_field = self.settingsManager().value(TRTSettingsKeys.LIST_SORT_FIELD, "sequence_name"),
+				sort_order = sort_order
+			)
 
 		sequenceSelectionSettings = model_trt.SingleSequenceSelectionProcess()
 		sequenceSelectionSettings.setSortColumn(self.settingsManager().value(TRTSettingsKeys.SEQ_SELECTION_COL_NAME,"Name"))
-		sequenceSelectionSettings.setSortDirection(self.settingsManager().value(TRTSettingsKeys.SEQ_SELECTION_COL_DIRECTION, "Descending"))
-		sequenceSelectionFilters = []
+		
+		
+		try:
+			sort_direction = QtCore.Qt.SortOrder[self.settingsManager().value(TRTSettingsKeys.SEQ_SELECTION_COL_DIRECTION, QtCore.Qt.SortOrder.AscendingOrder.name)]
+		except ValueError:
+			sort_direction = QtCore.Qt.SortOrder.AscendingOrder
+		finally:
+			sequenceSelectionSettings.setSortDirection(sort_direction)
+			sequenceSelectionFilters = []
+
 		for filter in self.settingsManager().value(TRTSettingsKeys.SEQ_SELECTION_FILTERS, None) or []:
 			if filter.get("kind") == "name_contains":
 				sequenceSelectionFilters.append(
@@ -491,7 +505,7 @@ class LBTRTCalculator(LBUtilityTab):
 		"""Model has changed the selection process"""
 
 		self.settingsManager().setValue(TRTSettingsKeys.SEQ_SELECTION_COL_NAME, process.sortColumn())
-		self.settingsManager().setValue(TRTSettingsKeys.SEQ_SELECTION_COL_DIRECTION, process.sortDirection())
+		self.settingsManager().setValue(TRTSettingsKeys.SEQ_SELECTION_COL_DIRECTION, process.sortDirection().name)
 
 		filter_settings = []
 		for filter in process.filters():
@@ -832,7 +846,7 @@ class LBTRTCalculator(LBUtilityTab):
 	@QtCore.Slot(str, QtCore.Qt.SortOrder)
 	def saveSorting(self, sort_field:str, sort_order:QtCore.Qt.SortOrder):
 		self.settingsManager().setValue(TRTSettingsKeys.LIST_SORT_FIELD, sort_field)
-		self.settingsManager().setValue(TRTSettingsKeys.LIST_SORT_DIRECTION, sort_order)
+		self.settingsManager().setValue(TRTSettingsKeys.LIST_SORT_DIRECTION, sort_order.name)
 	
 	@QtCore.Slot(str, QtCore.Qt.SortOrder)
 	def setSorting(self, sort_field:str, sort_order:QtCore.Qt.SortOrder):
@@ -844,6 +858,8 @@ class LBTRTCalculator(LBUtilityTab):
 		self.trt_summary.add_stat_item(wdg_stats.TRTStatItem(label="Sequences", value=self.model().sequence_count()))
 		self.trt_summary.add_stat_item(wdg_stats.TRTStatItem(label="Total Running Length", value=self.model().total_lfoa()))
 		self.trt_summary.add_stat_item(wdg_stats.TRTStatItem(label="Total Running Time",  value=self.model().total_runtime()))
+
+		### Ascending order: Use QtCore.SortOrder
 	
 	@QtCore.Slot()
 	def update_control_buttons(self):

@@ -49,7 +49,6 @@ class SingleSequenceSelectionProcess:
 		
 
 	SORT_COLUMNS = ["Name", "Start Timecode", "Creation Date", "Modified Date"]
-	SORT_DIRECTIONS = ["Ascending", "Descending"]
 
 	def __init__(self):
 		self._sort_column:str = "Name"
@@ -64,13 +63,11 @@ class SingleSequenceSelectionProcess:
 			raise ValueError(f"Column {column} is not a valid column")
 		self._sort_column = str(column)
 	
-	def sortDirection(self) -> str:
+	def sortDirection(self) -> QtCore.Qt.SortOrder:
 		return self._sort_direction
 	
-	def setSortDirection(self, direction:str):
-		if direction not in self.SORT_DIRECTIONS:
-			raise ValueError(f"{direction} is not a valid direction")
-		self._sort_direction = str(direction)
+	def setSortDirection(self, direction:QtCore.Qt.SortOrder):
+		self._sort_direction = QtCore.Qt.SortOrder(direction)
 
 	def filters(self) -> list[AbstractSequenceFilter]:
 		"For now, filters will just b"

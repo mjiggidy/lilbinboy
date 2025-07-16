@@ -76,8 +76,9 @@ class TRTSequenceSelection(QtWidgets.QDialog):
 		self.cmb_sort_column_name.addItems(sort_process.SORT_COLUMNS)
 		self.cmb_sort_column_name.setCurrentText(sort_process.sortColumn())
 		
-		self.cmb_sort_column_direction.addItems(sort_process.SORT_DIRECTIONS)
-		self.cmb_sort_column_direction.setCurrentText(sort_process.sortDirection())
+		self.cmb_sort_column_direction.addItems(o.name.rstrip("Order") for o in QtCore.Qt.SortOrder)
+		print("Set initiao to", sort_process.sortDirection().value)
+		self.cmb_sort_column_direction.setCurrentIndex(sort_process.sortDirection().value)
 
 		for sequence_filter in sort_process.filters():
 
@@ -94,7 +95,7 @@ class TRTSequenceSelection(QtWidgets.QDialog):
 		"""Build a process from the options selected"""
 
 		sort_column_name = self.cmb_sort_column_name.currentText()
-		sort_column_direction = self.cmb_sort_column_direction.currentText()
+		sort_column_direction = QtCore.Qt.SortOrder(self.cmb_sort_column_direction.currentIndex())
 		
 		filters = []
 		if self.chk_name.isChecked() and self.txt_name.text():
