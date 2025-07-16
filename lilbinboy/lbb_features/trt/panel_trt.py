@@ -3,6 +3,8 @@ from timecode import Timecode
 from concurrent import futures
 from lilbinboy.lbb_common import LBUtilityTab, LBSpinBoxTC, LBTimelineView, LBSettingsManager
 from lilbinboy.lbb_features.trt import dlg_choose_columns, dlg_marker, logic_trt, model_trt, markers_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt, wdg_sequence_treeview, wdg_sequence_trims, wdg_stats, hist_main
+from .settings_keys import TRTSettingsKeys
+
 
 class TRTBinLoadingProgressBar(QtWidgets.QProgressBar):
 
@@ -236,33 +238,39 @@ class LBTRTCalculator(LBUtilityTab):
 	def _loadInitial(self):
 		"""Load initial data from preferences (or defaults)"""
 		
-		self.model().setRate(int(self.settingsManager().value("saved_state/rate", 24)))
+		self.model().setRate(int(self.settingsManager().value(TRTSettingsKeys.LAST_RATE, 24)))
 
-		self.model().setSequenceSelectionMode(self.settingsManager().value("sequence_selection/selection_mode", model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN))
-		self.bin_mode.setSequenceSelectionMode(self.model().sequenceSelectionMode())
 		
-		self.model().set_marker_presets(self.settingsManager().value("marker_presets", dict()))
+		try:
+			seq_mode = model_trt.SequenceSelectionMode(self.settingsManager().value(TRTSettingsKeys.SEQ_SELECTION_MODE, model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN.value))
+		except ValueError:
+			seq_mode = model_trt.SequenceSelectionMode.ONE_SEQUENCE_PER_BIN
+		finally:
+			self.model().setSequenceSelectionMode(seq_mode)
+			self.bin_mode.setSequenceSelectionMode(self.model().sequenceSelectionMode())
+		
+		self.model().set_marker_presets(self.settingsManager().value(TRTSettingsKeys.MARKER_PRESETS_LIST, dict()))
 
-		self.model().setTrimFromHead(Timecode(self.settingsManager().value("trim_settings/trim_head",0), rate=self.model().rate()))
-		self.model().setTrimFromTail(Timecode(self.settingsManager().value("trim_settings/trim_tail",0), rate=self.model().rate()))
-		self.model().setTrimTotal(Timecode(self.settingsManager().value("trim_settings/trim_total",0), rate=self.model().rate()))
+		self.model().setTrimFromHead(Timecode(self.settingsManager().value(TRTSettingsKeys.TRIM_HEAD_DURATION,0), rate=self.model().rate()))
+		self.model().setTrimFromTail(Timecode(self.settingsManager().value(TRTSettingsKeys.TRIM_TAIL_DURATION,0), rate=self.model().rate()))
+		self.model().setTrimTotal(Timecode(self.settingsManager().value(TRTSettingsKeys.TRIM_TOTAL_DURATION,0), rate=self.model().rate()))
 		
-		self.model().set_active_head_marker_preset_name(self.settingsManager().value("trim_settings/trim_head_marker_preset"))
-		self.model().set_active_tail_marker_preset_name(self.settingsManager().value("trim_settings/trim_tail_marker_preset"))
+		self.model().set_active_head_marker_preset_name(self.settingsManager().value(TRTSettingsKeys.TRIM_HEAD_MARKER))
+		self.model().set_active_tail_marker_preset_name(self.settingsManager().value(TRTSettingsKeys.TRIM_TAIL_MARKER))
 
 		#self.list_trts.header().restoreState(self.settingsManager().value("trt/list_header_State", QtCore.QByteArray))
 		#self.setColumnsHidden(self.settingsManager().value("list_view/columns_hidden", [], type=list))
-		self.setFieldVisibility(self.settingsManager().value("list_view/columns_order", [], type=list), self.settingsManager().value("list_view/columns_hidden", [], type=list))
+		self.setFieldVisibility(self.settingsManager().value(TRTSettingsKeys.LIST_FIELDS_ORDER, [], type=list), self.settingsManager().value(TRTSettingsKeys.LIST_FIELDS_HIDDEN, [], type=list))
 		self.setSorting(
-			sort_field = self.settingsManager().value("list_view/sort_column", "sequence_name"),
-			sort_order = self.settingsManager().value("list_view/sort_order", QtCore.Qt.SortOrder.AscendingOrder)
+			sort_field = self.settingsManager().value(TRTSettingsKeys.LIST_SORT_FIELD, "sequence_name"),
+			sort_order = self.settingsManager().value(TRTSettingsKeys.LIST_SORT_DIRECTION, QtCore.Qt.SortOrder.AscendingOrder)
 		)
 
 		sequenceSelectionSettings = model_trt.SingleSequenceSelectionProcess()
-		sequenceSelectionSettings.setSortColumn(self.settingsManager().value("sequence_selection/sort_column_name","Name"))
-		sequenceSelectionSettings.setSortDirection(self.settingsManager().value("sequence_selection/sort_column_direction", "Descending"))
+		sequenceSelectionSettings.setSortColumn(self.settingsManager().value(TRTSettingsKeys.SEQ_SELECTION_COL_NAME,"Name"))
+		sequenceSelectionSettings.setSortDirection(self.settingsManager().value(TRTSettingsKeys.SEQ_SELECTION_COL_DIRECTION, "Descending"))
 		sequenceSelectionFilters = []
-		for filter in self.settingsManager().value("sequence_selection/filters", None) or []:
+		for filter in self.settingsManager().value(TRTSettingsKeys.SEQ_SELECTION_FILTERS, None) or []:
 			if filter.get("kind") == "name_contains":
 				sequenceSelectionFilters.append(
 					model_trt.SingleSequenceSelectionProcess.NameContainsFilter(filter.get("string",""))
@@ -277,7 +285,7 @@ class LBTRTCalculator(LBUtilityTab):
 		self.model().setSequenceSelectionProcess(sequenceSelectionSettings)
 			
 		
-		self.add_bins_from_paths(list(self.settingsManager().value("saved_state/bin_paths",[], type=list)))
+		self.add_bins_from_paths(list(self.settingsManager().value(TRTSettingsKeys.BINS_LIST,[], type=list)))
 
 
 	def _setupWidgets(self):
@@ -482,8 +490,8 @@ class LBTRTCalculator(LBUtilityTab):
 	def singleSequenceSelectionProcessChanged(self, process:model_trt.SingleSequenceSelectionProcess):
 		"""Model has changed the selection process"""
 
-		self.settingsManager().setValue("sequence_selection/sort_column_name", process.sortColumn())
-		self.settingsManager().setValue("sequence_selection/sort_column_direction", process.sortDirection())
+		self.settingsManager().setValue(TRTSettingsKeys.SEQ_SELECTION_COL_NAME, process.sortColumn())
+		self.settingsManager().setValue(TRTSettingsKeys.SEQ_SELECTION_COL_DIRECTION, process.sortDirection())
 
 		filter_settings = []
 		for filter in process.filters():
@@ -501,7 +509,7 @@ class LBTRTCalculator(LBUtilityTab):
 			else:
 				print("Unknown filter: ", str(filter))
 
-		self.settingsManager().setValue("sequence_selection/filters", filter_settings)
+		self.settingsManager().setValue(TRTSettingsKeys.SEQ_SELECTION_FILTERS, filter_settings)
 		
 
 		# Prompt for reload
@@ -527,7 +535,7 @@ class LBTRTCalculator(LBUtilityTab):
 		presets.update({preset_name: marker_preset})
 		self.model().set_marker_presets(presets)
 		
-		self.settingsManager().setValue("marker_presets", self.model().marker_presets())
+		self.settingsManager().setValue(TRTSettingsKeys.MARKER_PRESETS_LIST, self.model().marker_presets())
 
 	
 	@QtCore.Slot(str)
@@ -536,7 +544,7 @@ class LBTRTCalculator(LBUtilityTab):
 		presets.pop(preset_name, None)
 		self.model().set_marker_presets(presets)
 
-		self.settingsManager().setValue("marker_presets", self.model().marker_presets())
+		self.settingsManager().setValue(TRTSettingsKeys.MARKER_PRESETS_LIST, self.model().marker_presets())
 	
 	@QtCore.Slot()
 	def show_marker_maker_dialog(self) -> bool:
@@ -582,34 +590,33 @@ class LBTRTCalculator(LBUtilityTab):
 	def trimHeadMarkerChanged(self, preset_name:str):
 		self.trt_trims.set_head_marker_preset_name(preset_name)
 		self.updateSequenceInfo()
-		self.settingsManager().setValue("trim_settings/trim_head_marker_preset", preset_name)
+		self.settingsManager().setValue(TRTSettingsKeys.TRIM_HEAD_MARKER, preset_name)
 
 	@QtCore.Slot(str)
 	def trimTailMarkerChanged(self, preset_name:str):
 		self.trt_trims.set_tail_marker_preset_name(preset_name)
 		self.updateSequenceInfo()
-		self.settingsManager().setValue("trim_settings/trim_tail_marker_preset", preset_name)
+		self.settingsManager().setValue(TRTSettingsKeys.TRIM_TAIL_MARKER, preset_name)
 
 	@QtCore.Slot(int)
 	def saveRate(self, rate:int):
-		self.settingsManager().setValue("saved_state/rate", rate)
+		self.settingsManager().setValue(TRTSettingsKeys.LAST_RATE, rate)
 	
 	def trimHeadTCChanged(self, tc:Timecode):
 		self.trt_trims.set_head_trim(tc)
 		self.updateSequenceInfo()
-		self.settingsManager().setValue("trim_settings/trim_head", str(tc))
+		self.settingsManager().setValue(TRTSettingsKeys.TRIM_HEAD_DURATION, str(tc))
 
 	def trimTailTCChanged(self, tc:Timecode):
 		self.trt_trims.set_tail_trim(tc)
 		self.updateSequenceInfo()
-		self.settingsManager().setValue("trim_settings/trim_tail", str(tc))
+		self.settingsManager().setValue(TRTSettingsKeys.TRIM_TAIL_DURATION, str(tc))
 	
 	def trimTotalTCChanged(self, tc:Timecode):
 		self.trt_trims.set_total_trim(tc)
 		self.view_longplay.setTotalAdjust(tc.frame_number)
-		self.settingsManager().setValue("trim_settings/trim_total", str(tc))
+		self.settingsManager().setValue(TRTSettingsKeys.TRIM_TOTAL_DURATION, str(tc))
 
-		# TODO: Misplaced this little guy?
 	#
 	# Data model methods
 	#
@@ -625,7 +632,7 @@ class LBTRTCalculator(LBUtilityTab):
 	def saveBins(self, bin_paths:list[str]):
 		settings = self.settingsManager()
 
-		settings.setValue("saved_state/bin_paths", bin_paths)
+		settings.setValue(TRTSettingsKeys.BINS_LIST, bin_paths)
 	
 	@QtCore.Slot(model_trt.TRTDataModel.CalculatedTimelineInfo)
 	def sequenceAdded(self, sequence_info: model_trt.TRTDataModel.CalculatedTimelineInfo):
@@ -666,7 +673,7 @@ class LBTRTCalculator(LBUtilityTab):
 
 		# Save last bin path if it's a good 'un
 		if last_bin:
-			self.settingsManager().setValue("saved_state/last_bin", last_bin)
+			self.settingsManager().setValue(TRTSettingsKeys.LAST_BIN, last_bin)
 	
 	@QtCore.Slot(bool)
 	def bin_loading_complete(self, had_errors:bool):
@@ -810,11 +817,11 @@ class LBTRTCalculator(LBUtilityTab):
 			if self.list_trts.isColumnHidden(logical_idx):
 				fields_hidden.append(header_field)
 		
-		self.settingsManager().setValue("list_view/columns_order",  fields_order)
-		self.settingsManager().setValue("list_view/columns_hidden", fields_hidden)
+		self.settingsManager().setValue(TRTSettingsKeys.LIST_FIELDS_ORDER,  fields_order)
+		self.settingsManager().setValue(TRTSettingsKeys.LIST_FIELDS_HIDDEN, fields_hidden)
 	
 	def choose_folder(self):
-		last_bin_path = self.settingsManager().value("saved_state/last_bin")
+		last_bin_path = self.settingsManager().value(TRTSettingsKeys.LAST_BIN)
 		files,_ = QtWidgets.QFileDialog.getOpenFileNames(caption="Choose Avid bins for calcuation...", dir=last_bin_path, filter="Avid Bins (*.avb);;All Files (*)")
 		
 		if not files:
@@ -824,8 +831,8 @@ class LBTRTCalculator(LBUtilityTab):
 	
 	@QtCore.Slot(str, QtCore.Qt.SortOrder)
 	def saveSorting(self, sort_field:str, sort_order:QtCore.Qt.SortOrder):
-		self.settingsManager().setValue("list_view/sort_column", sort_field)
-		self.settingsManager().setValue("list_view/sort_order", sort_order)
+		self.settingsManager().setValue(TRTSettingsKeys.LIST_SORT_FIELD, sort_field)
+		self.settingsManager().setValue(TRTSettingsKeys.LIST_SORT_DIRECTION, sort_order)
 	
 	@QtCore.Slot(str, QtCore.Qt.SortOrder)
 	def setSorting(self, sort_field:str, sort_order:QtCore.Qt.SortOrder):
@@ -848,7 +855,7 @@ class LBTRTCalculator(LBUtilityTab):
 	def sequenceSelectionModeChanged(self, mode:model_trt.SequenceSelectionMode):
 		
 		self.bin_mode.setSequenceSelectionMode(mode)
-		self.settingsManager().setValue("sequence_selection/selection_mode", mode)
+		self.settingsManager().setValue(TRTSettingsKeys.SEQ_SELECTION_MODE, mode.value)
 
 		if not self.model().sequence_count():
 			return
