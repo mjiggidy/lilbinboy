@@ -9,10 +9,10 @@ from lilbinboy.lbb_features.trt import logic_trt, markers_trt, wdg_sequence_tree
 class SequenceSelectionMode(enum.Enum):
 	"""Modes for choosing sequences from a bin"""
 
-	ONE_SEQUENCE_PER_BIN  = 0,
+	ONE_SEQUENCE_PER_BIN  = "Single"
 	"""Select only one sequence from a given bin"""
 
-	ALL_SEQUENCES_PER_BIN = 1
+	ALL_SEQUENCES_PER_BIN = "All"
 	"""Select all sequences from a given bin"""
 
 
