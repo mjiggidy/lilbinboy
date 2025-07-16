@@ -80,7 +80,7 @@ class SingleSequenceSelectionProcess:
 		"""Get a seequence based on this process"""
 
 		# Sort first
-		sort_reversed = self.sortDirection() == "Descending"
+		sort_reversed = self.sortDirection() == QtCore.Qt.SortOrder.DescendingOrder
 		
 		if self.sortColumn() == "Name":
 			timelines_sorted = sorted(timelines, reverse=sort_reversed, key=lambda t: avbutils.human_sort(t.timeline_name))
