@@ -1,4 +1,4 @@
-import logging, importlib.metadata
+import logging, importlib.metadata, sys
 from PySide6 import QtWidgets, QtGui, QtCore
 from lilbinboy import lbb_common, lbb_features
 
@@ -28,17 +28,23 @@ class LBBApplication(QtWidgets.QApplication):
 		self.setApplicationName(Config.APP_NAME)
 		self.setApplicationVersion(Config.APP_VERSION)
 
-		logging.basicConfig(level=logging.INFO)
+		# Setup logging
+		logging.basicConfig(level=logging.DEBUG)
 		log_app = logging.getLogger("app")
 		log_app.info("Using user data location %s", self.userDataLocation())
 
+		# Setup settings manager
+		self.settings_manager = lbb_common.LBSettingsManager(basepath=self.userDataLocation().toLocalFile(), format=QtCore.QSettings.Format.IniFormat)
+		app_settings = self.settings_manager.settings("lbb")
 
-		# TODO: macOS Translucent background
-		#surface_format = QtGui.QSurfaceFormat()
-		#surface_format.setAlphaBufferSize(8)
-		#QtGui.QSurfaceFormat.setDefaultFormat(surface_format)
-		#wnd_main.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-
+		# macOS Translucent background setup
+		if sys.platform == "darwin":
+			log_app.debug("Detected macOS, applying translucent surface")
+			surface_format = QtGui.QSurfaceFormat()
+			surface_format.setAlphaBufferSize(8)
+			QtGui.QSurfaceFormat.setDefaultFormat(surface_format)
+		
+		# Setup icon I guess
 		main_icon = QtGui.QIcon()
 		main_icon.addFile(":/app/icons/icon_16.png", QtCore.QSize(16,16))
 		main_icon.addFile(":/app/icons/icon_24.png", QtCore.QSize(24,24))
@@ -49,16 +55,15 @@ class LBBApplication(QtWidgets.QApplication):
 
 		self.setWindowIcon(main_icon)
 
-		self.settings_manager = lbb_common.LBSettingsManager(basepath=self.userDataLocation().toLocalFile(), format=QtCore.QSettings.Format.IniFormat)
-
-		app_settings = self.settings_manager.settings("lbb")
-
 		# Setup main window
 		self.wnd_main = lbb_common.wnd_main.LBMainWindow()
 		self.wnd_main.setWindowTitle(self.applicationName())
-		#self.wnd_main.setGeometry(app_settings.value("window_geometry", QtCore.QRect()))
-		#self.wnd_main.sig_resized.connect(lambda rect: app_settings.setValue("window_geometry", rect))
 
+		# Apply macOS translucent background
+		if sys.platform == "darwin":
+			self.wnd_main.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+
+		# Attach window manager
 		self._windowmanager = lbb_common.windowmanager.WindowManager(self.wnd_main, app_settings, "main")
 		self._windowmanager.restoreWindowGeometry()
 
@@ -154,7 +159,4 @@ class LBBApplication(QtWidgets.QApplication):
 
 def main():
 	app = LBBApplication()
-
-
-
 	app.exec()
