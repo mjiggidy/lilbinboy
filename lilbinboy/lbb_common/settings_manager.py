@@ -2,6 +2,7 @@
 Manage QSettings location & format
 """
 
+import logging
 from os import PathLike
 from PySide6 import QtCore
 
@@ -25,7 +26,7 @@ class LBSettingsManager:
 
 		if self.format() == QtCore.QSettings.Format.IniFormat:			
 			settings= QtCore.QSettings(self.settingsPath(feature_name).toLocalFile(), QtCore.QSettings.Format.IniFormat)
-			print("Handing off", settings.fileName())
+			logging.getLogger(__name__).debug("Handing off settings for %s at %s", feature_name, settings.fileName())
 			return settings
 		else:
 			return QtCore.QSettings(self.format())

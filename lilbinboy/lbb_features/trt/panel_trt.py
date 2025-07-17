@@ -1,3 +1,4 @@
+import logging
 from PySide6 import QtWidgets, QtGui, QtCore, QtSql
 from timecode import Timecode
 from concurrent import futures
@@ -77,7 +78,7 @@ class TRTThreadedMulticoreAbomination(QtCore.QRunnable):
 					timeline_info_list = bin_future.result()
 					self.signals().sig_got_bin_info.emit(timeline_info_list)
 				except Exception as e:
-					print("Didn't load " + bin_futures[bin_future] + ": " + str(e))
+					logging.getLogger(__name__).error("Didn't load %s: %s", bin_futures[bin_future], e)
 					errors.append(e)
 					self.signals().sig_had_error.emit(bin_futures[bin_future], e)
 		self.signals().sig_complete.emit(bool(errors))
@@ -161,7 +162,7 @@ class TRTModeSelection(QtWidgets.QFrame):
 		elif button == self._rdo_all_sequence:
 			self.sig_sequence_selection_mode_changed.emit(model_trt.SequenceSelectionMode.ALL_SEQUENCES_PER_BIN)
 		else:
-			print("Weird selection mode")
+			logging.getLogger(__name__).error("Weird selection mode from button: %s", button)
 	
 	@QtCore.Slot(model_trt.SequenceSelectionMode)
 	def setSequenceSelectionMode(self, mode:model_trt.SequenceSelectionMode):
@@ -228,11 +229,11 @@ class LBTRTCalculator(LBUtilityTab):
 
 
 	def setSettingsManager(self, settings:QtCore.QSettings):
+		# TODO: Never called?
 		self._settings = settings
-		print("I set", self.settingsManager().fileName())
+		logging.getLogger(__name__).debug("Settings manager set to %s", settings)
 	
 	def settingsManager(self) -> QtCore.QSettings:
-		print("I return", self._settings.fileName())
 		return self._settings
 
 	def _loadInitial(self):
@@ -293,7 +294,7 @@ class LBTRTCalculator(LBUtilityTab):
 					model_trt.SingleSequenceSelectionProcess.ClipColorFilter([QtGui.QColor.fromRgba64(*c) for c in filter.get("colors")])
 				)
 			else:
-				print("Unknown filter:", str(filter))
+				logging.getLogger(__name__).error("Unknown filter: %s", filter)
 		sequenceSelectionSettings.setFilters(sequenceSelectionFilters)
 		self.model().setSequenceSelectionProcess(sequenceSelectionSettings)
 			
@@ -520,7 +521,7 @@ class LBTRTCalculator(LBUtilityTab):
 					"colors": [tuple([color.rgba64().red(), color.rgba64().green(), color.rgba64().blue(), color.rgba64().alpha()]) for color in filter.colors()]
 				})
 			else:
-				print("Unknown filter: ", str(filter))
+				logging.getLogger(__name__).error("Unknown filter: %s", filter)
 
 		self.settingsManager().setValue(TRTSettingsKeys.SEQ_SELECTION_FILTERS, filter_settings)
 		
@@ -932,15 +933,15 @@ class LBTRTCalculator(LBUtilityTab):
 				return
 
 	@QtCore.Slot(str,str)
-	def exportData(self, path_file:str, format:str):
+	def exportData(self, path_file:str, file_format:str):
 		
 		try:
-			if format in ["tsv","csv"]:
-				exporters_trt.export_delimited(self.list_trts.model(), path_file, format)
-			if format == "json":
+			if file_format in ["tsv","csv"]:
+				exporters_trt.export_delimited(self.list_trts.model(), path_file, file_format)
+			if file_format == "json":
 				exporters_trt.export_json(self.formatSequenceInfoAsJSON(), path_file)
 		except Exception as e:
-			print("Prolem:",str(e))
+			logging.getLogger(__name__).error("Problem exporting %s: %s:", file_format, e)
 		else:
 			self.settingsManager().setValue(TRTSettingsKeys.LAST_EXPORT, path_file)
 	
@@ -951,15 +952,14 @@ class LBTRTCalculator(LBUtilityTab):
 		QtCore.QDir().mkpath(QtCore.QFileInfo(path_db).absolutePath())
 		
 		if not QtCore.QDir().exists(QtCore.QFileInfo(path_db).absolutePath()):
-			print("Didn't make the path to DB: ", QtCore.QFileInfo(path_db).absolutePath())
+			logging.getLogger(__name__).error("Didn't make the path to DB: %s", QtCore.QFileInfo(path_db).absolutePath())
 
 		db = QtSql.QSqlDatabase.addDatabase("QSQLITE", "trt")
 		db.setDatabaseName(QtCore.QFileInfo(path_db).absoluteFilePath())
 		db.open()
 
 		if not db.open():
-			print("Nah lol", db.lastError().text())
-			print(path_db)
+			logging.getLogger(__name__).error("Couldn't open database at %s: %s", path_db, db.lastError().text())
 		
 		
 		self.wnd_history = hist_main.TRTHistoryViewer(db, parent=self)
