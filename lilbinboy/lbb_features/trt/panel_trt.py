@@ -277,7 +277,7 @@ class LBTRTCalculator(LBUtilityTab):
 		
 		try:
 			sort_direction = QtCore.Qt.SortOrder[self.settingsManager().value(TRTSettingsKeys.SEQ_SELECTION_COL_DIRECTION, QtCore.Qt.SortOrder.AscendingOrder.name)]
-		except ValueError:
+		except KeyError:
 			sort_direction = QtCore.Qt.SortOrder.AscendingOrder
 		finally:
 			sequenceSelectionSettings.setSortDirection(sort_direction)
@@ -691,10 +691,11 @@ class LBTRTCalculator(LBUtilityTab):
 	@QtCore.Slot(bool)
 	def bin_loading_complete(self, had_errors:bool):
 		"""Done loading bins"""
+
 		self.list_trts.doneLoadingSequences()
 		
 		# TEST
-		self.formatSequenceInfoAsJSON()
+		#self.formatSequenceInfoAsJSON()
 	
 	def updateSequenceInfo(self):
 
@@ -907,7 +908,7 @@ class LBTRTCalculator(LBUtilityTab):
 			f"{desc} (*.{ext})" for ext, desc in formats.items()
 		])
 
-		last_export_path = QtCore.QFileInfo(self.settingsManager().value("saved_state/last_export_path", "."))
+		last_export_path = QtCore.QFileInfo(self.settingsManager().value(TRTSettingsKeys.LAST_EXPORT, "."))
 		path_file, filter = QtWidgets.QFileDialog.getSaveFileName(
 			caption="Export data as...", 
 			dir=last_export_path.filePath(),
@@ -940,6 +941,8 @@ class LBTRTCalculator(LBUtilityTab):
 				exporters_trt.export_json(self.formatSequenceInfoAsJSON(), path_file)
 		except Exception as e:
 			print("Prolem:",str(e))
+		else:
+			self.settingsManager().setValue(TRTSettingsKeys.LAST_EXPORT, path_file)
 	
 	@QtCore.Slot()
 	def historyViewerRequsted(self):

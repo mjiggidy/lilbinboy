@@ -19,12 +19,13 @@ class TRTSettingsKeys(StrEnum):
 	TRIM_HEAD_MARKER = "trim_settings/trim_head_marker_preset"
 	TRIM_HEAD_DURATION = "trim_settings/trim_head"
 
-	
 	TRIM_TAIL_MARKER = "trim_settings/trim_tail_marker_preset"
 	TRIM_TAIL_DURATION = "trim_settings/trim_tail"
 	
 	TRIM_TOTAL_DURATION = "trim_settings/trim_total"
 
 	BINS_LIST = "saved_state/bin_paths"
+	
 	LAST_BIN = "saved_state/last_bin"
 	LAST_RATE = "saved_state/rate"
+	LAST_EXPORT = "saved_state/last_export"
