@@ -799,24 +799,17 @@ class LBTRTCalculator(LBUtilityTab):
 
 	@QtCore.Slot(wdg_sequence_treeview.TRTTreeViewHeaderItem, bool)
 	def setFieldHidden(self, field:wdg_sequence_treeview.TRTTreeViewHeaderItem, is_hidden:bool=True):
-		
-		try:
-			print(self.list_trts.fieldOrder())
-			idx_col = self.list_trts.fieldOrder().index(field.field())
-		except ValueError as e:
-			logging.getLogger(__name__).error("Field not found: %s", field.field())
-			return
-		
-		logging.getLogger(__name__).debug("Hiding %s (logicalIndex=%i, visualIndex=%i", field.name(), idx_col, self.list_trts.header().visualIndex(idx_col))
+		"""Given a field object, hide it from view"""
 
+		# All fields, in logical order
+		all_fields = self.list_trts.model().headers()
+		idx_logical_field = [f.field() for f in all_fields].index(field.field())
 		
-		self.list_trts.setColumnHidden(self.list_trts.header().visualIndex(idx_col), is_hidden)
+		self.list_trts.setColumnHidden(idx_logical_field, is_hidden)
 		self.saveFieldVisibility()
 		
-
-
 	
-	@QtCore.Slot(list)
+	@QtCore.Slot(list) 
 	def processColumnChooserSelection(self, idx_visible:list[int]):
 		"""Columns hidden/shown were chosen"""
 
