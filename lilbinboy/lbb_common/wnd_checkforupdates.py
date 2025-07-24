@@ -1,4 +1,4 @@
-import dataclasses
+import dataclasses, logging
 from PySide6 import QtCore, QtGui, QtWidgets, QtNetwork
 
 URL_RELEASES = "https://api.github.com/repos/mjiggidy/lilbinboy/releases"
@@ -264,7 +264,6 @@ class LBUpdateManager(QtCore.QObject):
 		# Signals
 		self._cooldown_timer.timeout.connect(self.sig_cooldownExpired)
 		self._autocheck_timer.timeout.connect(self.checkForUpdates)
-		self._autocheck_timer.timeout.connect(lambda: print("AUTOCHECK BOYYYY"))
 
 		self._netman.finished.connect(self._cooldown_timer.start)
 		self._netman.finished.connect(self.processNetworkReply)
@@ -301,6 +300,7 @@ class LBUpdateManager(QtCore.QObject):
 	# ---
 	# Autocheck
 	# ---
+	@QtCore.Slot(bool)
 	def setAutoCheckEnabled(self, autocheck:bool):
 		"""Set automatically check for updates"""
 
@@ -312,7 +312,6 @@ class LBUpdateManager(QtCore.QObject):
 		# Start autocheck if a new release hasn't already been found
 		if self.autoCheckEnabled() and self.latestReleaseInfo() is None:
 			if self._cooldown_timer.isActive():
-				print("Sched")
 				# Schedule autocheck
 				self._autocheck_timer.start()
 			else:
@@ -362,8 +361,14 @@ class LBUpdateManager(QtCore.QObject):
 		
 		# Skip if we have an active QNetworkRequest or in cooldown period
 		if self.checkInProgress() or self._cooldown_timer.isActive():
+			logging.getLogger(__name__).debug(
+				"Skipping network update check (checkInProgress=%s; cooldowntimerIsActive=%s)",
+				self.checkInProgress(), self._cooldown_timer.isActive()
+			)
 			return
 		
+		logging.getLogger(__name__).debug("Network update check start")
+
 		self.sig_networkCheckStarted.emit()
 		self._current_request = self._netman.get(QtNetwork.QNetworkRequest(self.releasesUrl()))
 
@@ -381,8 +386,12 @@ class LBUpdateManager(QtCore.QObject):
 			return
 
 		# Parse JSON for latest version
-		response = QtCore.QJsonDocument.fromJson(reply.readAll())
-		latest_release:dict = response.array().first().toObject()
+		try:
+			response = QtCore.QJsonDocument.fromJson(reply.readAll())
+			latest_release:dict = response.array().first().toObject()
+		except Exception as e:
+			logging.getLogger(__name__).error("Problem with network update check response: %s", e)
+			return
 
 		# Latest version to `ReleaseInfo` struct
 		try:
@@ -393,7 +402,8 @@ class LBUpdateManager(QtCore.QObject):
 				release_url = latest_release["html_url"],
 				date = latest_release["published_at"]
 			)
-		except KeyError:	# Maybe do this
+		except KeyError as e:	# Maybe do this
+			logging.getLogger(__name__).error("Missing info from network update check response: %s", e)
 			self.sig_networkCheckError.emit(QtNetwork.QNetworkReply.NetworkError.UnknownContentError)
 			if self.autoCheckEnabled():
 				self._autocheck_timer.start()
@@ -402,10 +412,13 @@ class LBUpdateManager(QtCore.QObject):
 		if self.currentVersion() != latest_release_info.version:
 			# Store and emit new release info
 			self._latest_release_info = latest_release_info
+			logging.getLogger(__name__).info("Network update check found new version (currentVersion=%s; newVersion=%s)", self.currentVersion(), latest_release_info.version)
+
 			self.sig_newReleaseAvailable.emit(latest_release_info)
 		
 		else:
 			# Restart autocheck
+			logging.getLogger(__name__).debug("Current version appears to be the latest (currentVersion=%s; newVersion=%s)", self.currentVersion(), latest_release_info.version)
 			self.sig_releaseIsCurrent.emit(latest_release_info)
 			if self.autoCheckEnabled():
 				self._autocheck_timer.start()
