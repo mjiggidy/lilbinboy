@@ -26,7 +26,7 @@ class TRTAbstractItem(QtCore.QObject):
 	def _prepare_data(self):
 		"""Precalculate them datas for all them roles"""
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole:          str(self._data),
+			QtCore.Qt.ItemDataRole.DisplayRole:          self.to_string(self._data),
 			QtCore.Qt.ItemDataRole.ToolTipRole:          self._tooltip,
 			QtCore.Qt.ItemDataRole.DecorationRole:       self._icon,
 			QtCore.Qt.ItemDataRole.InitialSortOrderRole: avbutils.human_sort(str(self._data)),
@@ -41,6 +41,10 @@ class TRTAbstractItem(QtCore.QObject):
 		"""Format as JSON object"""
 		return self.data(QtCore.Qt.ItemDataRole.DisplayRole)
 	
+	@classmethod
+	def to_string(cls, data:typing.Any) -> str:
+		return str(data)
+	
 class TRTStringItem(TRTAbstractItem):
 	"""A standard string"""
 
@@ -50,6 +54,9 @@ class TRTStringItem(TRTAbstractItem):
 class TRTNumericItem(TRTAbstractItem):
 	"""A numeric value"""
 
+	STRING_PADDING:int = 0
+	"""Left-side padding for string formatting"""
+
 	def __init__(self, raw_data:int, *args, **kwargs):
 		super().__init__(raw_data, *args, **kwargs)
 
@@ -57,13 +64,17 @@ class TRTNumericItem(TRTAbstractItem):
 		super()._prepare_data()
 
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole:          str(self._data),
+			QtCore.Qt.ItemDataRole.DisplayRole: self.to_string(self._data),
 			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data,
 			QtCore.Qt.ItemDataRole.FontRole:             QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
 		})
 	
 	def to_json(self) -> int:
 		return self.data(QtCore.Qt.ItemDataRole.UserRole)
+	
+	@classmethod
+	def to_string(cls, data):
+		return super().to_string(data).rjust(cls.STRING_PADDING)
 
 class TRTPathItem(TRTAbstractItem):
 	"""A file path"""
@@ -104,7 +115,7 @@ class TRTDateTimeItem(TRTAbstractItem):
 			"formatted": self.data(QtCore.Qt.ItemDataRole.DisplayRole)
 		}
 
-class TRTTimecodeItem(TRTAbstractItem):
+class TRTTimecodeItem(TRTNumericItem):
 	"""A timecode"""
 
 	def __init__(self, raw_data:Timecode, *args, **kwargs):
@@ -115,9 +126,7 @@ class TRTTimecodeItem(TRTAbstractItem):
 	def _prepare_data(self):
 		super()._prepare_data()
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole:          str(self._data).rjust(12),
 			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data.frame_number,
-			QtCore.Qt.ItemDataRole.FontRole:             QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
 		})
 	
 	def to_json(self) -> dict:
@@ -136,7 +145,16 @@ class TRTDurationItem(TRTTimecodeItem):
 	def _prepare_data(self):
 		super()._prepare_data()
 
-		tc_str = str(self._data)
+
+
+		self._data_roles.update({
+			QtCore.Qt.ItemDataRole.DisplayRole: self.to_string(self._data),
+		})
+	
+	@classmethod
+	def to_string(cls, data):
+
+		tc_str = str(data)
 		is_neg =tc_str.startswith("-")
 		
 		# Get the index of the last separator
@@ -146,13 +164,9 @@ class TRTDurationItem(TRTTimecodeItem):
 		pre, post = tc_str[:idx_last_sep], tc_str[idx_last_sep:]
 		pre = pre.lstrip("-00" + sep)
 
-		stripped_tc = f"{'-' if is_neg else ''}{pre}{post}".rjust(12)
+		return f"{'-' if is_neg else ''}{pre}{post}".rjust(cls.STRING_PADDING)
 
-		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole: stripped_tc,
-		})
-
-class TRTFeetFramesItem(TRTAbstractItem):
+class TRTFeetFramesItem(TRTNumericItem):
 
 	def __init__(self, raw_data:int, *args, **kwargs):
 
@@ -162,11 +176,6 @@ class TRTFeetFramesItem(TRTAbstractItem):
 
 	def _prepare_data(self):
 		super()._prepare_data()
-		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole:          str(str(self._data // 16) + "+" + str(self._data % 16).zfill(2)).rjust(9),
-			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data,
-			QtCore.Qt.ItemDataRole.FontRole:             QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont),
-		})
 	
 	def to_json(self) -> dict:
 		return {
@@ -176,6 +185,10 @@ class TRTFeetFramesItem(TRTAbstractItem):
 			"frames":    self.data(QtCore.Qt.ItemDataRole.UserRole),
 			"formatted": self.data(QtCore.Qt.ItemDataRole.DisplayRole).strip()
 		}
+	
+	@classmethod
+	def to_string(cls, data):
+		return str(str(data // 16) + "+" + str(data % 16).zfill(2)).rjust(cls.STRING_PADDING)
 
 class TRTClipColorItem(TRTAbstractItem):
 	"""A clip color"""
