@@ -1,6 +1,6 @@
 format = "UDBZ"
 
-window_rect = ((800, 800), (615, 330))
+window_rect = ((800, 800), (615, 430))
 
 show_status_bar = False
 show_tab_view   = False
