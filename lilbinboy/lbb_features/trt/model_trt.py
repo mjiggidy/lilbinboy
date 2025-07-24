@@ -421,7 +421,7 @@ class TRTDataModel(QtCore.QObject):
 	def setRate(self, rate:int) -> int:
 		if rate < 1:
 			print("No!  No!!!!")
-			exit
+			exit()
 		self._fps = rate
 		self.sig_rate_changed.emit(self.rate())
 		self.sig_data_changed.emit()
@@ -709,8 +709,8 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		self._headers:list[wdg_sequence_treeview.TRTTreeViewHeaderItem]   = headers_list or []
 
 		self.setHeaderItems([
-			wdg_sequence_treeview.TRTTreeViewHeaderItem("Sequence Color","sequence_color", show_label=False, display_delegate=wdg_sequence_treeview.TRTClipColorDisplayDelegate),
-			wdg_sequence_treeview.TRTTreeViewHeaderItem("Sequence Name","sequence_name"),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Sequence Color","sequence_color", show_label=False, is_frozen_header=True, display_delegate=wdg_sequence_treeview.TRTClipColorDisplayDelegate),
+			wdg_sequence_treeview.TRTTreeViewHeaderItem("Sequence Name","sequence_name", is_frozen_header=True),
 			wdg_sequence_treeview.TRTTreeViewHeaderItem("Full Duration (TC)","duration_total_tc", is_accumulating_value=True),
 			wdg_sequence_treeview.TRTTreeViewHeaderItem("Full Duration (F+F)","duration_total_ff", is_accumulating_value=True),
 			wdg_sequence_treeview.TRTTreeViewHeaderItem("Full Duration (Frames)","duration_total_frames", is_accumulating_value=True),
@@ -796,7 +796,10 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 
 	def headerData(self, section:int, orientation:QtCore.Qt.Orientation=QtCore.Qt.Orientation.Horizontal, role:int=QtCore.Qt.ItemDataRole.DisplayRole) -> QtCore.QObject:
 		"""Returns the data for the given role and section in the header with the specified orientation."""
-		return self._headers[section].header_data(role)
+		if orientation == QtCore.Qt.Orientation.Horizontal:
+			return self._headers[section].header_data(role)
+		else:
+			return None
 	
 	def headers(self) -> list[wdg_sequence_treeview.TRTTreeViewHeaderItem]:
 		"""Return all `TRTTreeViewHeaderItem` objects in logical order"""

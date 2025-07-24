@@ -758,10 +758,33 @@ class LBTRTCalculator(LBUtilityTab):
 	@QtCore.Slot(QtCore.QPoint)
 	def showColumnChooserContextMenu(self, pos:QtCore.QPoint):
 		"""Show the menu"""
+		
+		idx_logical_heading = self.list_trts.header().logicalIndexAt(pos)
+		field = self._treeview_model.headers()[idx_logical_heading]
+		title = field.name()
+		section = field.field()
+
+		title = self.list_trts.model().headerData(idx_logical_heading, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.DisplayRole)
+		section = self.list_trts.model().headerData(idx_logical_heading, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole)
+
+		logging.getLogger(__name__).debug("Right click on %s at %s", section, pos)
+
 
 		menu = QtWidgets.QMenu(self.list_trts.header())
+
+		visible_columns = self.list_trts.fieldOrder(include_hidden=False)
+
 		action_showchooser = QtGui.QAction("Choose visible columns...")
 		action_showchooser.triggered.connect(self.showColumnChooserWindow)
+		
+		logging.getLogger(__name__).debug("Got %i columns", len(visible_columns))
+
+		if not field.isFrozenHeader() and len(visible_columns) > 1:
+			action_hidecol = QtGui.QAction(f"Hide {title}")
+			action_hidecol.triggered.connect(lambda: self.setFieldHidden(field, True))
+			menu.addAction(action_hidecol)
+			menu.addSeparator()
+
 		menu.addAction(action_showchooser)
 		menu.exec(menu.parent().mapToGlobal(pos))
 	
@@ -773,6 +796,25 @@ class LBTRTCalculator(LBUtilityTab):
 			wnd_choosecolumns.addColumn(header, is_hidden=self.list_trts.isColumnHidden(idx))
 		wnd_choosecolumns.sig_columns_chosen.connect(self.processColumnChooserSelection)
 		wnd_choosecolumns.exec()
+
+	@QtCore.Slot(wdg_sequence_treeview.TRTTreeViewHeaderItem, bool)
+	def setFieldHidden(self, field:wdg_sequence_treeview.TRTTreeViewHeaderItem, is_hidden:bool=True):
+		
+		try:
+			print(self.list_trts.fieldOrder())
+			idx_col = self.list_trts.fieldOrder().index(field.field())
+		except ValueError as e:
+			logging.getLogger(__name__).error("Field not found: %s", field.field())
+			return
+		
+		logging.getLogger(__name__).debug("Hiding %s (logicalIndex=%i, visualIndex=%i", field.name(), idx_col, self.list_trts.header().visualIndex(idx_col))
+
+		
+		self.list_trts.setColumnHidden(self.list_trts.header().visualIndex(idx_col), is_hidden)
+		self.saveFieldVisibility()
+		
+
+
 	
 	@QtCore.Slot(list)
 	def processColumnChooserSelection(self, idx_visible:list[int]):

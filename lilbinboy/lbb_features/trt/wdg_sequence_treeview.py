@@ -331,6 +331,7 @@ class TRTClipColorDisplayDelegate(QtWidgets.QStyledItemDelegate):
 class TRTTreeView(QtWidgets.QTreeView):
 	"""TRT Readout"""
 
+
 	class TRTTreeViewDisplayStatus(enum.Enum):
 		"""The status of the data currently being displayed in the TreeView"""
 
@@ -356,10 +357,7 @@ class TRTTreeView(QtWidgets.QTreeView):
 				return "No Sequences Found\nNo sequences were found that matched the criteria."
 			
 			return ""
-			
-				
-
-
+	
 	sig_remove_rows_requested = QtCore.Signal(list)
 	sig_bins_dragged_dropped  = QtCore.Signal(list)
 	sig_field_order_changed   = QtCore.Signal(list)
@@ -418,23 +416,25 @@ class TRTTreeView(QtWidgets.QTreeView):
 			return
 		
 		self.header().setSortIndicator(fields_logical.index(sort_field), sort_order)
-		print("Set to ", sort_field, sort_order)
+		#print("Set to ", sort_field, sort_order)
 	
 	@QtCore.Slot(int, int, int)
 	def sectionMoved(self, idx_logical:int, idx_visual_old:int, idx_visual_new:int):
 		"""A header column was moved"""
-		self.sig_field_order_changed.emit(self.displayedFields())
+		self.sig_field_order_changed.emit(self.fieldOrder())
 	
-	def displayedFields(self) -> list[str]:
-		"""Returns a list of visible fields in the order they are displayed"""
+	def fieldOrder(self, include_hidden:bool=True) -> list[str]:
+		"""Returns a list of fields in the order they are displayed"""
 
 		field_order = []
 
 		# Iterate over visual indexes to look up the field name at the corresponding logical index
 		for idx_visual in range(self.header().count()):
 			idx_logical = self.header().logicalIndex(idx_visual)
-			field_name = self.model().headerData(idx_logical, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole)
-			field_order.append(field_name)
+
+			if include_hidden or not self.header().isSectionHidden(idx_logical):
+				field_name = self.model().headerData(idx_logical, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole)
+				field_order.append(field_name)
 
 		return field_order
 	
@@ -443,10 +443,10 @@ class TRTTreeView(QtWidgets.QTreeView):
 		"""Arrange columns based on an ordered list of fields"""
 
 		for idx_visual_new, field_name in enumerate(field_order):
-			if field_name not in self.displayedFields():
+			if field_name not in self.fieldOrder():
 				continue
 
-			idx_visual_old = self.displayedFields().index(field_name)
+			idx_visual_old = self.fieldOrder().index(field_name)
 			self.header().moveSection(idx_visual_old, idx_visual_new)
 	
 	def fit_headers(self):
