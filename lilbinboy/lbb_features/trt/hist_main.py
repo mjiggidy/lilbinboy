@@ -1,8 +1,8 @@
 import timecode
 from .db_hist_sqlite import SnapshotDatabaseManager
-from lilbinboy.lbb_features.trt.model_trt import TRTViewModel
-from lilbinboy.lbb_features.trt.hist_snapshot_panel import TRTHistorySnapshotPanel, TRTHistorySnapshotDatabaseProxyModel
-from lilbinboy.lbb_features.trt.hist_snapshot_list  import TRTHistorySnapshotLabelDelegate
+from ...lbb_features.trt.model_trt import TRTViewModel
+from ...lbb_features.trt.hist_snapshot_panel import TRTHistorySnapshotPanel
+from ...lbb_features.trt.hist_snapshot_list  import TRTHistorySnapshotLabelDelegate
 from PySide6 import QtCore, QtGui, QtWidgets, QtSql
 
 class SnapshotListProxyModel(QtCore.QIdentityProxyModel):

@@ -1,11 +1,10 @@
-import re
-from PySide6 import QtWidgets, QtCore, QtGui
-from timecode import Timecode
-from lilbinboy.lbb_common import resources, wnd_about, wnd_main, dlg_errorlog, wnd_checkforupdates, windowmanager
-from lilbinboy.lbb_common.wdg_clipcolorpicker import LBClipColorPicker
-from lilbinboy.lbb_common.wdg_timelineview import LBTimelineView
-from lilbinboy.lbb_common.wdg_timecodespinbox import LBSpinBoxTC
-from lilbinboy.lbb_common.wdg_utilitytab import LBUtilityTab
-from lilbinboy.lbb_common.settings_manager import LBSettingsManager
+"""Common classes and methods to help that Lil' Bin Boy do his Lil' Bin Thang"""
 
-from lilbinboy.lbb_common.helper_funcs import *
+from . import resources, wnd_about, wnd_main, dlg_errorlog, wnd_checkforupdates, windowmanager
+from .wdg_clipcolorpicker import LBClipColorPicker
+from .wdg_timelineview import LBTimelineView
+from .wdg_timecodespinbox import LBSpinBoxTC
+from .wdg_utilitytab import LBUtilityTab
+from .settings_manager import LBSettingsManager
+
+from .helper_funcs import *

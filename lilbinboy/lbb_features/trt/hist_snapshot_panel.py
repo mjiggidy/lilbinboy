@@ -1,8 +1,8 @@
 import abc
 import timecode
-from lilbinboy.lbb_common import LBClipColorPicker
-from lilbinboy.lbb_common.paint_delegates import LBClipColorPainter
-from lilbinboy.lbb_features.trt import wdg_stats
+from ...lbb_common import LBClipColorPicker
+from ...lbb_common.paint_delegates import LBClipColorPainter
+from ...lbb_features.trt import wdg_stats
 from PySide6 import QtSql, QtCore, QtGui, QtWidgets
 
 class SnapshotClipColorDelegate(QtWidgets.QStyledItemDelegate):

@@ -1,3 +1,5 @@
+"""Lil' Error Log Dialog"""
+
 from PySide6 import QtGui, QtWidgets
 
 class LBErrorLogWindow(QtWidgets.QWidget):

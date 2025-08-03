@@ -2,8 +2,8 @@ import typing, enum
 import avbutils
 from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
-from lilbinboy.lbb_features.trt import model_trt
-from lilbinboy.lbb_common.paint_delegates import LBClipColorPainter
+from ...lbb_features.trt import model_trt
+from ...lbb_common.paint_delegates import LBClipColorPainter
 
 #
 # Cell items

@@ -1,11 +1,8 @@
-from PySide6 import QtWidgets, QtCore, QtGui
-from lilbinboy import lbb_common, lbb_features, Config, main
-#from .lbb_common import resources
-import pathlib
-
-
+"""Main entrypoint as module"""
 
 if __name__ == "__main__":
 	import multiprocessing
+	from . import main
+	
 	multiprocessing.freeze_support()
 	main()

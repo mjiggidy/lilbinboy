@@ -1,6 +1,6 @@
 import dataclasses
 from PySide6 import QtCore, QtGui
-from lilbinboy.lbb_features.trt.wdg_sequence_treeview import TRTTreeViewHeaderItem
+from ...lbb_features.trt.wdg_sequence_treeview import TRTTreeViewHeaderItem
 
 def export_delimited(model:QtCore.QAbstractItemModel, path:str, format:str):
 

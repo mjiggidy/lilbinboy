@@ -1,5 +1,5 @@
-from PySide6 import QtSql, QtCore, QtGui, QtWidgets
-from lilbinboy.lbb_common.paint_delegates import LBClipColorPainter
+from PySide6 import QtCore, QtGui, QtWidgets
+from ...lbb_common.paint_delegates import LBClipColorPainter
 
 class TRTHistorySnapshotLabelDelegate(QtWidgets.QStyledItemDelegate):
 

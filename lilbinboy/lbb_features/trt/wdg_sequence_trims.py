@@ -1,8 +1,8 @@
 import logging
 from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
-from lilbinboy.lbb_common import LBSpinBoxTC, resources
-from lilbinboy.lbb_features.trt import markers_trt
+from ...lbb_common import LBSpinBoxTC
+from ...lbb_features.trt import markers_trt
 
 class TRTControlsTrims(QtWidgets.QWidget):
 

@@ -1,10 +1,13 @@
+"""Lil' Paint Delegate Boys"""
+
 from PySide6 import QtCore, QtGui
 
 def LBClipColorPainter(rect:QtCore.QRect, painter:QtGui.QPainter, outline_color:QtGui.QColor=None, clip_color:QtGui.QColor=None, pen_width:int=1, padding:QtCore.QSize=None, shadow_offset:QtCore.QPoint=None):
 		"""Draw a Clip Color graphic for a given painter"""
 		
 		if not painter.isActive():
-			print("No active")
+			import logging
+			logging.getLogger(__name__).debug("No active painter")
 			return
 
 		outline_color = outline_color or QtGui.QColor("Black")

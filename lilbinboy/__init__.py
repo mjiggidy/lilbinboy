@@ -1,6 +1,6 @@
 import logging, importlib.metadata, sys
 from PySide6 import QtWidgets, QtGui, QtCore
-from lilbinboy import lbb_common, lbb_features
+from . import lbb_common, lbb_features
 
 try:
 	__version__ =importlib.metadata.version("lilbinboy")

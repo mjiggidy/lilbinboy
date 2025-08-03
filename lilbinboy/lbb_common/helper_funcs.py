@@ -5,6 +5,8 @@ Generic helper functions that don't be goin nowheres else.
 def make_unique_name(name:str, existing_names:list[str], *, default_index_start:int=1, default_index_padding:int=2) -> str:
 	"""Ensure a unique name with the format "My Kewl Name.02" or something"""
 
+	import re
+
 	# Return the unaltered name if it isn't already in thurr
 	if name not in existing_names:
 		return name

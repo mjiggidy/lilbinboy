@@ -1,6 +1,5 @@
 from PySide6 import QtCore, QtWidgets
-from lilbinboy.lbb_common.dlg_errorlog import LBErrorLogWindow
-from lilbinboy.lbb_common.wnd_checkforupdates import LBCheckForUpdatesWindow, LBUpdateManager
+from .dlg_errorlog import LBErrorLogWindow
 
 class LBMainWindow(QtWidgets.QMainWindow):
 	"""Lil' Main Window Boy"""

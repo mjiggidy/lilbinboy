@@ -2,8 +2,8 @@ import logging
 from PySide6 import QtWidgets, QtGui, QtCore, QtSql
 from timecode import Timecode
 from concurrent import futures
-from lilbinboy.lbb_common import LBUtilityTab, LBSpinBoxTC, LBTimelineView, LBSettingsManager
-from lilbinboy.lbb_features.trt import dlg_choose_columns, dlg_marker, logic_trt, model_trt, markers_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt, wdg_sequence_treeview, wdg_sequence_trims, wdg_stats, hist_main
+from ...lbb_common import LBUtilityTab, LBSpinBoxTC, LBTimelineView
+from ...lbb_features.trt import dlg_choose_columns, dlg_marker, logic_trt, model_trt, markers_trt, dlg_sequence_selection, dlg_choose_columns, exporters_trt, wdg_sequence_treeview, wdg_sequence_trims, wdg_stats, hist_main
 from .settings_keys import TRTSettingsKeys
 
 

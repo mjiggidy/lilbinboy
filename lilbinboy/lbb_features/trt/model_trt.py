@@ -4,7 +4,7 @@ import avbutils
 from datetime import timezone
 from PySide6 import QtCore, QtGui
 from timecode import Timecode, TimecodeRange
-from lilbinboy.lbb_features.trt import logic_trt, markers_trt, wdg_sequence_treeview
+from ...lbb_features.trt import logic_trt, markers_trt, wdg_sequence_treeview
 
 class SequenceSelectionMode(enum.Enum):
 	"""Modes for choosing sequences from a bin"""
