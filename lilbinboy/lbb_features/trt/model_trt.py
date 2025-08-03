@@ -706,7 +706,7 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		super().__init__()
 
 		self._data:list[dict[str, wdg_sequence_treeview.TRTAbstractItem]] = []
-		self._headers:list[wdg_sequence_treeview.TRTTreeViewHeaderItem]   = headers_list or []
+		self._headers:list[wdg_sequence_treeview.TRTTreeViewHeaderItem] = []
 
 		self.setHeaderItems([
 			wdg_sequence_treeview.TRTTreeViewHeaderItem("Sequence Color","sequence_color", show_label=False, is_frozen_header=True, display_delegate=wdg_sequence_treeview.TRTClipColorDisplayDelegate),
@@ -786,12 +786,9 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 	def data(self, index:QtCore.QModelIndex, role:int=QtCore.Qt.ItemDataRole.DisplayRole) -> QtCore.QObject:
 		"""Returns the data stored under the given role for the item referred to by the index."""
 
-		#item:treeview_trt.TRTAbstractItem = index.data()
-		#return item.data(role)
-
 		field = self._headers[index.column()].field()
 		item  = self._data[index.row()]
-		#print(field, item)
+
 		return item.get(field).data(role)
 
 	def headerData(self, section:int, orientation:QtCore.Qt.Orientation=QtCore.Qt.Orientation.Horizontal, role:int=QtCore.Qt.ItemDataRole.DisplayRole) -> QtCore.QObject:
@@ -806,18 +803,12 @@ class TRTViewModel(QtCore.QAbstractItemModel):
 		return self._headers
 	
 class TRTViewSortModel(QtCore.QSortFilterProxyModel):
-	
+	"""Proxy model to ensure proper sorting"""
+
 	def lessThan(self, left_idx:QtCore.QModelIndex, right_idx:QtCore.QModelIndex) -> bool:
 		"""Reimplemented sort function to use InitialSortOrderRole"""
 		return left_idx.data(self.sortRole()) < right_idx.data(self.sortRole())
 	
-	def headers(self) -> list:
-		"""Header items in logical order, mapped to source"""
-		headers = []
-		
-		source_headers = self.sourceModel().headers()
-
-		for idx in range(self.columnCount(QtCore.QModelIndex())):
-			col = self.mapToSource(self.index(0, idx, QtCore.QModelIndex())).column()
-			headers.append(source_headers[col])
-		return headers
+	def headers(self) -> list[wdg_sequence_treeview.TRTTreeViewHeaderItem]:
+		"""Header items in logical order"""
+		return self.sourceModel().headers()

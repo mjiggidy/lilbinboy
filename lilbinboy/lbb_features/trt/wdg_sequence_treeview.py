@@ -64,9 +64,9 @@ class TRTNumericItem(TRTAbstractItem):
 		super()._prepare_data()
 
 		self._data_roles.update({
-			QtCore.Qt.ItemDataRole.DisplayRole: self.to_string(self._data),
+			QtCore.Qt.ItemDataRole.DisplayRole:          self.to_string(self._data),
 			QtCore.Qt.ItemDataRole.InitialSortOrderRole: self._data,
-			QtCore.Qt.ItemDataRole.FontRole:             QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
+			QtCore.Qt.ItemDataRole.FontRole:             QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont),
 		})
 	
 	def to_json(self) -> int:
@@ -435,9 +435,13 @@ class TRTTreeView(QtWidgets.QTreeView):
 	def sectionMoved(self, idx_logical:int, idx_visual_old:int, idx_visual_new:int):
 		"""A header column was moved"""
 		self.sig_field_order_changed.emit(self.fieldOrder())
+
+	def headers(self) -> list[TRTTreeViewHeaderItem]:
+		"""All `TRTTreeViewHeaderItem` headers in logical order"""
+		return self.model().sourceModel().headers()
 	
 	def fieldOrder(self, include_hidden:bool=True) -> list[str]:
-		"""Returns a list of fields in the order they are displayed"""
+		"""Returns a list of field names in the order they are displayed"""
 
 		field_order = []
 
@@ -448,6 +452,14 @@ class TRTTreeView(QtWidgets.QTreeView):
 			if include_hidden or not self.header().isSectionHidden(idx_logical):
 				field_name = self.model().headerData(idx_logical, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole)
 				field_order.append(field_name)
+
+		# Test easier way
+		#easier:list[TRTTreeViewHeaderItem] = []
+		#for idx_logical, header in enumerate(self.headers()):
+		#	if include_hidden or not self.isColumnHidden(idx_logical):
+		#		easier.append(header.field())
+		#
+		#print("AHOY THERE", easier == field_order, f"Easier ({len(easier)})", f"field_oder ({len(field_order)})", "\n", easier, "\n", field_order)
 
 		return field_order
 	
