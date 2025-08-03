@@ -248,7 +248,6 @@ class TRTHistoryViewer(QtWidgets.QWidget):
 
 		## Initial State
 		self.updateModelQueries()
-		#print(self._snapshot_query_model.query())
 
 	def closeEvent(self, event):
 		self.sig_is_closing.emit()

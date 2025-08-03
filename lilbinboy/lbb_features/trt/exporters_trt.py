@@ -42,7 +42,6 @@ def export_delimited(model:QtCore.QAbstractItemModel, path:str, format:str):
 
 def export_json(json_info:dict, path:str):
 	import json
-	#print("Ok to ", path, json_info)
 
 	with open(path, "w") as json_handle:
 		json.dump(json_info, json_handle, indent='\t')
@@ -85,12 +84,6 @@ def exportToSnapshot(proxy_model:QtCore.QAbstractProxyModel):
 		)
 	
 	return timeline_infos
-
-
-#		for source_col in range(source_model_cols):
-#			source_index = source_model.index(source_row, source_col)
-#			print(source_headers[source_col], ":   ", source_index.data(QtCore.Qt.ItemDataRole.UserRole))
-#		print("")
 
 @dataclasses.dataclass
 class TimelineSnapshotInfo:

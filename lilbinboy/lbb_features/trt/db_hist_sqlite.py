@@ -1,5 +1,6 @@
-from PySide6 import QtCore, QtSql, QtGui
+import logging
 import timecode
+from PySide6 import QtCore, QtSql, QtGui
 
 class SnapshotDatabaseManager(QtCore.QObject):
 
@@ -13,7 +14,7 @@ class SnapshotDatabaseManager(QtCore.QObject):
 		"""Setup the initial database"""
 
 		if not QtSql.QSqlQuery(self._db).exec("PRAGMA foreign_keys = ON;"):
-			print("Error enabling foregin keys: ", self._db.lastError().text())
+			logging.getLogger(__name__).error("Error enabling foregin keys: %s", self._db.lastError().text())
 
 		if not QtSql.QSqlQuery(self._db).exec(
 			"""
@@ -32,7 +33,7 @@ class SnapshotDatabaseManager(QtCore.QObject):
 			)
 			"""
 		):
-			print("Error setting up snapshot labels: ", self._db.lastError().text())
+			logging.getLogger(__name__).error("Error setting up snapshot labels: %s", self._db.lastError().text())
 
 		if not QtSql.QSqlQuery(self._db).exec(
 			"""
@@ -50,12 +51,11 @@ class SnapshotDatabaseManager(QtCore.QObject):
 			)
 			"""
 		):
-			print("Error setting up snapshot sequences: ", self._db.lastError().text())
+			logging.getLogger(__name__).error("Error setting up snapshot sequences: %s", self._db.lastError().text())
 	
 	def getSnapshotRecords(self, records:list[QtSql.QSqlRecord]):
 
 		snapshot_ids = [record.field("id_snapshot").value() for record in records]
-		#print(snapshot_ids)
 
 		query = QtSql.QSqlQuery(self._db)
 
@@ -151,11 +151,9 @@ class SnapshotDatabaseManager(QtCore.QObject):
 		query.addBindValue(str(duration_frames)) # TODO: F+F
 		query.addBindValue(adjust_frames)
 		if not query.exec():
-			print(query.lastError().text())
+			logging.getLogger(__name__).error("Error creating snapshot group: %s", query.lastError().text())
 		
 		id_snapsphot_new = query.lastInsertId()
-
-	#	print("Inserted into ", id_snapsphot_new)
 		
 		# Copy sequences
 		for timeline_info in timeline_info_list:
@@ -180,7 +178,7 @@ class SnapshotDatabaseManager(QtCore.QObject):
 			query.addBindValue(timeline_info.duration_ff)
 
 			if not query.exec():
-				print(query.lastError().text())
+				logging.getLogger(__name__).error("Error adding sequence to snapshot group: %s", query.lastError().text())
 
 		return id_snapsphot_new
 	
@@ -202,4 +200,4 @@ class SnapshotDatabaseManager(QtCore.QObject):
 			query.addBindValue(id_snapshot)
 		
 		if not query.exec():
-			print(query.lastError().text())
+			logging.getLogger(__name__).error("Error deleting snapshot group: %s", query.lastError().text())

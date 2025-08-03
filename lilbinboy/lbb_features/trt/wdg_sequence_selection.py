@@ -62,7 +62,8 @@ class TRTModeSelection(QtWidgets.QFrame):
 		elif button == self._rdo_all_sequence:
 			self.sig_sequence_selection_mode_changed.emit(SequenceSelectionMode.ALL_SEQUENCES_PER_BIN)
 		else:
-			print("Weird selection mode")
+			import logging
+			logging.getLogger(__name__).error("Invalid selection mode selected: %s", button)
 	
 	@QtCore.Slot(SequenceSelectionMode)
 	def setSequenceSelectionMode(self, mode:SequenceSelectionMode):

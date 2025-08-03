@@ -294,8 +294,6 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 			label = "Total Running Time",
 			value = timecode.Timecode(self._trt_frames, rate=self._rate)
 		))
-
-		#print("TRT set to ", timecode.Timecode(self._trt_frames, rate=self._rate))
 	
 	def setFinalAdjustmentFrames(self, adjustment:timecode.Timecode):
 		self._final_adjust_frames = adjustment.frame_number
@@ -307,11 +305,8 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 			label = "Final Adjustment",
 			value = timecode.Timecode(self._final_adjust_frames, rate=self._rate)
 		))
-		
-		#print("Final adjust set to ", timecode.Timecode(self._rate, rate=self._rate))
 
 	def setRate(self, rate:int):
-		#print("Ayy I'm setting the thing to ", str(rate))
 		self._rate = rate
 
 		self._summary.add_stat_item(wdg_stats.TRTStatItem(
@@ -361,7 +356,6 @@ class TRTHistorySnapshotPanel(QtWidgets.QFrame):
 			)
 
 		self._tree_sequences.setItemDelegateForColumn(0, SnapshotClipColorDelegate())
-		self._tree_sequences.model().rowsInserted.connect(lambda: print("Ayyy"))
 
 		if snapshot_record.field("label_color").isNull():
 			clip_color = QtGui.QColor(None)

@@ -1,7 +1,7 @@
 
-import enum
+import enum, logging
 import avbutils
-from datetime import datetime, timezone
+from datetime import timezone
 from PySide6 import QtCore, QtGui
 from timecode import Timecode, TimecodeRange
 from lilbinboy.lbb_features.trt import logic_trt, markers_trt, wdg_sequence_treeview
@@ -254,8 +254,6 @@ class TRTDataModel(QtCore.QObject):
 
 			self._active_lfoa_offset = Timecode(frame_offset, rate=self._timecode_trimmed.rate)
 
-			#print("Set to", self._timecode_trimmed.start, "End", self.timelineTimecodeExtents().start + frame_offset)
-
 			self._timecode_trimmed = TimecodeRange(
 				start = self._timecode_trimmed.start,
 				end   = max(self.timelineTimecodeExtents().end - frame_offset, self._timecode_trimmed.start)
@@ -420,8 +418,8 @@ class TRTDataModel(QtCore.QObject):
 	
 	def setRate(self, rate:int) -> int:
 		if rate < 1:
-			print("No!  No!!!!")
-			exit()
+			logging.getLogger(__name__).error("No!  No!!!!  Tried to set an invalid rate (<1): %i", rate)
+			return
 		self._fps = rate
 		self.sig_rate_changed.emit(self.rate())
 		self.sig_data_changed.emit()
@@ -528,36 +526,38 @@ class TRTDataModel(QtCore.QObject):
 	@QtCore.Slot(str)
 	def set_active_head_marker_preset_name(self, marker_preset_name:str|None):
 		"""User has set a head marker preset"""
-		
-		if not marker_preset_name or marker_preset_name in self.marker_presets():
-			self._head_marker_preset_name = marker_preset_name or None
 
-			for timeline in self.data():
-				timeline.findMarkerFFOAFromPreset(self.activeHeadMarkerPreset())
+		if marker_preset_name and not marker_preset_name in self.marker_presets():
+			logging.getLogger(__name__).error("Attempted to set head marker preset by invalid name: %s", marker_preset_name)
+			return
+	
+		self._head_marker_preset_name = marker_preset_name or None
 
-			self.sig_head_marker_preset_changed.emit(self._head_marker_preset_name)
-			self.sig_data_changed.emit()
+		for timeline in self.data():
+			timeline.findMarkerFFOAFromPreset(self.activeHeadMarkerPreset())
 
-			self.sig_trt_changed.emit(self.total_runtime())
-		else:
-			print("Got weird one:", marker_preset_name, str(type(marker_preset_name)))
+		self.sig_head_marker_preset_changed.emit(self._head_marker_preset_name)
+		self.sig_data_changed.emit()
+
+		self.sig_trt_changed.emit(self.total_runtime())
 
 	@QtCore.Slot(str)
 	def set_active_tail_marker_preset_name(self, marker_preset_name:str|None):
 		"""User has set a tail marker preset"""
+
+		if marker_preset_name and not marker_preset_name in self.marker_presets():
+			logging.getLogger(__name__).error("Attempted to set tail marker preset by invalid name: %s", marker_preset_name)
+			return
 		
-		if not marker_preset_name or marker_preset_name in self.marker_presets():
-			self._tail_marker_preset_name = marker_preset_name or None
+		self._tail_marker_preset_name = marker_preset_name or None
 
-			for timeline in self.data():
-				timeline.findMarkerLFOAFromPreset(self.activeTailMarkerPreset())
+		for timeline in self.data():
+			timeline.findMarkerLFOAFromPreset(self.activeTailMarkerPreset())
 
-			self.sig_tail_marker_preset_changed.emit(self._tail_marker_preset_name)
-			self.sig_data_changed.emit()
+		self.sig_tail_marker_preset_changed.emit(self._tail_marker_preset_name)
+		self.sig_data_changed.emit()
 
-			self.sig_trt_changed.emit(self.total_runtime())
-		else:
-			print("Noo", marker_preset_name)
+		self.sig_trt_changed.emit(self.total_runtime())
 
 	
 
@@ -610,7 +610,7 @@ class TRTDataModel(QtCore.QObject):
 		try:
 			del self._data[index]
 		except Exception as e:
-			print(f"Didn't remove because {e}")
+			logging.getLogger(__name__).error("Error removing sequence from data model: %s", e)
 		
 		self.sig_sequence_removed.emit(index)
 		

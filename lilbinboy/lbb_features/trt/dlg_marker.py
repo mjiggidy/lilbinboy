@@ -515,10 +515,7 @@ class TRTMarkerMaker(QtWidgets.QDialog):
 	def switchPresetsAllowed(self) -> bool:
 		"""If it's cool to switch to editing another marker preset criteria"""
 		if not self.isDirty():
-		#	print("Ain't dirty")
 			return True
-		
-		#print("Deemed dirty (dd)")
 		
 		btn_chosen = QtWidgets.QMessageBox.warning(self, "Current Preset Not Saved", "You have unsaved changes to the current preset.", buttons=QtWidgets.QMessageBox.StandardButton.Discard|QtWidgets.QMessageBox.StandardButton.Cancel)
 

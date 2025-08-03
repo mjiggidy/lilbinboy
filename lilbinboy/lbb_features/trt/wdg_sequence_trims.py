@@ -1,4 +1,4 @@
-import pathlib
+import logging
 from PySide6 import QtCore, QtGui, QtWidgets
 from timecode import Timecode
 from lilbinboy.lbb_common import LBSpinBoxTC, resources
@@ -169,7 +169,7 @@ class TRTControlsTrims(QtWidgets.QWidget):
 	def set_head_marker_preset_name(self, marker_preset_name:str|None):
 		"""Set the active marker preset based on preset name (or None to deactivate)"""
 
-		print("Setting head marker to", marker_preset_name)
+		logging.getLogger(__name__).info("Setting head marker to %s", marker_preset_name)
 
 		if not marker_preset_name:
 			self._use_head_marker.setCheckState(QtCore.Qt.CheckState.Unchecked)
@@ -186,7 +186,7 @@ class TRTControlsTrims(QtWidgets.QWidget):
 	def set_tail_marker_preset_name(self, marker_preset_name:str|None):
 		"""Set the active marker preset based on preset name (or None to deactivate)"""
 
-		print("Setting tail marker to ", marker_preset_name)
+		logging.getLogger(__name__).info("Setting tail marker to %s", marker_preset_name)
 		
 		if not marker_preset_name:
 			self._use_tail_marker.setCheckState(QtCore.Qt.CheckState.Unchecked)

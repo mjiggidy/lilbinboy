@@ -429,7 +429,6 @@ class TRTTreeView(QtWidgets.QTreeView):
 			return
 		
 		self.header().setSortIndicator(fields_logical.index(sort_field), sort_order)
-		#print("Set to ", sort_field, sort_order)
 	
 	@QtCore.Slot(int, int, int)
 	def sectionMoved(self, idx_logical:int, idx_visual_old:int, idx_visual_new:int):
@@ -459,7 +458,6 @@ class TRTTreeView(QtWidgets.QTreeView):
 		#	if include_hidden or not self.isColumnHidden(idx_logical):
 		#		easier.append(header.field())
 		#
-		#print("AHOY THERE", easier == field_order, f"Easier ({len(easier)})", f"field_oder ({len(field_order)})", "\n", easier, "\n", field_order)
 
 		return field_order
 	

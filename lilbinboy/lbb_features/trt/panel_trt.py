@@ -460,7 +460,6 @@ class LBTRTCalculator(LBUtilityTab):
 		# Hook in to the sort/filter model to update the LP timeline view
 		self.list_trts.model().layoutChanged.connect(self.update_lp_layout)
 		self.model().sig_data_changed.connect(self.update_lp_layout)
-		#print(self.list_trts.model().data(0,1))
 		
 		# Top control buttons
 		self.btn_add_bins.clicked.connect(self.choose_folder)
@@ -956,7 +955,6 @@ class LBTRTCalculator(LBUtilityTab):
 			return
 		
 		# If user specified a known suffix in the filename, go with it
-#		print("Got ", QtCore.QFileInfo(path_file).suffix())
 		if QtCore.QFileInfo(path_file).suffix().lower() in formats.keys():
 			self.sig_export_requested.emit(path_file, QtCore.QFileInfo(path_file).suffix())
 			return

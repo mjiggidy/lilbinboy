@@ -55,9 +55,7 @@ class LBMarkerIcon(QtGui.QIcon):
 
 		self._name = color
 		self._color = QtGui.QColor().fromString(color) if color else None
-
-		#print("I make for ", self._color)
-
+		
 		for s in [8,16, 32, 64]:
 			self.addPixmap(self._create_pixmap(s,s))
 	

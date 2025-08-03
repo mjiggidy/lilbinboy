@@ -1,4 +1,4 @@
-from PySide6 import QtCore, QtWidgets, QtGui
+from PySide6 import QtCore, QtWidgets
 from lilbinboy.lbb_common import LBClipColorPicker
 from lilbinboy.lbb_features.trt.model_trt import SingleSequenceSelectionProcess
 
@@ -77,7 +77,6 @@ class TRTSequenceSelection(QtWidgets.QDialog):
 		self.cmb_sort_column_name.setCurrentText(sort_process.sortColumn())
 		
 		self.cmb_sort_column_direction.addItems(o.name.rstrip("Order") for o in QtCore.Qt.SortOrder)
-		print("Set initiao to", sort_process.sortDirection().value)
 		self.cmb_sort_column_direction.setCurrentIndex(sort_process.sortDirection().value)
 
 		for sequence_filter in sort_process.filters():
