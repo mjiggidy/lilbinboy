@@ -30,7 +30,27 @@ class LBBApplication(QtWidgets.QApplication):
 
 		# Setup logging
 		logging.basicConfig(level=logging.DEBUG)
-		log_app = logging.getLogger("app")
+		
+		from logging import handlers
+		file_formatter = logging.Formatter("\t".join([
+			"%(asctime)s",
+			"%(name)s",
+			"%(levelname)s",
+			"%(message)s"
+		]))
+
+		file_handler = handlers.RotatingFileHandler(
+			filename    = QtCore.QDir(self.userDataLocation().toLocalFile()).filePath("lbb_log.log"),
+			maxBytes    = 1_000_000,
+			backupCount = 5,
+
+		)
+
+		file_handler.setFormatter(file_formatter)
+		file_handler.setLevel(logging.NOTSET)
+		logging.getLogger().addHandler(file_handler)
+		
+		log_app = logging.getLogger(__name__)
 		log_app.info("Using user data location %s", self.userDataLocation())
 
 		# Setup settings manager
