@@ -6,5 +6,6 @@ from .wdg_timelineview import LBTimelineView
 from .wdg_timecodespinbox import LBSpinBoxTC
 from .wdg_utilitytab import LBUtilityTab
 from .settings_manager import LBSettingsManager
+from .log_handler import *
 
 from .helper_funcs import *
