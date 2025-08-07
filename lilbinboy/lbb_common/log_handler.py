@@ -62,7 +62,7 @@ class LBLogDataModel(QtCore.QAbstractItemModel):
 		# Keepin' it flat for now
 		return QtCore.QModelIndex()
 	
-	def rowCount(self, /, parent:QtCore.QModelIndex=None) -> int:
+	def rowCount(self, /, parent:QtCore.QModelIndex=QtCore.QModelIndex()) -> int:
 		"""Return the number of records"""
 
 		# Keep 'er flat
