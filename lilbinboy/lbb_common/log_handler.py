@@ -11,6 +11,12 @@ class LBLogDataModel(QtCore.QAbstractItemModel):
 	DEFAULT_MAX_RECORDS:int = 128
 	"""Default number of maxmimum records unless explicitly set per instance"""
 
+	sig_record_count_changed = QtCore.Signal(int)
+	"""Number of records has changed"""
+
+	sig_max_records_changed = QtCore.Signal(int)
+	"""Maxmimum number of allowed records has changed"""
+
 	def __init__(self, max_records:int=DEFAULT_MAX_RECORDS, *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
@@ -51,6 +57,8 @@ class LBLogDataModel(QtCore.QAbstractItemModel):
 		# Trim off them extras real good. No room for you fellas!
 		if not delay_cull:
 			self.cullRecords()
+		
+		self.sig_max_records_changed.emit(self._max_records)
 	
 	def maxRecords(self) -> int:
 		"""Maximum number of log records maintained"""
