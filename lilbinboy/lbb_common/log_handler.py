@@ -39,7 +39,7 @@ class LBLogDataModel(QtCore.QAbstractItemModel):
 		extra_records = max(len(self._records) - self._max_records, 0)
 
 		if extra_records:
-			self.beginRemoveRows(QtCore.QModelIndex(), self._max_records, self._max_records + extra_records)
+			self.beginRemoveRows(QtCore.QModelIndex(), self._max_records, self._max_records + extra_records - 1)
 			self._records = self._records[:self._max_records]
 			self.endRemoveRows()
 
@@ -49,7 +49,7 @@ class LBLogDataModel(QtCore.QAbstractItemModel):
 	def setMaxRecords(self, max_records:int, delay_cull:bool=False):
 		"""Set a new max record length and cull extras"""
 
-		if self._max_records < 0:
+		if max_records < 0:
 			raise ValueError("Max records cannot be negative")
 
 		self._max_records = int(max_records)
