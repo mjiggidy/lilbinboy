@@ -1,4 +1,4 @@
-import logging
+import logging, random
 from PySide6 import QtCore, QtGui, QtWidgets
 from lilbinboy.lbb_common import LBLogDataModel, LBLogHandler
 
@@ -32,6 +32,24 @@ def toggleTimer(set_enabled:bool):
 		timer.stop()
 		logging.getLogger(__name__).info(f"Stopped auto-logger")
 
+@QtCore.Slot()
+def doALog():
+	level = random.choice([
+		logging.DEBUG,
+		logging.INFO,
+		logging.ERROR,
+		logging.CRITICAL
+	])
+
+	message = random.choice([
+		"hi",
+		"sup lol",
+		"okay",
+		"yo",
+		"look at my log",
+	])
+	logging.getLogger(__name__).log(level, f"Auto-log says \"%s\"", message)
+
 @QtCore.Slot(int)
 def setAutoLoggerInterval(interval_ms:int):
 
@@ -56,7 +74,7 @@ if __name__ == "__main__":
 
 
 	timer = QtCore.QTimer(interval=5000)
-	timer.timeout.connect(lambda: logging.getLogger().info("Ahaa"))
+	timer.timeout.connect(doALog)
 	timer.start()
 
 	wnd_main.layout().addWidget(log_shower)
