@@ -1,11 +1,16 @@
 import logging
 from datetime import datetime
-from PySide6 import QtCore
+from PySide6 import QtCore, QtWidgets, QtGui
 
 class LBLogDataModel(QtCore.QAbstractItemModel):
 	"""Qt Data model for Lil' Gui' Loggin Boy"""
 
-	HEADERS:list[str] = ["Module","Timestamp","Message"]
+	HEADERS:list[str] = [
+		"Timestamp",
+		"Module",
+		"Level",
+		"Message"
+	]
 	"""Headers available for display"""
 
 	DEFAULT_MAX_RECORDS:int = 128
@@ -87,8 +92,37 @@ class LBLogDataModel(QtCore.QAbstractItemModel):
 	def data(self, index:QtCore.QModelIndex, /, role:QtCore.Qt.ItemDataRole):
 		"""Return the requested data for an index"""
 
+		record = self._records[index.row()]
+		header = self.HEADERS[index.column()]
+
 		if role == QtCore.Qt.ItemDataRole.DisplayRole:
-			return self.getLogRecordAttribute(log_index=index.row(), log_attribute=index.column())
+			if header == "Module":
+				return record.module
+			elif header == "Timestamp":
+				return str(datetime.fromtimestamp(record.created).strftime("%Y-%m-%d %H:%M:%S"))
+			elif header == "Message":
+				return record.getMessage()
+			elif header == "Level":
+				return record.levelname.title()
+			else:
+				return ""
+		
+		elif role == QtCore.Qt.ItemDataRole.ForegroundRole:
+			if record.levelno >= logging.ERROR:
+				return QtGui.QBrush(QtGui.QColor("Red"))
+			elif record.levelno <= logging.DEBUG:
+				return QtGui.QBrush(
+					QtWidgets.QApplication.palette().color(QtGui.QPalette.ColorGroup.Disabled, QtGui.QPalette.ColorRole.Text)
+				)
+		
+		elif role == QtCore.Qt.ItemDataRole.FontRole:
+			if record.levelno >= logging.CRITICAL:
+				font = QtGui.QFont()
+				font.setBold(True)
+				return font
+				
+
+			#return self.getLogRecordAttribute(log_index=index.row(), log_attribute=index.column())
 		
 	def headerData(self, section:int, orientation:QtCore.Qt.Orientation, /, role:QtCore.Qt.ItemDataRole=None):
 		
@@ -106,9 +140,9 @@ class LBLogDataModel(QtCore.QAbstractItemModel):
 		if log_attribute == 0:
 			return record.module
 		elif log_attribute == 1:
-			return str(datetime.fromtimestamp(record.created))
+			return str(datetime.fromtimestamp(record.created).strftime("%Y-%m-%d %H:%M:%S"))
 		elif log_attribute == 2:
-			return record.message
+			return record.getMessage()
 	
 	def index(self, row:int, column:int, /, parent:QtCore.QModelIndex=QtCore.QModelIndex()):
 		return self.createIndex(row, column)
