@@ -14,6 +14,7 @@ if typing.TYPE_CHECKING:
 class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 
 	sig_hide_column_index         = QtCore.Signal(int, QtCore.QModelIndex)
+	sig_user_clicking_remove_buttons = QtCore.Signal()
 	sig_remove_selected_bin_columns = QtCore.Signal()
 	sig_rename_column_for_index   = QtCore.Signal(int, QtCore.QModelIndex, str)
 
@@ -253,19 +254,12 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 
 			elif can_delete and event.type() == QtCore.QEvent.Type.MouseButtonPress and event.button() == QtCore.Qt.MouseButton.LeftButton:
 
-				for selected_button_index in view_widget.selectionModel().selectedRows(actual_index.column()):
-
-					if not selected_button_index.data(QtCore.Qt.ItemDataRole.UserRole):
-						view_widget.selectionModel().select(selected_button_index, QtCore.QItemSelectionModel.SelectionFlag.Deselect|QtCore.QItemSelectionModel.SelectionFlag.Rows)
-					else:
-						view_widget.update(selected_button_index)
+				self.sig_user_clicking_remove_buttons.emit()
 			
 			elif can_delete and event.type() == QtCore.QEvent.Type.MouseButtonRelease and event.button() == QtCore.Qt.MouseButton.LeftButton:
 
 				self.sig_remove_selected_bin_columns.emit()
-
 				return True
-
 
 		return super().editorEvent(event, model, option_item, index)
 	
