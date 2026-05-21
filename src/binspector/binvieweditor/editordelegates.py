@@ -13,9 +13,9 @@ if typing.TYPE_CHECKING:
 
 class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 
-	sig_hide_column_index       = QtCore.Signal(int, QtCore.QModelIndex)
-	sig_remove_column_index     = QtCore.Signal(int, QtCore.QModelIndex)
-	sig_rename_column_for_index = QtCore.Signal(int, QtCore.QModelIndex, str)
+	sig_hide_column_index         = QtCore.Signal(int, QtCore.QModelIndex)
+	sig_remove_selected_bin_columns = QtCore.Signal()
+	sig_rename_column_for_index   = QtCore.Signal(int, QtCore.QModelIndex, str)
 
 	DEFAULT_BUTTON_MARGINS = QtCore.QMargins(1,1,1,1)
 
@@ -224,9 +224,9 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 
 				#view_widget.update(actual_index)
 				
-				selected_rows = view_widget.selectionModel().selectedRows(actual_index.column())
+				selected_row_indexes = view_widget.selectionModel().selectedRows(actual_index.column())
 				
-				if not selected_rows:
+				if not selected_row_indexes:
 					
 					# Hmmmm....
 					return True
@@ -234,7 +234,7 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 				
 				# NOTE: Doin' this in reverse row order so as not to change row indexes
 				
-				for selected_button_index in sorted(selected_rows, key=lambda i: i.row(), reverse=True):
+				for selected_button_index in sorted(selected_row_indexes, key=lambda i: i.row(), reverse=True):
 
 					if selected_button_index.data(QtCore.Qt.ItemDataRole.UserRole):
 						self.sig_hide_column_index.emit(selected_button_index.row(), QtCore.QModelIndex())
@@ -261,25 +261,10 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 						view_widget.update(selected_button_index)
 			
 			elif can_delete and event.type() == QtCore.QEvent.Type.MouseButtonRelease and event.button() == QtCore.Qt.MouseButton.LeftButton:
-				
-				selected_rows = view_widget.selectionModel().selectedRows(actual_index.column())
-				
-				if not selected_rows:
-					
-					# Hmmmm....
-					return True
-				
-				
-				# NOTE: Doin' this in reverse row order so as not to change row indexes
-				
-				for selected_button_index in sorted(selected_rows, key=lambda i: i.row(), reverse=True):
 
-					if selected_button_index.data(QtCore.Qt.ItemDataRole.UserRole):
-						self.sig_remove_column_index.emit(selected_button_index.row(), QtCore.QModelIndex())
+				self.sig_remove_selected_bin_columns.emit()
 
-					view_widget.update(selected_button_index)
-
-			#return True
+				return True
 
 
 		return super().editorEvent(event, model, option_item, index)

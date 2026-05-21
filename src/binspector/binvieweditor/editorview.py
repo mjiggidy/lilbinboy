@@ -70,7 +70,7 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 
 		# NOTE: Need better way to do this for model/delegate reassignments
 		self.itemDelegate().sig_hide_column_index.connect(self.toggleBinColumnVisibility)
-		self.itemDelegate().sig_remove_column_index.connect(self.removeUserColumn)
+		self.itemDelegate().sig_remove_selected_bin_columns.connect(self.removeSelectedColumns)
 #		self.itemDelegate().sig_rename_column_for_index.connect(self.model().renameColumnForIndex)
 		
 		for col in range(model.columnCount(QtCore.QModelIndex())):
@@ -99,13 +99,65 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 
 		self.model().setData(row_index, not is_hidden, binviewitemtypes.BSBinViewColumnInfoRole.IsHiddenRole)
 
-	@QtCore.Slot(int, QtCore.QModelIndex)
-	def removeUserColumn(self, row:int, parent:QtCore.QModelIndex):
+	@QtCore.Slot()
+	def removeSelectedColumns(self):
 		
-		if not self.model() or parent.isValid():
+		if not self.model():	
 			return
 		
-		self.model().removeRow(row, QtCore.QModelIndex())
+		del_col = None
+		for col in range(self.model().columnCount(QtCore.QModelIndex())):
+
+			if self.model().headerData(col, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole) == editorproxymodel.BSBinViewColumnEditorFeature.DeleteColumn:
+				del_col = col
+				break
+
+		if del_col is None:
+			print("Hmm")
+			return
+		
+		selected_row_indexes = sorted(
+			(i.row() for i in self.selectionModel().selectedRows(del_col) if i.data(QtCore.Qt.ItemDataRole.UserRole)),
+#			key=lambda i: i.row(),
+			reverse=True,
+		)
+		
+		if not selected_row_indexes:
+			# Hmmmm....
+			return True
+		
+		row_clumps = []
+		clump = []
+		for row in selected_row_indexes:
+			
+			if clump:
+				if clump[-1] == row+1:
+					clump.append(row)
+				else:
+					row_clumps.append(clump)
+					clump = [row]
+			else:
+				clump = [row]
+		
+		if clump:
+			row_clumps.append(clump)
+		else:
+			print("No clumps...")
+			return
+
+#		print("Clumps: ", row_clumps)
+
+		for clump in row_clumps:
+
+			self.model().removeRows(
+				clump[-1],
+				len(clump),
+				QtCore.QModelIndex()
+			)
+
+#			print("Removed clump", clump)
+		
+		#self.model().removeRow(row, QtCore.QModelIndex())
 
 	def sizeHintForRow(self, row:int):
 		

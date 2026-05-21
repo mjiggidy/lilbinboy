@@ -295,12 +295,27 @@ class BSBinViewColumnEditorProxyModel(QtCore.QAbstractProxyModel):
 		
 #		return super().moveRows(sourceParent, sourceRow, count, destinationParent, destinationChild)
 	
-	def removeRow(self, row:int, /, parent:QtCore.QModelIndex) -> bool:
-		
+	def removeRows(self, row, count, /, parent = ...):
+
 		if not self.sourceModel() or parent.isValid():
 			return
 		
-		return self.sourceModel().removeRow(row, QtCore.QModelIndex())
+		return self.sourceModel().removeRows(row, count, QtCore.QModelIndex())
+
+#	def removeRow(self, row:int, /, parent:QtCore.QModelIndex) -> bool:
+#		
+#		if not self.sourceModel() or parent.isValid():
+#			return
+#		
+#		return self.sourceModel().removeRow(row, QtCore.QModelIndex())
+	
+	def insertRows(self, row:int, count:int, /, parent:QtCore.QModelIndex) -> bool:
+		"""Forward row inserts to the source model"""
+
+		if parent.isValid() or not self.sourceModel():
+			return False
+		
+		return self.sourceModel().insertRows(row, count, QtCore.QModelIndex())
 	
 	def dropMimeData(self, data:QtCore.QMimeData, action:QtCore.Qt.DropAction, row:int, column:int, parent:QtCore.QModelIndex) -> bool:
 
