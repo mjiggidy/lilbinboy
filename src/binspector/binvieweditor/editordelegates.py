@@ -12,9 +12,10 @@ if typing.TYPE_CHECKING:
 	from . import editorwidget
 
 class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
-
-	sig_hide_column_index         = QtCore.Signal(int, QtCore.QModelIndex)
+	
 	sig_user_clicking_remove_buttons = QtCore.Signal()
+	sig_user_clicking_hide_buttons   = QtCore.Signal()
+	sig_user_toggling_column_visibility = QtCore.Signal()
 	sig_remove_selected_bin_columns = QtCore.Signal()
 	sig_rename_column_for_index   = QtCore.Signal(int, QtCore.QModelIndex, str)
 
@@ -215,32 +216,18 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 				return True
 			
 			if event.type() == QtCore.QEvent.Type.MouseButtonPress and event.button() == QtCore.Qt.MouseButton.LeftButton:
-				
 
-				for selected_button_index in view_widget.selectionModel().selectedRows(actual_index.column()):
-					view_widget.update(selected_button_index)
+				self.sig_user_clicking_hide_buttons.emit()
+
+				# Pass through to register mousedown with the view
+				return False
 				
 
 			elif event.type() == QtCore.QEvent.Type.MouseButtonRelease and event.button() == QtCore.Qt.MouseButton.LeftButton:
 
 				#view_widget.update(actual_index)
 				
-				selected_row_indexes = view_widget.selectionModel().selectedRows(actual_index.column())
-				
-				if not selected_row_indexes:
-					
-					# Hmmmm....
-					return True
-				
-				
-				# NOTE: Doin' this in reverse row order so as not to change row indexes
-				
-				for selected_button_index in sorted(selected_row_indexes, key=lambda i: i.row(), reverse=True):
-
-					if selected_button_index.data(QtCore.Qt.ItemDataRole.UserRole):
-						self.sig_hide_column_index.emit(selected_button_index.row(), QtCore.QModelIndex())
-
-					view_widget.update(selected_button_index)
+				self.sig_user_toggling_column_visibility.emit()
 
 			#return True
 		
@@ -248,18 +235,23 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 
 			can_delete = actual_index.data(QtCore.Qt.ItemDataRole.UserRole)
 
-			# NONNA THAT DRAGGIN THE BATTIN
+			# NONNA THAT DRAGGIN THE MOUSE BATTIN
 			if can_delete and event.type() == QtCore.QEvent.Type.MouseMove:
 				return True
 
 			elif can_delete and event.type() == QtCore.QEvent.Type.MouseButtonPress and event.button() == QtCore.Qt.MouseButton.LeftButton:
 
 				self.sig_user_clicking_remove_buttons.emit()
+				
+				# Pass through to register mousedown with the view
+				return False
 			
 			elif can_delete and event.type() == QtCore.QEvent.Type.MouseButtonRelease and event.button() == QtCore.Qt.MouseButton.LeftButton:
 
 				self.sig_remove_selected_bin_columns.emit()
-				return True
+				
+				# Pass through for... reasons... probably
+				return False
 
 		return super().editorEvent(event, model, option_item, index)
 	

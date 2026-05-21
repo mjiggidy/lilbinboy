@@ -69,9 +69,10 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		super().setModel(model)
 
 		# NOTE: Need better way to do this for model/delegate reassignments
-		self.itemDelegate().sig_hide_column_index.connect(self.toggleBinColumnVisibility)
 		self.itemDelegate().sig_remove_selected_bin_columns.connect(self.removeSelectedColumns)
 		self.itemDelegate().sig_user_clicking_remove_buttons.connect(self.userClickingDeleteColumn)
+		self.itemDelegate().sig_user_toggling_column_visibility.connect(self.toggleBinColumnVisibility)
+		self.itemDelegate().sig_user_clicking_hide_buttons.connect(self.userClickingHideColumn)
 #		self.itemDelegate().sig_rename_column_for_index.connect(self.model().renameColumnForIndex)
 		
 		for col in range(model.columnCount(QtCore.QModelIndex())):
@@ -116,16 +117,61 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 				# Repaint any delete buttons to show them goin' down
 				self.update(selected_button_index)
 
-	@QtCore.Slot(int, QtCore.QModelIndex)
-	def toggleBinColumnVisibility(self, row:int, parent:QtCore.QModelIndex):
+	@QtCore.Slot()
+	def userClickingHideColumn(self):
+		"""User is pressing mouse button on one o' them "Delete" buttons prolly"""
 
-		if not self.model() or parent.isValid():
+		vis_col = self.columnForEditorFeature(editorproxymodel.BSBinViewColumnEditorFeature.VisibilityColumn)
+
+		if not vis_col:
+
+			# No delete column? Probably shouldn't be deleting them then, hoss.  You ever think about that?
+			# Lemme just clear this for yas.
+
+			self.selectionModel().clear()
+			return
+
+		for selected_button_index in self.selectionModel().selectedRows(vis_col):
+
+			if not selected_button_index.data(QtCore.Qt.ItemDataRole.UserRole):
+
+				# Deselect any rows that are not deletable / not showing a delete button probably
+
+				self.selectionModel().select(
+					selected_button_index,
+					QtCore.QItemSelectionModel.SelectionFlag.Deselect|QtCore.QItemSelectionModel.SelectionFlag.Rows
+				)
+
+			else:
+				# Repaint any delete buttons to show them goin' down
+				self.update(selected_button_index)
+
+	@QtCore.Slot()
+	def toggleBinColumnVisibility(self):
+
+		if not self.model():
 			return
 		
-		row_index = self.model().index(row, 1, QtCore.QModelIndex())
-		is_hidden = row_index.data(binviewitemtypes.BSBinViewColumnInfoRole.IsHiddenRole)
+		vis_col = self.columnForEditorFeature(editorproxymodel.BSBinViewColumnEditorFeature.VisibilityColumn)
+		
+		selected_row_indexes = sorted(
+			(i.row() for i in self.selectionModel().selectedRows(vis_col) if i.data(QtCore.Qt.ItemDataRole.UserRole)),
+			reverse=True,
+		)
+		
+		if not selected_row_indexes:
+			return True
+		
+		self.model().blockSignals(True)
+		
+		for row in selected_row_indexes:
 
-		self.model().setData(row_index, not is_hidden, binviewitemtypes.BSBinViewColumnInfoRole.IsHiddenRole)
+			item_index = self.model().index(row, 1, QtCore.QModelIndex())
+			self.model().setData(item_index, not item_index.data(binviewitemtypes.BSBinViewColumnInfoRole.IsHiddenRole), binviewitemtypes.BSBinViewColumnInfoRole.IsHiddenRole)
+		
+		self.model().blockSignals(False)
+
+		self.model().layoutChanged.emit()
 
 	def columnForEditorFeature(self, feature:editorproxymodel.BSBinViewColumnEditorFeature) -> int|None:
 		"""Get the model column index for a given bin view editor feature"""
@@ -172,7 +218,6 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		if clump:
 			row_clumps.append(clump)
 		else:
-			print("No clumps...")
 			return
 
 #		print("Clumps: ", row_clumps)
@@ -193,3 +238,7 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		
 		# Uniform row heights
 		return super().sizeHintForRow(0)
+	
+	def dropEvent(self, event):
+		print("Yo")
+		return super().dropEvent(event)
