@@ -1,4 +1,4 @@
-from PySide6 import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtGui, QtCore
 
 from . import editordelegates, editorproxymodel
 from ..binview import binviewitemtypes
@@ -69,15 +69,15 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		super().setModel(model)
 
 		# NOTE: Need better way to do this for model/delegate reassignments
-		self.itemDelegate().sig_remove_selected_bin_columns.connect(self.removeSelectedColumns)
-		self.itemDelegate().sig_user_clicking_remove_buttons.connect(self.userClickingDeleteColumn)
-		self.itemDelegate().sig_user_toggling_column_visibility.connect(self.toggleBinColumnVisibility)
-		self.itemDelegate().sig_user_clicking_hide_buttons.connect(self.userClickingHideColumn)
+		self.itemDelegate().sig_user_clicking_remove_buttons   .connect(self.userClickingDeleteColumn)
+		self.itemDelegate().sig_user_clicking_hide_buttons     .connect(self.userClickingHideColumn)
+		self.itemDelegate().sig_remove_selected_bin_columns    .connect(self.removeSelectedColumns)
+		self.itemDelegate().sig_user_toggling_column_visibility.connect(self.toggleSelectedColumnVisibility)
 #		self.itemDelegate().sig_rename_column_for_index.connect(self.model().renameColumnForIndex)
 		
 		for col in range(model.columnCount(QtCore.QModelIndex())):
 
-			editor_feature = model.headerData(col, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole)
+			editor_feature = self._editorFeatureForColumn(col)
 
 			if editor_feature == editorproxymodel.BSBinViewColumnEditorFeature.NameColumn:
 				self.horizontalHeader().setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeMode.Stretch)
@@ -92,7 +92,7 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 	def userClickingDeleteColumn(self):
 		"""User is pressing mouse button on one o' them "Delete" buttons prolly"""
 
-		del_col = self.columnForEditorFeature(editorproxymodel.BSBinViewColumnEditorFeature.DeleteColumn)
+		del_col = self._columnForEditorFeature(editorproxymodel.BSBinViewColumnEditorFeature.DeleteColumn)
 
 		if not del_col:
 
@@ -121,7 +121,7 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 	def userClickingHideColumn(self):
 		"""User is pressing mouse button on one o' them "Delete" buttons prolly"""
 
-		vis_col = self.columnForEditorFeature(editorproxymodel.BSBinViewColumnEditorFeature.VisibilityColumn)
+		vis_col = self._columnForEditorFeature(editorproxymodel.BSBinViewColumnEditorFeature.VisibilityColumn)
 
 		if not vis_col:
 
@@ -147,12 +147,12 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 				self.update(selected_button_index)
 
 	@QtCore.Slot()
-	def toggleBinColumnVisibility(self):
+	def toggleSelectedColumnVisibility(self):
 
 		if not self.model():
 			return
 		
-		vis_col = self.columnForEditorFeature(editorproxymodel.BSBinViewColumnEditorFeature.VisibilityColumn)
+		vis_col = self._columnForEditorFeature(editorproxymodel.BSBinViewColumnEditorFeature.VisibilityColumn)
 		
 		selected_row_indexes = sorted(
 			(i.row() for i in self.selectionModel().selectedRows(vis_col) if i.data(QtCore.Qt.ItemDataRole.UserRole)),
@@ -173,7 +173,7 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 
 		self.model().layoutChanged.emit()
 
-	def columnForEditorFeature(self, feature:editorproxymodel.BSBinViewColumnEditorFeature) -> int|None:
+	def _columnForEditorFeature(self, feature:editorproxymodel.BSBinViewColumnEditorFeature) -> int|None:
 		"""Get the model column index for a given bin view editor feature"""
 
 		for col in range(self.model().columnCount(QtCore.QModelIndex())):
@@ -182,6 +182,14 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 				return col
 		
 		return None
+	
+	def _editorFeatureForColumn(self, col_index:int) -> editorproxymodel.BSBinViewColumnEditorFeature|None:
+		"""Get the bin view editor feature role for a given column index"""
+
+		if not self.model():
+			return None
+		
+		return self.model().headerData(col_index, QtCore.Qt.Orientation.Horizontal, QtCore.Qt.ItemDataRole.UserRole)
 
 	@QtCore.Slot()
 	def removeSelectedColumns(self):
@@ -189,7 +197,7 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		if not self.model():	
 			return
 		
-		del_col = self.columnForEditorFeature(editorproxymodel.BSBinViewColumnEditorFeature.DeleteColumn)
+		del_col = self._columnForEditorFeature(editorproxymodel.BSBinViewColumnEditorFeature.DeleteColumn)
 
 		if del_col is None:
 			return
@@ -239,6 +247,38 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		# Uniform row heights
 		return super().sizeHintForRow(0)
 	
-	def dropEvent(self, event):
-		print("Yo")
+	def dropEvent(self, event:QtGui.QDropEvent):
+
+		if event.dropAction() != QtCore.Qt.DropAction.MoveAction or not self.selectionModel().hasSelection():
+			
+			event.ignore()
+			return super().dropEvent(event)
+		
+		# Don't do anything fancy
+		event.setDropAction(QtCore.Qt.DropAction.IgnoreAction)
+		
+		drop_target_index = self.indexAt(event.pos())
+		drop_target_row   = drop_target_index.row() if self.dropIndicatorPosition() == QtWidgets.QTableView.DropIndicatorPosition.AboveItem else drop_target_index.row() + 1
+
+		if not drop_target_index.isValid():
+
+			print("Invalid drop target index hmmmmmmm")
+			return
+		
+		if self.dropIndicatorPosition() != QtWidgets.QTableView.DropIndicatorPosition.AboveItem:
+			print(f"Moving below {drop_target_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({drop_target_row=}):")
+		else:
+			print(f"Moving above {drop_target_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({drop_target_row=}):")
+
+		move_rows = sorted(list(set(idx.row() for idx in self.selectionModel().selectedRows(1))))
+
+		if not move_rows:
+			print("No rows to move")
+			event.ignore()
+			return super().dropEvent(event)
+		
+		self.model().moveRows(QtCore.QModelIndex(), move_rows[0], len(move_rows), QtCore.QModelIndex(), drop_target_row)
+
+		event.accept()
+		
 		return super().dropEvent(event)
