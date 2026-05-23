@@ -1,3 +1,4 @@
+import typing
 from PySide6 import QtWidgets, QtGui, QtCore
 
 from . import editordelegates, editorproxymodel
@@ -210,37 +211,17 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		if not selected_row_indexes:
 			return True
 		
-		row_clumps = []
-		clump = []
-		for row in selected_row_indexes:
-			
-			if clump:
-				if clump[-1] == row+1:
-					clump.append(row)
-				else:
-					row_clumps.append(clump)
-					clump = [row]
-			else:
-				clump = [row]
-		
-		if clump:
-			row_clumps.append(clump)
-		else:
-			return
-
-#		print("Clumps: ", row_clumps)
+		row_clumps = self._clumpIndexesByRow(
+			i for i in self.selectionModel().selectedRows(del_col) if i.data(QtCore.Qt.ItemDataRole.UserRole)
+		)
 
 		for clump in row_clumps:
 
 			self.model().removeRows(
-				clump[-1],
+				clump[-1].row(),
 				len(clump),
 				QtCore.QModelIndex()
 			)
-
-#			print("Removed clump", clump)
-		
-		#self.model().removeRow(row, QtCore.QModelIndex())
 
 	def sizeHintForRow(self, row:int):
 		
@@ -270,15 +251,57 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		else:
 			print(f"Moving above {drop_target_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({drop_target_row=}):")
 
-		move_rows = sorted(list(set(idx.row() for idx in self.selectionModel().selectedRows(1))))
+		source_row_index_clumps = list(self._clumpIndexesByRow(self.selectionModel().selectedRows(1)))
 
-		if not move_rows:
+		if not source_row_index_clumps:
 			print("No rows to move")
 			event.ignore()
 			return super().dropEvent(event)
 		
-		self.model().moveRows(QtCore.QModelIndex(), move_rows[0], len(move_rows), QtCore.QModelIndex(), drop_target_row)
+		if len(source_row_index_clumps) > 1:
+
+			print("Nah")
+			return
+		
+		for source_row_index_clump in source_row_index_clumps:
+		
+			self.model().moveRows(QtCore.QModelIndex(), source_row_index_clump[-1].row(), len(source_row_index_clump), QtCore.QModelIndex(), drop_target_row)
 
 		event.accept()
+
+		# Update selection model to stay selected on those very same indexes! Ooh!
+
+		new_selection = QtCore.QItemSelection(
+			self.model().index(drop_target_row, 0, QtCore.QModelIndex()),
+			self.model().index(drop_target_row + len(source_row_index_clumps) - 1, 0, QtCore.QModelIndex())
+		)
+
+		self.selectionModel().select(
+			new_selection,
+			QtCore.QItemSelectionModel.SelectionFlag.ClearAndSelect | \
+			QtCore.QItemSelectionModel.SelectionFlag.Rows
+		)
 		
 		return super().dropEvent(event)
+	
+	def _clumpIndexesByRow(self, indexes:typing.Iterable[QtCore.QModelIndex], reverse:bool=True) -> typing.Iterable[list[int]]:
+		"""Clump contiguous row indexes together"""
+
+		clump = []
+
+		for row in sorted(indexes, key=lambda idx: idx.row(), reverse=reverse):
+			
+			if clump:
+
+				if clump[-1].row() == row.row()+1:
+					clump.append(row)
+
+				else:
+					yield clump
+					clump = [row]
+			
+			else:
+				clump = [row]
+		
+		if clump:
+			yield clump
