@@ -258,11 +258,6 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 			event.ignore()
 			return super().dropEvent(event)
 		
-		if len(source_row_index_clumps) > 1:
-
-			print("Nah")
-			return
-		
 		for source_row_index_clump in source_row_index_clumps:
 		
 			self.model().moveRows(QtCore.QModelIndex(), source_row_index_clump[-1].row(), len(source_row_index_clump), QtCore.QModelIndex(), drop_target_row)
