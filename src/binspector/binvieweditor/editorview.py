@@ -3,6 +3,7 @@ from PySide6 import QtWidgets, QtGui, QtCore
 
 from . import editordelegates, editorproxymodel
 from ..binview import binviewitemtypes
+from ..utils import clumper
 
 class BSBinViewColumnListView(QtWidgets.QTableView):
 	"""A QTableView for bin view column data"""
@@ -211,8 +212,10 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		if not selected_row_indexes:
 			return True
 		
-		row_clumps = self._clumpIndexesByRow(
-			i for i in self.selectionModel().selectedRows(del_col) if i.data(QtCore.Qt.ItemDataRole.UserRole)
+		row_clumps = clumper.clumpValues(
+			(i for i in self.selectionModel().selectedRows(del_col) if i.data(QtCore.Qt.ItemDataRole.UserRole)),
+			key=lambda i:i.row(),
+			reverse=True
 		)
 
 		for clump in row_clumps:
@@ -251,7 +254,13 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		else:
 			print(f"Moving above {drop_target_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({drop_target_row=}):")
 
-		source_row_index_clumps = list(self._clumpIndexesByRow(self.selectionModel().selectedRows(1)))
+		source_row_index_clumps = list(
+			clumper.clumpValues(
+				self.selectionModel().selectedRows(1),
+				key=lambda i: i.row(),
+				reverse=True
+			)
+		)
 
 		if not source_row_index_clumps:
 			print("No rows to move")
@@ -278,25 +287,3 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		)
 		
 		return super().dropEvent(event)
-	
-	def _clumpIndexesByRow(self, indexes:typing.Iterable[QtCore.QModelIndex], reverse:bool=True) -> typing.Iterable[list[int]]:
-		"""Clump contiguous row indexes together"""
-
-		clump = []
-
-		for row in sorted(indexes, key=lambda idx: idx.row(), reverse=reverse):
-			
-			if clump:
-
-				if clump[-1].row() == row.row()+1:
-					clump.append(row)
-
-				else:
-					yield clump
-					clump = [row]
-			
-			else:
-				clump = [row]
-		
-		if clump:
-			yield clump
