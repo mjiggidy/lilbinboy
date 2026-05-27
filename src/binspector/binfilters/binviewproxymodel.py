@@ -4,6 +4,8 @@ from PySide6 import QtCore
 from . import abstractfiltermodel
 from ..binview import binviewitemtypes
 
+from ..utils import clumper
+
 import avbutils
 
 class BSBinViewFilterOptions(enum.IntFlag):
@@ -129,28 +131,64 @@ class BSBinViewFilterProxyModel(abstractfiltermodel.BSAbstractBinSortFilterProxy
 
 	def moveRows(self, sourceParent:QtCore.QModelIndex, sourceRow:int, count:int, destinationParent:QtCore.QModelIndex, destinationChild:int) -> bool:
 
-		if count > 1:
-			# TODO
-			raise NotImplementedError("TODO: Multiple row moves not yet implemented")
+#		if count > 1:
+#			# TODO
+#			raise NotImplementedError("TODO: Multiple row moves not yet implemented")
 		
 		if sourceParent.isValid() or destinationParent.isValid():
 			return False
 		
 		mapped_source_idx      = self.mapToSource(self.index(sourceRow, 0, QtCore.QModelIndex())).row()
-		mapped_destination_idx = self.mapToSource(self.index(destinationChild-1, 0, QtCore.QModelIndex())).row() + 1
+		mapped_destination_row = self.mapToSource(self.index(destinationChild-1, 0, QtCore.QModelIndex())).row() + 1
 
 		# NOTE ABOUT THE ABOVE: Want to move the visible column to JUST UNDER its left-neighboring visible column, so
 		# getting the proxy index of the left neighbor, mapping it back to source (all columns), and adding one to put it after that
 		# If destinationChild=0, I think that maps to invalid index -1, +1 = 0 so I think that's okay.
+
+		# NOTE TO SELF ABOUT ALLA THIS:
+		# 
+		# Clumps moving up from below the destination push down the indexes of any remaining under-clumps by the moving clump's length
+		# 
+		# Clumps moving down from above the destination pull up the destination index by the moving clump's length.
+		# 
+		# ALSO, want to move any hidden rows within the clump.  So first and last clump indexes should be used as a range for the count, 
+		# rather than relying on the number of indexes in the clump, if that makes any sense to me later.
+
+		print("Begin proxy model move")
+
+		source_row_offset = 0
+		dest_row_offset   = 0
 		
-		return self.sourceModel().moveRows(
-			QtCore.QModelIndex(),
-			mapped_source_idx,
-			count,
-			QtCore.QModelIndex(),
-			mapped_destination_idx
-		)
-	
+		for index_clump in clumper.clumpValues(
+			(
+				self.mapToSource(
+					self.index(row, 0, QtCore.QModelIndex())
+				) for row in range(sourceRow, sourceRow+count)
+			),
+			key=lambda i: i.row(),
+			reverse=True
+		):
+			
+			mapped_clump_length = index_clump[0].row() - index_clump[-1].row() + 1
+
+			print("Move clump")
+
+			self.sourceModel().moveRows(
+				QtCore.QModelIndex(),
+				index_clump[-1].row() + source_row_offset,
+				mapped_clump_length,
+				QtCore.QModelIndex(),
+				mapped_destination_row + dest_row_offset
+			)
+
+			if index_clump[-1].row() > mapped_destination_row:
+				source_row_offset += mapped_clump_length
+
+			elif index_clump[-1].row() < mapped_destination_row:
+				dest_row_offset -= mapped_clump_length
+		
+		return True
+		
 	def indexIsPermanentItem(self, index:QtCore.QModelIndex) -> bool:
 		"""
 		Does this index reference an item that is permanent?\n
