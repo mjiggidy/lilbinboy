@@ -171,13 +171,14 @@ class BSBinViewFilterProxyModel(abstractfiltermodel.BSAbstractBinSortFilterProxy
 			
 			mapped_clump_length = index_clump[0].row() - index_clump[-1].row() + 1
 
-
-
-
 			if index_clump[-1].row() > mapped_destination_row:
 
 				# Movin' the under-clumps, as I call them in computery schience
-				print("Move a under-clump")
+				
+				names = []
+				for row in reversed(range(index_clump[-1].row(), index_clump[-1].row() + mapped_clump_length)):
+					names.append(self.sourceModel().index(row+source_row_offset, 0, QtCore.QModelIndex()).data(QtCore.Qt.ItemDataRole.DisplayRole))
+				print(f"Move a under-clump: {names}")
 
 				self.sourceModel().moveRows(
 					QtCore.QModelIndex(),
