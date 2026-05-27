@@ -160,6 +160,9 @@ class ActionsManager(QtCore.QObject):
 		self._act_open_discussions = QtGui.QAction(self.tr("Visit Discussion Board..."), parent=self._parent)
 		self._act_open_discussions.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DialogInformation))
 
+		self._act_open_donations = QtGui.QAction(self.tr("Buy Me A Ko-Fi..."), parent=self._parent)
+		self._act_open_donations.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.WeatherClear))
+
 		self._act_check_updates = QtGui.QAction(self.tr("Check For Updates..."), parent=self._parent)
 		self._act_check_updates.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.SoftwareUpdateAvailable))
 		self._act_check_updates.setMenuRole(QtGui.QAction.MenuRole.ApplicationSpecificRole)
@@ -322,6 +325,11 @@ class ActionsManager(QtCore.QObject):
 		"""Visit the discussion boards"""
 
 		return self._act_open_discussions
+	
+	def visitDonations(self) -> QtGui.QAction:
+		"""Visit the donations page"""
+
+		return self._act_open_donations
 	
 	def toggleBinView(self) -> QtGui.QAction:
 		"""Toggle filtering columns through the bin view"""

@@ -294,3 +294,15 @@ class BSSettingsManager:
 		use_sift = self.settings("bs").value("BinSettingsToggles/use_sift_criteria", False, bool)
 		logging.getLogger(__name__).debug("Returning use_sift_criteria: %s", use_sift)
 		return use_sift
+	
+	@QtCore.Slot(bool)
+	def setShowFirstRunMessage(self, show_first_run_message:bool):
+
+		self.settings("bs").setValue("UserInterface/show_first_run_message", show_first_run_message)
+		logging.getLogger(__name__).debug("Set show_first_run_message: %s", show_first_run_message)
+	
+	def showFirstRunMessage(self) -> bool:
+		
+		show_first_run_message = self.settings("bs").value("UserInterface/show_first_run_message", True, bool)
+		logging.getLogger(__name__).debug("Returning show_first_run_message: %s", show_first_run_message)
+		return show_first_run_message

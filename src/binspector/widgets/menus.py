@@ -36,6 +36,7 @@ class BinWindowMenuBar(QtWidgets.QMenuBar):
 
 		mnu_help.addAction(action_manager.checkForUpdates())
 		mnu_help.addAction(action_manager.visitDiscussionBoard())
+		mnu_help.addAction(action_manager.visitDonations())
 		mnu_help.addSeparator()
 		mnu_help.addAction(action_manager.showAboutBoxAction())
 
@@ -69,6 +70,7 @@ class DefaultMenuBar(QtWidgets.QMenuBar):
 		mnu_help   = QtWidgets.QMenu(self.tr("&Help"))
 		mnu_help.addAction(action_manager.checkForUpdates())
 		mnu_help.addAction(action_manager.visitDiscussionBoard())
+		mnu_help.addAction(action_manager.visitDonations())
 		mnu_help.addSeparator()
 		mnu_help.addAction(action_manager.showAboutBoxAction())
 		

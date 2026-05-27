@@ -73,6 +73,35 @@ class BSMainApplication(QtWidgets.QApplication):
 		self._bin_view_storage_model = storagemodel.BSFileSystemModel(parent=self)
 
 		self._setupBinViewStorage()
+
+		if self._man_settings.showFirstRunMessage():
+
+			self._man_settings.setShowFirstRunMessage(False)
+
+			dev_message = QtWidgets.QMessageBox()
+			dev_message.setOption(QtWidgets.QMessageBox.Option.DontUseNativeDialog)
+			dev_message.setWindowTitle(self.tr("Bless This Mess"))
+			dev_message.setIcon(QtWidgets.QMessageBox.Icon.Information)
+			dev_message.setTextFormat(QtCore.Qt.TextFormat.RichText)
+			dev_message.setText("Welcome to Binspector: The Pre-Alpha Nightmare!")
+
+			dev_message.setInformativeText(
+			"""
+				<p>Binspector is still under heavy development and is feature-incomplete.  There will be things that don't work so great.  
+				Most things, in fact.  Kinda <em>everything</em> is a mess right now, really.  Just so you know what's goin' on.
+				</p>
+				<p>
+				Although Binspector is a read-only program and will never modify your Avid bin files, use this development build at your own risk.
+				</p>
+				<p>
+				If you encounter any bugs that you'd really like me to prioritize, please report them to <strong><code>michael@glowingpixel.com</code></strong>.
+				</p>
+				<hr/>
+				<p>Please consider supporting development on Ko-Fi:<br/><strong><code>https://ko-fi.com/lilbinboy</code></strong></p>
+				"""
+			)
+			dev_message.exec()
+
 		
 	def _setupSignals(self):
 
@@ -257,6 +286,7 @@ class BSMainApplication(QtWidgets.QApplication):
 		window.sig_request_show_log_viewer   .connect(self.showLogWindow)
 		window.sig_request_show_user_folder  .connect(self.showLocalStorage)
 		window.sig_request_visit_discussions .connect(lambda: QtGui.QDesktopServices.openUrl("https://github.com/mjiggidy/binspector/discussions/"))
+		window.sig_request_visit_donations   .connect(lambda: QtGui.QDesktopServices.openUrl("https://ko-fi.com/lilbinboy/"))
 		window.sig_request_check_updates     .connect(self.showUpdatesWindow)
 		window.sig_bin_changed               .connect(self._man_settings.setLastBinPath)
 #		window.sig_request_export_bin_view   .connect(self.exportBinView)

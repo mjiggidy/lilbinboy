@@ -30,6 +30,7 @@ class BSMainWindow(QtWidgets.QMainWindow):
 	sig_request_show_settings     = QtCore.Signal()
 	sig_request_check_updates     = QtCore.Signal()
 	sig_request_visit_discussions = QtCore.Signal()
+	sig_request_visit_donations   = QtCore.Signal()
 	
 	sig_request_export_bin_view   = QtCore.Signal(object)
 	"""Export the bin view"""
@@ -258,6 +259,7 @@ class BSMainWindow(QtWidgets.QMainWindow):
 
 		self._man_actions._act_check_updates.triggered       .connect(self.sig_request_check_updates)
 		self._man_actions._act_open_discussions.triggered    .connect(self.sig_request_visit_discussions)
+		self._man_actions._act_open_donations.triggered      .connect(self.sig_request_visit_donations)
 
 		# Toolbox Toggle Actions
 		# NOTE: Dock widgets have a toggleViewAction() butuhhhhh
