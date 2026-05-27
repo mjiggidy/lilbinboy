@@ -138,12 +138,7 @@ class BSBinViewFilterProxyModel(abstractfiltermodel.BSAbstractBinSortFilterProxy
 		if sourceParent.isValid() or destinationParent.isValid():
 			return False
 		
-		mapped_source_idx      = self.mapToSource(self.index(sourceRow, 0, QtCore.QModelIndex())).row()
-		mapped_destination_row = self.mapToSource(self.index(destinationChild-1, 0, QtCore.QModelIndex())).row() + 1
-
-		# NOTE ABOUT THE ABOVE: Want to move the visible column to JUST UNDER its left-neighboring visible column, so
-		# getting the proxy index of the left neighbor, mapping it back to source (all columns), and adding one to put it after that
-		# If destinationChild=0, I think that maps to invalid index -1, +1 = 0 so I think that's okay.
+#		mapped_source_idx      = self.mapToSource(self.index(sourceRow, 0, QtCore.QModelIndex())).row()
 
 		# NOTE TO SELF ABOUT ALLA THIS:
 		# 
@@ -154,8 +149,25 @@ class BSBinViewFilterProxyModel(abstractfiltermodel.BSAbstractBinSortFilterProxy
 		# ALSO, want to move any hidden rows within the clump.  So first and last clump indexes should be used as a range for the count, 
 		# rather than relying on the number of indexes in the clump, if that makes any sense to me later.
 
-		print("Begin proxy model move")
 
+
+		mapped_source_row_first = self.mapToSource(self.index(sourceRow, 0, QtCore.QModelIndex())).row()
+		mapped_source_row_last  = self.mapToSource(self.index(sourceRow+count-1, 0, QtCore.QModelIndex())).row()
+		mapped_destination_row  = self.mapToSource(self.index(destinationChild-1, 0, QtCore.QModelIndex())).row() + 1
+
+		# NOTE ABOUT THE ABOVE: Want to move the visible column to JUST UNDER its left-neighboring visible column, so
+		# getting the proxy index of the left neighbor, mapping it back to source (all columns), and adding one to put it after that
+		# If destinationChild=0, I think that maps to invalid index -1, +1 = 0 so I think that's okay.
+
+		mapped_count = mapped_source_row_last - mapped_source_row_first + 1
+
+		print(f"Moving {count} visible rows and {mapped_count - count} ")
+
+		return self.sourceModel().moveRows(QtCore.QModelIndex(), mapped_source_row_first, mapped_count, QtCore.QModelIndex(), mapped_destination_row)
+
+		#return True
+	
+	# Olde waye
 		source_row_offset = 0
 		dest_row_offset   = 0
 		

@@ -238,16 +238,19 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 			event.ignore()
 			return super().dropEvent(event)
 		
+		print(event)
+		
 		# Don't do anything fancy
 		event.setDropAction(QtCore.Qt.DropAction.IgnoreAction)
 		
 		drop_target_index = self.indexAt(event.pos())
-		drop_target_row   = drop_target_index.row() if self.dropIndicatorPosition() == QtWidgets.QTableView.DropIndicatorPosition.AboveItem else drop_target_index.row() + 1
-
 		if not drop_target_index.isValid():
 
 			print("Invalid drop target index hmmmmmmm")
 			return
+		
+		drop_target_row   = drop_target_index.row() if self.dropIndicatorPosition() == QtWidgets.QTableView.DropIndicatorPosition.AboveItem else drop_target_index.row() + 1
+
 		
 		if self.dropIndicatorPosition() != QtWidgets.QTableView.DropIndicatorPosition.AboveItem:
 			print(f"Moving below {drop_target_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({drop_target_row=}):")
@@ -272,17 +275,61 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 			
 			return super().dropEvent(event)
 		
-		for source_row_index_clump in source_row_index_clumps:
+
+		source_row_offset = 0
+		dest_row_offset   = 0
 		
-			self.model().moveRows(QtCore.QModelIndex(), source_row_index_clump[-1].row(), len(source_row_index_clump), QtCore.QModelIndex(), drop_target_row)
+		for source_row_index_clump in source_row_index_clumps:
+
+			mapped_clump_length = source_row_index_clump[0].row() - source_row_index_clump[-1].row() + 1
+
+			if source_row_index_clump[-1].row() > drop_target_row:
+
+				# Movin' the under-clumps, as I call them in computery schience
+				
+				names = []
+				for row in reversed(range(source_row_index_clump[-1].row(), source_row_index_clump[-1].row() + mapped_clump_length)):
+					names.append(self.model().index(row+source_row_offset, 0, QtCore.QModelIndex()).data(QtCore.Qt.ItemDataRole.DisplayRole))
+
+				print(f"Move a under-clump: {names}")
+
+				self.model().moveRows(
+					QtCore.QModelIndex(),
+					source_row_index_clump[-1].row() + source_row_offset,
+					mapped_clump_length,
+					QtCore.QModelIndex(),
+					drop_target_row # + dest_row_offset
+				)
+
+				source_row_offset += mapped_clump_length
+
+			elif source_row_index_clump[-1].row() < drop_target_row + dest_row_offset:
+
+				print(f"Move a overboy {source_row_index_clump[-1].row()=} {drop_target_row=}")
+
+				self.model().moveRows(
+					QtCore.QModelIndex(),
+					source_row_index_clump[-1].row(), # + source_row_offset,
+					mapped_clump_length,
+					QtCore.QModelIndex(),
+					drop_target_row + dest_row_offset
+				)
+
+
+				dest_row_offset -= mapped_clump_length
+
+			else:
+				print("BRUH?")
+				event.ignore()
+				return
 
 		event.accept()
 
 		# Update selection model to stay selected on those very same indexes! Ooh!
 
 		new_selection = QtCore.QItemSelection(
-			self.model().index(drop_target_row, 0, QtCore.QModelIndex()),
-			self.model().index(drop_target_row + len(source_row_index_clumps) - 1, 0, QtCore.QModelIndex())
+			self.model().index(drop_target_row +  dest_row_offset, 0, QtCore.QModelIndex()),
+			self.model().index(drop_target_row +  dest_row_offset + sum(len(clump) for clump in source_row_index_clumps) - 1, 0, QtCore.QModelIndex())
 		)
 
 		self.selectionModel().select(
@@ -291,4 +338,4 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 			QtCore.QItemSelectionModel.SelectionFlag.Rows
 		)
 		
-		return super().dropEvent(event)
+#		return super().dropEvent(event)
