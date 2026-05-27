@@ -285,6 +285,9 @@ class BSBinViewColumnEditorProxyModel(QtCore.QAbstractProxyModel):
 
 	def moveRows(self, sourceParent:QtCore.QModelIndex, sourceRow:int, count:int, destinationParent:QtCore.QModelIndex, destinationChild:int):
 
+		if sourceParent.isValid() or destinationParent.isValid():
+			return False
+
 		return self.sourceModel().moveRows(
 			QtCore.QModelIndex(),
 			sourceRow,
@@ -292,8 +295,6 @@ class BSBinViewColumnEditorProxyModel(QtCore.QAbstractProxyModel):
 			QtCore.QModelIndex(),
 			destinationChild
 		)
-		
-#		return super().moveRows(sourceParent, sourceRow, count, destinationParent, destinationChild)
 	
 	def removeRows(self, row, count, /, parent = ...):
 

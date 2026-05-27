@@ -251,9 +251,12 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		
 		if self.dropIndicatorPosition() != QtWidgets.QTableView.DropIndicatorPosition.AboveItem:
 			print(f"Moving below {drop_target_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({drop_target_row=}):")
+
 		else:
 			print(f"Moving above {drop_target_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({drop_target_row=}):")
 
+		# Clump together contiguous ranges... in reverse!
+		
 		source_row_index_clumps = list(
 			clumper.clumpValues(
 				self.selectionModel().selectedRows(1),
@@ -263,8 +266,10 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		)
 
 		if not source_row_index_clumps:
+			
 			print("No rows to move")
 			event.ignore()
+			
 			return super().dropEvent(event)
 		
 		for source_row_index_clump in source_row_index_clumps:
