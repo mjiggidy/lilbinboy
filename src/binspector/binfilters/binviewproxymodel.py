@@ -171,20 +171,37 @@ class BSBinViewFilterProxyModel(abstractfiltermodel.BSAbstractBinSortFilterProxy
 			
 			mapped_clump_length = index_clump[0].row() - index_clump[-1].row() + 1
 
-			print("Move clump")
 
-			self.sourceModel().moveRows(
-				QtCore.QModelIndex(),
-				index_clump[-1].row() + source_row_offset,
-				mapped_clump_length,
-				QtCore.QModelIndex(),
-				mapped_destination_row + dest_row_offset
-			)
+
 
 			if index_clump[-1].row() > mapped_destination_row:
+
+				# Movin' the under-clumps, as I call them in computery schience
+				print("Move a under-clump")
+
+				self.sourceModel().moveRows(
+					QtCore.QModelIndex(),
+					index_clump[-1].row() + source_row_offset,
+					mapped_clump_length,
+					QtCore.QModelIndex(),
+					mapped_destination_row # + dest_row_offset
+				)
+
 				source_row_offset += mapped_clump_length
 
 			elif index_clump[-1].row() < mapped_destination_row:
+
+				print("Move a overboy")
+
+				self.sourceModel().moveRows(
+					QtCore.QModelIndex(),
+					index_clump[-1].row(), # + source_row_offset,
+					mapped_clump_length,
+					QtCore.QModelIndex(),
+					mapped_destination_row + dest_row_offset
+				)
+
+
 				dest_row_offset -= mapped_clump_length
 		
 		return True
