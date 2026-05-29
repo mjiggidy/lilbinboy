@@ -34,7 +34,6 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		self.setDragDropMode(QtWidgets.QAbstractItemView.DragDropMode.InternalMove)
 		self.setDragDropOverwriteMode(False)
 
-		self.setDefaultDropAction(QtCore.Qt.DropAction.MoveAction)
 		self.setDropIndicatorShown(True)
 		
 		self.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -233,36 +232,49 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 	
 	def dropEvent(self, event:QtGui.QDropEvent):
 
-		if event.dropAction() != QtCore.Qt.DropAction.MoveAction or not self.selectionModel().hasSelection():
+		if event.dropAction() != QtCore.Qt.DropAction.MoveAction:
+
+			print("NAH")
 			
 			event.ignore()
 			return super().dropEvent(event)
 		
-		print(event)
+		print(event.dropAction())
 		
 		# Don't do anything fancy
 		event.setDropAction(QtCore.Qt.DropAction.IgnoreAction)
 		
 		drop_target_index = self.indexAt(event.pos())
-		if not drop_target_index.isValid():
+
+		if not drop_target_index.isValid() \
+			or not self.selectionModel().hasSelection() \
+			or not self.moveSelectedRows(
+				source_indexes=self.selectionModel().selectedRows(1),
+				destination_index=drop_target_index
+		):
+
+			event.ignore()
+			return super().dropEvent(event)
+		
+		event.accept()
+
+
+
+	def moveSelectedRows(self, source_indexes:typing.Iterable[QtCore.QModelIndex], destination_index:QtCore.QModelIndex) -> bool:
+
+		if not destination_index.isValid():
 
 			print("Invalid drop target index hmmmmmmm")
 			return
 		
-		drop_target_row   = drop_target_index.row() if self.dropIndicatorPosition() == QtWidgets.QTableView.DropIndicatorPosition.AboveItem else drop_target_index.row() + 1
-
-		
-		if self.dropIndicatorPosition() != QtWidgets.QTableView.DropIndicatorPosition.AboveItem:
-			print(f"Moving below {drop_target_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({drop_target_row=}):")
-
-		else:
-			print(f"Moving above {drop_target_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({drop_target_row=}):")
+		drop_target_row   = destination_index.row() if self.dropIndicatorPosition() == QtWidgets.QTableView.DropIndicatorPosition.AboveItem else destination_index.row() + 1
+	
 
 		# Clump together contiguous ranges... in reverse!
 		
 		source_row_index_clumps = list(
 			clumper.clumpValues(
-				self.selectionModel().selectedRows(1),
+				source_indexes,
 				key=lambda i: i.row(),
 				reverse=True
 			)
@@ -271,10 +283,10 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		if not source_row_index_clumps:
 			
 			print("No rows to move")
-			event.ignore()
 			
-			return super().dropEvent(event)
-		
+			return False
+
+
 
 		source_row_offset = 0
 		dest_row_offset   = 0
@@ -283,9 +295,34 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 
 			mapped_clump_length = source_row_index_clump[0].row() - source_row_index_clump[-1].row() + 1
 
+			if self.dropIndicatorPosition() != QtWidgets.QTableView.DropIndicatorPosition.AboveItem:
+				if source_row_index_clump[0].row() == drop_target_row:
+
+					print("Nah")
+					continue
+				print(f"Moving below {destination_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({source_row_index_clump[-1].row()=} {drop_target_row=}):")
+
+			else:
+				print(self.dropIndicatorPosition())
+
+				print(f"{source_row_index_clump[-1].row()=} { drop_target_row+1=}")
+				
+				if source_row_index_clump[0].row() == drop_target_row-1:
+
+					print("Nah")
+					continue
+				
+				print(f"Moving above {destination_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({source_row_index_clump[-1].row()=} {drop_target_row=}):")
+
 			if source_row_index_clump[-1].row() > drop_target_row:
 
 				# Movin' the under-clumps, as I call them in computery schience
+				# Since we're moving it up, make sure the destination index is not the same as the first element
+
+
+				
+				print(f"{source_row_index_clump[0].row()=} {drop_target_row=}")
+
 				
 				names = []
 				for row in reversed(range(source_row_index_clump[-1].row(), source_row_index_clump[-1].row() + mapped_clump_length)):
@@ -320,10 +357,8 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 
 			else:
 				print("BRUH?")
-				event.ignore()
-				return
+				continue
 
-		event.accept()
 
 		# Update selection model to stay selected on those very same indexes! Ooh!
 
@@ -338,4 +373,5 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 			QtCore.QItemSelectionModel.SelectionFlag.Rows
 		)
 		
+		return True
 #		return super().dropEvent(event)
