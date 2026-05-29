@@ -33,9 +33,8 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 		}
 	}
 
-	DEFAULT_FORMAT_ICONS = \
-	{
-		avbutils.bins.BinColumnFormat.UserText:   QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.UserOffline),
+	DEFAULT_FORMAT_ICONS = {
+		avbutils.bins.BinColumnFormat.UserText:   QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.FormatJustifyLeft),
 		avbutils.bins.BinColumnFormat.CodecInfo:  QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.CameraVideo),
 		avbutils.bins.BinColumnFormat.DateTime:   QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.AppointmentSoon),
 		avbutils.bins.BinColumnFormat.Frame:      QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.VideoDisplay),
@@ -47,12 +46,17 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 		avbutils.bins.BinColumnFormat.Timecode:   QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.MediaSeekForward),
 	}
 
+	DEFAULT_FIELD_ICONS = {
+		avbutils.bins.BinColumnFieldIDs.User:     QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.UserOffline),
+	}
+
 	def __init__(self, *args, **kwargs):
 
 		super().__init__(*args, **kwargs)
 
 		self._button_icon_provider = self.DEFAULT_BUTTON_ICONS
 		self._format_icon_provider = self.DEFAULT_FORMAT_ICONS
+		self._field_icon_provider  = self.DEFAULT_FIELD_ICONS
 
 		self._btn_aspect_ratio = 1.3
 
@@ -63,6 +67,10 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 	def buttonIconForFormat(self, format:avbutils.bins.BinColumnFormat) -> QtGui.QIcon:
 
 		return self._format_icon_provider.get(format, QtGui.QIcon())
+	
+	def buttonIconForField(self, field:avbutils.bins.BinColumnFieldIDs) -> QtGui.QIcon:
+
+		return self._field_icon_provider.get(field, QtGui.QIcon())
 
 	def setButtonIconProvider(self, icon_provider:dict[editorproxymodel.BSBinViewColumnEditorFeature, dict[typing.Any, QtGui.QIcon]]):
 
@@ -177,7 +185,18 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 			option_empty.text = ""
 			super().paint(painter, option_empty, index)
 
-			format_icon = self.buttonIconForFormat(index.data(QtCore.Qt.ItemDataRole.UserRole))
+			field  = index.siblingAtColumn(1).data(binviewitemtypes.BSBinViewColumnInfoRole.FieldIdRole)
+			format = index.siblingAtColumn(1).data(binviewitemtypes.BSBinViewColumnInfoRole.FormatIdRole)
+
+#			print(field)
+
+			format_icon = self.buttonIconForField(field)
+			
+			if format_icon.isNull():
+				format_icon = self.buttonIconForFormat(format)
+
+			
+		#	format_icon = self.buttonIconForFeature(index.siblingAtColumn(1).data(binviewitemtypes.BSBinViewColumnInfoRole.FieldIdRole)) self.buttonIconForFormat(index.data(QtCore.Qt.ItemDataRole.UserRole))
 
 			format_icon.paint(
 				painter,
