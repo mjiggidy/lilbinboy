@@ -240,6 +240,20 @@ class BSBinViewModel(QtCore.QAbstractItemModel):
 		
 		return True
 	
+	def sort(self, role:binviewitemtypes.BSBinViewColumnInfoRole, /, order:QtCore.Qt.SortOrder):
+		"""REDEFINED SORT ROLE: Accepts `BSBinViewColumnInfoRole` instead of a column index, since this is a flat list"""
+
+		self.layoutAboutToBeChanged.emit()
+
+		self._bin_view_columns.sort(
+			key=lambda c: c.data(role),
+			reverse=(order == QtCore.Qt.SortOrder.DescendingOrder)
+		)
+		
+		self.layoutChanged.emit()
+		self.sig_bin_view_modified.emit(self.binViewInfo(), BSBinViewModificationHint.BinViewColumnDataChanged)
+		#return super().sort(column, order)
+	
 #	def dropMimeData(self, data, action, row, column, parent):
 #		print("Huh")
 #		return True

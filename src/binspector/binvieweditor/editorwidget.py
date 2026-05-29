@@ -27,6 +27,10 @@ class BSBinViewColumnEditor(QtWidgets.QWidget):
 	"""User requests the given `BSBinColumnInfo` to be brought into focus"""
 
 	sig_bin_view_source_selected = QtCore.Signal(object)
+	"""A bin view has been chosen from available sources"""
+
+	sig_user_column_added        = QtCore.Signal(object)
+	"""A user column has been added to the current bin view"""
 
 	def __init__(self, *args, bin_view_model:binviewmodel.BSBinViewModel|None=None, bin_view_provider:providermodel.BSBinViewProviderModel|None=None, **kwargs):
 
@@ -60,6 +64,7 @@ class BSBinViewColumnEditor(QtWidgets.QWidget):
 		# Action Buttons
 #		self._btn_toggle_all = QtWidgets.QPushButton(self.tr("Toggle Visibility"))
 		self._btn_add_col    = QtWidgets.QPushButton(self.tr("Add User Column"))
+		self._btn_float_visibile = QtWidgets.QPushButton(self.tr("Float Visible To Top"))
 		
 		self._setupWidgets()
 		self._setupSignals()
@@ -117,6 +122,7 @@ class BSBinViewColumnEditor(QtWidgets.QWidget):
 		lay_filters.addWidget(self._chk_show_hidden)
 		lay_filters.addStretch()
 		lay_filters.addWidget(self._btn_add_col)
+		lay_filters.addWidget(self._btn_float_visibile)
 		self.layout().addLayout(lay_filters)
 
 		# Toggle Buttons (eh..?)
@@ -141,9 +147,15 @@ class BSBinViewColumnEditor(QtWidgets.QWidget):
 #		self._btn_toggle_all.clicked.connect(self._view_editor.toggleSelectedVisibility)
 #		self._cmb_bin_view_list.currentTextChanged.connect(self.updateButtonState)
 		self._btn_add_col.clicked.connect(self.addUserColumn)
+		self._btn_float_visibile.clicked.connect(self.floatVisibleToTop)
 		
 		self._chk_show_hidden.clicked.connect(self.userChangedFilters)
 		self._chk_show_visible.clicked.connect(self.userChangedFilters)
+
+	@QtCore.Slot()
+	def floatVisibleToTop(self):
+
+		self._model_editor.sort(binviewitemtypes.BSBinViewColumnInfoRole.IsHiddenRole, QtCore.Qt.SortOrder.AscendingOrder)
 
 	@QtCore.Slot()
 	def addUserColumn(self):
@@ -163,12 +175,24 @@ class BSBinViewColumnEditor(QtWidgets.QWidget):
 			new_row, QtCore.QModelIndex()
 		)
 
-		new_item = self._model_editor.index(new_row, 1, QtCore.QModelIndex())
-		print(f"Inserted {new_item}, {name}")
-		self._model_editor.setData(new_item, name, QtCore.Qt.ItemDataRole.DisplayRole)
-		self._model_editor.setData(new_item, avbutils.bins.BinColumnFieldIDs.User, binviewitemtypes.BSBinViewColumnInfoRole.FieldIdRole)
-		self._model_editor.setData(new_item, avbutils.bins.BinColumnFormat.UserText, binviewitemtypes.BSBinViewColumnInfoRole.FormatIdRole)
-		self._model_editor.setData(new_item, False, binviewitemtypes.BSBinViewColumnInfoRole.IsHiddenRole)
+		new_user_row_idx = self._model_editor.index(new_row, 1, QtCore.QModelIndex())
+		#print(f"Inserted {new_item}, {name}")
+		self._model_editor.setData(new_user_row_idx, name, QtCore.Qt.ItemDataRole.DisplayRole)
+		self._model_editor.setData(new_user_row_idx, avbutils.bins.BinColumnFieldIDs.User, binviewitemtypes.BSBinViewColumnInfoRole.FieldIdRole)
+		self._model_editor.setData(new_user_row_idx, avbutils.bins.BinColumnFormat.UserText, binviewitemtypes.BSBinViewColumnInfoRole.FormatIdRole)
+		self._model_editor.setData(new_user_row_idx, False, binviewitemtypes.BSBinViewColumnInfoRole.IsHiddenRole)
+
+		self._view_editor.selectionModel().select(new_user_row_idx, QtCore.QItemSelectionModel.SelectionFlag.ClearAndSelect|QtCore.QItemSelectionModel.SelectionFlag.Rows)
+
+		self.sig_user_column_added.emit(new_user_row_idx)
+
+		# NOTE: View defers its little layout updates until the next event loop
+		# so I'mma need to do it manually before we can scroll
+
+		self._view_editor.updateGeometries()
+		self._view_editor.scrollTo(new_user_row_idx, QtWidgets.QAbstractItemView.ScrollHint.EnsureVisible)
+
+		self.sig_user_column_added.emit(new_user_row_idx)
 
 	@QtCore.Slot()
 	def userChangedFilters(self):

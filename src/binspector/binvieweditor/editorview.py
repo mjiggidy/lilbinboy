@@ -46,6 +46,26 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		# Scrolling
 		self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
 
+	def selectAll(self):
+
+		# Needed to be reimplemented for... some reason.  Maybe a proxy mapping thing.
+		
+		if not self.model():
+			return
+	
+		row_count = self.model().rowCount(QtCore.QModelIndex())
+
+		if not row_count:
+			return
+		
+		idx_start = self.model().index(0, 0, QtCore.QModelIndex())
+		idx_end   = self.model().index(row_count-1, 0, QtCore.QModelIndex())
+
+		self.selectionModel().select(
+			QtCore.QItemSelection(idx_start, idx_end),
+			QtCore.QItemSelectionModel.SelectionFlag.Select | QtCore.QItemSelectionModel.SelectionFlag.Rows
+		)
+
 	@QtCore.Slot()
 	def toggleColumnSelection(self):
 
@@ -163,6 +183,8 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		if not selected_row_indexes:
 			return True
 		
+		
+		self.model().layoutChanged.emit()
 		self.model().blockSignals(True)
 		
 		for row in selected_row_indexes:
@@ -171,7 +193,6 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 			self.model().setData(item_index, not item_index.data(binviewitemtypes.BSBinViewColumnInfoRole.IsHiddenRole), binviewitemtypes.BSBinViewColumnInfoRole.IsHiddenRole)
 		
 		self.model().blockSignals(False)
-
 		self.model().layoutChanged.emit()
 
 	def _columnForEditorFeature(self, feature:editorproxymodel.BSBinViewColumnEditorFeature) -> int|None:

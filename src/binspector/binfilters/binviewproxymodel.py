@@ -218,6 +218,14 @@ class BSBinViewFilterProxyModel(abstractfiltermodel.BSAbstractBinSortFilterProxy
 				dest_row_offset -= mapped_clump_length
 		
 		return True
+	
+	def sort(self,  role:binviewitemtypes.BSBinViewColumnInfoRole, /, order:QtCore.Qt.SortOrder):
+		"""REDEFINED SORT ROLE: Accepts `BSBinViewColumnInfoRole` instead of a column index, since this is a flat list"""
+		
+		if not self.sourceModel():
+			return
+		
+		self.sourceModel().sort(role, order)
 		
 	def indexIsPermanentItem(self, index:QtCore.QModelIndex) -> bool:
 		"""

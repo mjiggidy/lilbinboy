@@ -318,6 +318,11 @@ class BSBinViewColumnEditorProxyModel(QtCore.QAbstractProxyModel):
 		
 		return self.sourceModel().insertRows(row, count, QtCore.QModelIndex())
 	
+	def sort(self, role:binviewitemtypes.BSBinViewColumnInfoRole, /, order = ...):
+		"""REDEFINED SORT ROLE: Accepts `BSBinViewColumnInfoRole` instead of a column index, since this is a flat list"""
+
+		return super().sort(role, order)
+	
 	def dropMimeData(self, data:QtCore.QMimeData, action:QtCore.Qt.DropAction, row:int, column:int, parent:QtCore.QModelIndex) -> bool:
 
 		# Accept drop-to-move-column actions
