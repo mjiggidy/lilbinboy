@@ -114,15 +114,24 @@ class BSBinViewColumnEditor(QtWidgets.QWidget):
 
 		# Filter Columns By Visibility
 
+#		self._btn_add_col.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ListAdd))
+#		self._btn_float_visibile.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.GoUp))
+
 		self._chk_show_hidden .setChecked(self._model_binviewfilter.binViewOptions() & binviewproxymodel.BSBinViewFilterOptions.ShowHidden)
+		self._chk_show_hidden .setToolTip(self.tr("Show Hidden Columns"))
 		self._chk_show_visible.setChecked(self._model_binviewfilter.binViewOptions() & binviewproxymodel.BSBinViewFilterOptions.ShowVisible)
+		self._chk_show_visible .setToolTip(self.tr("Show Visible Columns"))
+
+		lay_mods = QtWidgets.QHBoxLayout()
+		lay_mods.addWidget(self._btn_add_col)
+		lay_mods.addStretch()
+		lay_mods.addWidget(self._btn_float_visibile)
+		self.layout().addLayout(lay_mods)
 
 		lay_filters = QtWidgets.QHBoxLayout()
 		lay_filters.addWidget(self._chk_show_visible)
 		lay_filters.addWidget(self._chk_show_hidden)
 		lay_filters.addStretch()
-		lay_filters.addWidget(self._btn_add_col)
-		lay_filters.addWidget(self._btn_float_visibile)
 		self.layout().addLayout(lay_filters)
 
 		# Toggle Buttons (eh..?)

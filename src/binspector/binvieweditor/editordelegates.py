@@ -13,11 +13,11 @@ if typing.TYPE_CHECKING:
 
 class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 	
-	sig_user_clicking_remove_buttons = QtCore.Signal()
-	sig_user_clicking_hide_buttons   = QtCore.Signal()
+#	sig_user_clicking_remove_buttons = QtCore.Signal()
+	sig_user_clicking_feature_button    = QtCore.Signal(object)
 	sig_user_toggling_column_visibility = QtCore.Signal()
-	sig_remove_selected_bin_columns = QtCore.Signal()
-	sig_rename_column_for_index   = QtCore.Signal(int, QtCore.QModelIndex, str)
+	sig_user_removing_bin_columns       = QtCore.Signal()
+	sig_rename_column_for_index         = QtCore.Signal(int, QtCore.QModelIndex, str)
 
 	DEFAULT_BUTTON_MARGINS = QtCore.QMargins(1,1,1,1)
 
@@ -236,7 +236,7 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 			
 			if event.type() == QtCore.QEvent.Type.MouseButtonPress and event.button() == QtCore.Qt.MouseButton.LeftButton:
 
-				self.sig_user_clicking_hide_buttons.emit()
+				self.sig_user_clicking_feature_button.emit(editorproxymodel.BSBinViewColumnEditorFeature.VisibilityColumn)
 
 				# Pass through to register mousedown with the view
 				return False
@@ -260,14 +260,14 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 
 			elif can_delete and event.type() == QtCore.QEvent.Type.MouseButtonPress and event.button() == QtCore.Qt.MouseButton.LeftButton:
 
-				self.sig_user_clicking_remove_buttons.emit()
+				self.sig_user_clicking_feature_button.emit(editorproxymodel.BSBinViewColumnEditorFeature.DeleteColumn)
 				
 				# Pass through to register mousedown with the view
 				return False
 			
 			elif can_delete and event.type() == QtCore.QEvent.Type.MouseButtonRelease and event.button() == QtCore.Qt.MouseButton.LeftButton:
 
-				self.sig_remove_selected_bin_columns.emit()
+				self.sig_user_removing_bin_columns.emit()
 				
 				# Pass through for... reasons... probably
 				return False
