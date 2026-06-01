@@ -63,7 +63,7 @@ class BSBinViewColumnEditor(QtWidgets.QWidget):
 		
 		# Action Buttons
 #		self._btn_toggle_all = QtWidgets.QPushButton(self.tr("Toggle Visibility"))
-		self._btn_add_col    = QtWidgets.QPushButton(self.tr("Add User Column"))
+		self._btn_add_col        = QtWidgets.QPushButton(self.tr("Add User Column"))
 		self._btn_float_visibile = QtWidgets.QPushButton(self.tr("Float Visible To Top"))
 		
 		self._setupWidgets()
