@@ -23,7 +23,7 @@ class BSWindowManager(QtCore.QObject):
 
 		self._last_active_ref = None
 		self._window_refs:set[weakref.ReferenceType[QtWidgets.QWidget]] = set()
-		self._window_geometry_watcher = BSWindowGeometryWatcher()
+		self._window_geometry_watcher = BSWindowGeometryWatcher(parent=self)
 
 		self._window_geometry_watcher.sig_window_has_focus.connect(self._setLastActiveBinWindow)
 		self._window_geometry_watcher.sig_screen_geometry_changed.connect(self.checkWindowVisibility)
