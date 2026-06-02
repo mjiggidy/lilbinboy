@@ -81,15 +81,15 @@ class BSMainWindow(QtWidgets.QMainWindow):
 #		self._tool_bindisplay  = toolboxes.BSBinDisplaySettingsView(icon_registry=icon_registry.BIN_ITEM_TYPE_ICON_REGISTRY)
 #		self._dock_bindisplay  = QtWidgets.QDockWidget(self.tr("Bin Display Settings"))
 		
-		self._tool_sifting     = siftwidget.BSSiftSettingsWidget(sift_filter_model=self._bin_widget.siftFilter())
-		self._dock_sifting     = QtWidgets.QDockWidget(self.tr("Sift Settings"))
+#		self._tool_sifting     = siftwidget.BSSiftSettingsWidget(sift_filter_model=self._bin_widget.siftFilter())
+#		self._dock_sifting     = QtWidgets.QDockWidget(self.tr("Sift Settings"))
 
-		self._tool_appearance  = toolboxes.BSBinAppearanceSettingsView()
-		self._dock_appearance  = QtWidgets.QDockWidget(self.tr("Font & Colors"))
+#		self._tool_appearance  = toolboxes.BSBinAppearanceSettingsView()
+#		self._dock_appearance  = QtWidgets.QDockWidget(self.tr("Font & Colors"))
 
 
-		self._tool_binview     = editorwidget.BSBinViewColumnEditor(bin_view_model=self._bin_view_model, bin_view_provider=self._binview_provider)
-		self._dock_binview     = QtWidgets.QDockWidget(self.tr("Bin View Settings"))
+#		self._tool_binview     = editorwidget.BSBinViewColumnEditor(bin_view_model=self._bin_view_model, bin_view_provider=self._binview_provider)
+#		self._dock_binview     = QtWidgets.QDockWidget(self.tr("Bin View Settings"))
 
 		#self._tool_columneditor = editorwidget.BSBinViewColumnEditor()
 		#self._tool_columneditor.show()
@@ -105,7 +105,7 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		
 		self.setMenuBar(menus.BinWindowMenuBar(self._man_actions))
 		self.setupWidgets()
-		self.setupDock()
+#		self.setupDock()
 		self.setupActions()
 		self.setupSignals()
 
@@ -117,14 +117,14 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		self.setAcceptDrops(True)
 
 #		self._dock_bindisplay.setWidget(self._tool_bindisplay)
-		self._dock_sifting.setWidget(self._tool_sifting)
-		self._dock_appearance.setWidget(self._tool_appearance)
-		self._dock_binview.setWidget(self._tool_binview)
+#		self._dock_sifting.setWidget(self._tool_sifting)
+#		self._dock_appearance.setWidget(self._tool_appearance)
+#		self._dock_binview.setWidget(self._tool_binview)
 		
 #		self._dock_bindisplay.hide()
-		self._dock_sifting.hide()
-		self._dock_appearance.hide()
-		self._dock_binview.hide()
+#		self._dock_sifting.hide()
+#		self._dock_appearance.hide()
+#		self._dock_binview.hide()
 
 #		self._bin_widget.setBinModel(self._man_binitems.viewModel())
 		
@@ -214,14 +214,14 @@ class BSMainWindow(QtWidgets.QMainWindow):
 	def setupDock(self):
 		"""Add and prepare the dock"""
 		
-		self.addDockWidget(QtCore.Qt.DockWidgetArea.NoDockWidgetArea, self._dock_binview)
-		self._dock_binview.setFloating(True)
+#		self.addDockWidget(QtCore.Qt.DockWidgetArea.NoDockWidgetArea, self._dock_binview)
+#		self._dock_binview.setFloating(True)
 #		self.addDockWidget(QtCore.Qt.DockWidgetArea.NoDockWidgetArea, self._dock_bindisplay)
 #		self._dock_bindisplay.setFloating(True)
-		self.addDockWidget(QtCore.Qt.DockWidgetArea.NoDockWidgetArea, self._dock_sifting)
-		self._dock_sifting.setFloating(True)
-		self.addDockWidget(QtCore.Qt.DockWidgetArea.NoDockWidgetArea, self._dock_appearance)
-		self._dock_appearance.setFloating(True)
+#		self.addDockWidget(QtCore.Qt.DockWidgetArea.NoDockWidgetArea, self._dock_sifting)
+#		self._dock_sifting.setFloating(True)
+#		self.addDockWidget(QtCore.Qt.DockWidgetArea.NoDockWidgetArea, self._dock_appearance)
+#		self._dock_appearance.setFloating(True)
 
 	def setupActions(self):
 		"""Add applicable actions"""
@@ -262,14 +262,14 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		self._man_actions.showBinDisplaySettings().triggered .connect(lambda: self.showToolWindow(toolwindowmanager.BSToolWindowTypes.BinDisplayEditor))
 #		self._dock_bindisplay.visibilityChanged              .connect(self._man_actions.showBinDisplaySettings().setChecked)
 
-		self._man_actions.showBinAppearanceSettings().toggled.connect(self._dock_appearance.setVisible)
-		self._dock_appearance.visibilityChanged              .connect(self._man_actions.showBinAppearanceSettings().setChecked)
+		self._man_actions.showBinAppearanceSettings().triggered.connect(lambda: self.showToolWindow(toolwindowmanager.BSToolWindowTypes.BinAppearanceEditor))
+#		self._dock_appearance.visibilityChanged              .connect(self._man_actions.showBinAppearanceSettings().setChecked)
 
-		self._man_actions.showBinSiftSettings().toggled      .connect(self._dock_sifting.setVisible)
-		self._dock_sifting.visibilityChanged                 .connect(self._man_actions.showBinSiftSettings().setChecked)
+		self._man_actions.showBinSiftSettings().triggered      .connect(lambda: self.showToolWindow(toolwindowmanager.BSToolWindowTypes.SiftSettingsEditor))
+#		self._dock_sifting.visibilityChanged                 .connect(self._man_actions.showBinSiftSettings().setChecked)
 
-		self._man_actions.showBinViewSettings().toggled      .connect(self._dock_binview.setVisible)
-		self._dock_binview.visibilityChanged                 .connect(self._man_actions.showBinViewSettings().setChecked)
+		self._man_actions.showBinViewSettings().triggered      .connect(lambda: self.showToolWindow(toolwindowmanager.BSToolWindowTypes.BinViewEditor))
+#		self._dock_binview.visibilityChanged                 .connect(self._man_actions.showBinViewSettings().setChecked)
 
 		# User debuggy-type tools
 		# NOTE: Have application instance hook directly into window.actionsManager()?
@@ -289,14 +289,14 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		self._man_appearance.sig_palette_changed             .connect(self._bin_widget.setBinPalette)
 		
 		# Appearance to toolbox
-		self._man_appearance.sig_bin_font_changed            .connect(self._tool_appearance.setBinFont)
-		self._man_appearance.sig_bin_colors_changed          .connect(self._tool_appearance.setBinColors)
-		self._man_appearance.sig_window_rect_changed         .connect(self._tool_appearance.setBinRect)
-		self._man_appearance.sig_was_iconic_changed          .connect(self._tool_appearance.setWasIconic)
+#		self._man_appearance.sig_bin_font_changed            .connect(self._tool_appearance.setBinFont)
+#		self._man_appearance.sig_bin_colors_changed          .connect(self._tool_appearance.setBinColors)
+#		self._man_appearance.sig_window_rect_changed         .connect(self._tool_appearance.setBinRect)
+#		self._man_appearance.sig_was_iconic_changed          .connect(self._tool_appearance.setWasIconic)
 
 		# Toolbox to Appearance
-		self._tool_appearance.sig_font_changed               .connect(self._man_appearance.setBinFont)
-		self._tool_appearance.sig_colors_changed             .connect(self._man_appearance.setBinColors)
+#		self._tool_appearance.sig_font_changed               .connect(self._man_appearance.setBinFont)
+#		self._tool_appearance.sig_colors_changed             .connect(self._man_appearance.setBinColors)
 
 		# Bin loader signals
 		self._sigs_binloader.sig_begin_loading               .connect(self.prepareForBinLoading)
@@ -319,10 +319,10 @@ class BSMainWindow(QtWidgets.QMainWindow):
 #		self._sigs_binloader.sig_got_mobs                    .connect(self.updateLoadingBar, QtCore.Qt.ConnectionType.BlockingQueuedConnection)
 
 		# Sift Settings
-		self._tool_sifting.sig_criteria_set                  .connect(self._bin_widget.siftFilter().setSiftCriteria)
-		self._tool_sifting.sig_live_sift_enabled             .connect(self._bin_widget.siftFilter().setLiveSiftEnabled)
-		self._bin_widget.siftFilter().sig_live_sift_enabled  .connect(self._tool_sifting.setLiveSiftEnabled)
-		self._bin_widget.siftFilter().sig_criteria_changed   .connect(self._tool_sifting.setCriteria)
+#		self._tool_sifting.sig_criteria_set                  .connect(self._bin_widget.siftFilter().setSiftCriteria)
+#		self._tool_sifting.sig_live_sift_enabled             .connect(self._bin_widget.siftFilter().setLiveSiftEnabled)
+#		self._bin_widget.siftFilter().sig_live_sift_enabled  .connect(self._tool_sifting.setLiveSiftEnabled)
+#		self._bin_widget.siftFilter().sig_criteria_changed   .connect(self._tool_sifting.setCriteria)
 
 		# Find In Bin Sifter
 		self._find_in_bin_timer.timeout.connect(lambda: self._bin_widget.setSearchText(self._bin_widget.topWidgetBar().searchBox().text()))
@@ -352,9 +352,9 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		self._bin_view_model.sig_bin_view_modified              .connect(lambda bv: self.activeBinViewChanged(bv, True))
 		
 		# Bin View Editor
-		self._tool_binview.sig_focus_column_requested           .connect(self._bin_widget.focusBinColumn)
+#		self._tool_binview.sig_focus_column_requested           .connect(self._bin_widget.focusBinColumn)
 
-		self._tool_binview.sig_bin_view_source_selected                .connect(self.binViewSourceSelected)
+#		self._tool_binview.sig_bin_view_source_selected                .connect(self.binViewSourceSelected)
 		self._bin_widget.binViewSelector().sig_binview_source_selected .connect(self.binViewSourceSelected)
 
 
@@ -672,12 +672,15 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		tool_window = self._man_tool_windows.toolWindow(tool_type)
 
 		if tool_window:
+
+			logging.getLogger(__name__).debug(f"Returning existing tool window %s", repr(toolwindowmanager.BSToolWindowTypes(tool_type)))
 			
 			tool_window.show()
 			tool_window.raise_()
+			tool_window.activateWindow()
 			return True
 		
-		print(f"Create new {tool_type}")
+		logging.getLogger(__name__).debug(f"Creating new tool window %s", repr(toolwindowmanager.BSToolWindowTypes(tool_type)))
 		
 		if tool_type == toolwindowmanager.BSToolWindowTypes.BinDisplayEditor:
 
@@ -687,21 +690,64 @@ class BSMainWindow(QtWidgets.QMainWindow):
 			tool_window.setFlags(self._bin_widget.itemDisplayFilter().acceptedItemTypes())			
 			tool_window.sig_flags_changed.connect(self._man_bindisplay.setBinDisplayFlags)
 			self._man_bindisplay.sig_bin_display_changed.connect(tool_window.setFlags)
-			
 
+		elif tool_type == toolwindowmanager.BSToolWindowTypes.BinViewEditor:
+
+			tool_window = editorwidget.BSBinViewColumnEditor(parent=self, bin_view_model=self._bin_view_model, bin_view_provider=self._binview_provider)
+			
+			tool_window.setWindowTitle(self.tr("Bin View Settings"))
+
+			tool_window.sig_focus_column_requested.connect(self._bin_widget.focusBinColumn)
+			tool_window.sig_bin_view_source_selected.connect(self.binViewSourceSelected)
+
+		elif tool_type == toolwindowmanager.BSToolWindowTypes.SiftSettingsEditor:
+
+			tool_window = siftwidget.BSSiftSettingsWidget(parent=self, sift_filter_model=self._bin_widget.siftFilter())
+
+			tool_window.setWindowTitle(self.tr("Sift Settings"))
+
+			tool_window.sig_criteria_set.connect(self._bin_widget.siftFilter().setSiftCriteria)
+			tool_window.sig_live_sift_enabled.connect(self._bin_widget.siftFilter().setLiveSiftEnabled)
+
+			self._bin_widget.siftFilter().sig_live_sift_enabled.connect(tool_window.setLiveSiftEnabled)
+			self._bin_widget.siftFilter().sig_criteria_changed.connect(tool_window.setCriteria)
+
+		elif tool_type == toolwindowmanager.BSToolWindowTypes.BinAppearanceEditor:
+
+			tool_window = self._tool_appearance  = toolboxes.BSBinAppearanceSettingsView(parent=self)
+
+			tool_window.setWindowTitle(self.tr("Appearance Settings"))
+
+			tool_window.setBinFont(self._man_appearance.binFont())
+			tool_window.setBinColors(*self._man_appearance.binColors())
+			
+			# TODO
+#			tool_window.setBinRect(self.rect())
+#			tool_window.setWasIconic(True)
+
+			self._man_appearance.sig_bin_font_changed            .connect(tool_window.setBinFont)
+			self._man_appearance.sig_bin_colors_changed          .connect(tool_window.setBinColors)
+			self._man_appearance.sig_window_rect_changed         .connect(tool_window.setBinRect)
+			self._man_appearance.sig_was_iconic_changed          .connect(tool_window.setWasIconic)
+
+			# Toolbox to Appearance
+			tool_window.sig_font_changed               .connect(self._man_appearance.setBinFont)
+			tool_window.sig_colors_changed             .connect(self._man_appearance.setBinColors)
+
+		else:
+			# lol dunno
+			logging.getLogger(__name__).error("Setup not written for %s", repr(toolwindowmanager.BSToolWindowTypes(tool_type)))
+			QtWidgets.QApplication.beep()
+			return False
+		
 		tool_window.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
-		tool_window.setWindowFlag(QtCore.Qt.WindowType.Tool)
+		tool_window.setWindowFlags(QtCore.Qt.WindowType.Tool|QtCore.Qt.WindowType.WindowStaysOnTopHint)
 
 		self._man_tool_windows.registerToolWindow(tool_type, tool_window)
 		
 		tool_window.show()
 		tool_window.raise_()
 		return True
-
-
-
-		
-
 
 	@QtCore.Slot(object)
 	def loadBinFromPath(self, bin_path:PathLike):
@@ -735,10 +781,48 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		self._bin_widget.topWidgetBar().progressBar().setFormat(self.tr("Loading %v of %m mobs", "%v=current_count; %m=total_count"))
 
 	def closeEvent(self, event):
+
+		# Close the tools ok thank you
+#		for tool in self._man_tool_windows.toolWindows():
+#			tool.close()
 		
 		self.cleanupSignals()
 		
 		return super().closeEvent(event)
+	
+#	def moveEvent(self, event:QtGui.QMoveEvent):
+#
+#		diff = event.pos() - event.oldPos()
+#
+#		for tool_type, tool_window in self._man_tool_windows.toolWindows():
+#			tool_window.move(tool_window.pos() + diff)
+#
+#		return super().moveEvent(event)
+	
+
+	def changeEvent(self, event):
+
+		super().changeEvent(event)
+
+		if event.type() == QtCore.QEvent.Type.ActivationChange:
+
+			active_window = QtWidgets.QApplication.activeWindow()
+			print(f"{active_window=}")
+
+			if self.isActiveWindow():
+				print("Is active")
+
+				for _, tool_window in self._man_tool_windows.toolWindows():
+					tool_window.show()
+
+			elif not active_window or not active_window.parent() == self:
+
+				for _, tool_window in self._man_tool_windows.toolWindows():
+					tool_window.hide()
+
+				print("Is inactive")
+
+		#return super().changeEvent(event)
 	
 	def dragEnterEvent(self, event:QtGui.QDragEnterEvent):
 

@@ -104,15 +104,15 @@ class ActionsManager(QtCore.QObject):
 		"""Toggle visibility of Bin Display Settings toolbox"""
 		self._act_toggle_bindisplay_settings.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentPageSetup))
 
-		self._act_toggle_binview_settings    = QtGui.QAction(self.tr("Show Bin View Settings"), checkable=True, parent=self._parent)
+		self._act_toggle_binview_settings    = QtGui.QAction(self.tr("Show Bin View Settings"), parent=self._parent)
 		"""Toggle visibility of Binview Settings toolbox"""
 		self._act_toggle_binview_settings.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRestore))
 		
-		self._act_toggle_appearance_options = QtGui.QAction(self.tr("Show Appearance Settings"), checkable=True, parent=self._parent)
+		self._act_toggle_appearance_options = QtGui.QAction(self.tr("Show Appearance Settings"), parent=self._parent)
 		"""Toggle visibility of Fonts & Colors toolbox"""
 		self._act_toggle_appearance_options.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.Battery))
 
-		self._act_toggle_sift_settings = QtGui.QAction(self.tr("Show Sift Settings"), checkable=True, parent=self._parent)
+		self._act_toggle_sift_settings = QtGui.QAction(self.tr("Show Sift Settings"), parent=self._parent)
 		"""Toggle visibility of Sift Settings toolbox"""
 		self._act_toggle_sift_settings.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.AudioVolumeHigh))
 		self._act_toggle_sift_settings.setShortcut(QtGui.QKeySequence.StandardKey.Find)

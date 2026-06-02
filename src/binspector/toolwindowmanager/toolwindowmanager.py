@@ -4,9 +4,10 @@ from PySide6 import QtWidgets, QtCore
 
 class BSToolWindowTypes(enum.IntEnum):
 
-	SiftToolWindow   = enum.auto()
-	BinViewEditor    = enum.auto()
-	BinDisplayEditor = enum.auto()
+	SiftSettingsEditor  = enum.auto()
+	BinViewEditor       = enum.auto()
+	BinDisplayEditor    = enum.auto()
+	BinAppearanceEditor = enum.auto()
 
 class BSToolWindowManager(QtCore.QObject):
 
@@ -34,7 +35,7 @@ class BSToolWindowManager(QtCore.QObject):
 		
 		return tool_window
 
-	def toolWindows(self) -> typing.Iterable[QtWidgets.QWidget]:
+	def toolWindows(self) -> typing.Iterable[tuple[enum.Enum, QtWidgets.QWidget]]:
 		"""Get all valid tool windows"""
 
 		for tool_type in self._tool_windows:
@@ -44,7 +45,7 @@ class BSToolWindowManager(QtCore.QObject):
 			if tool_window is None:
 				continue
 
-			yield tool_type, self.toolWindow(tool_window)
+			yield tool_type, tool_window
 
 	def registerToolWindow(self, tool_window_type:enum.Enum, tool_window:QtWidgets.QWidget):
 

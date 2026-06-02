@@ -185,8 +185,9 @@ class BSMainApplication(QtWidgets.QApplication):
 		#logging.basicConfig(level=logging.DEBUG)
 		
 		logging.basicConfig(level=logging.ERROR)
-		logging.getLogger("binspector.binfilters").setLevel(logging.DEBUG)
-		logging.getLogger("binspector.siftwidget").setLevel(logging.DEBUG)
+#		logging.getLogger("binspector.binfilters").setLevel(logging.DEBUG)
+#		logging.getLogger("binspector.siftwidget").setLevel(logging.DEBUG)
+		logging.getLogger("binspector.widgets.mainwindow").setLevel(logging.DEBUG)
 
 		base_dir = QtCore.QDir(QtCore.QDir(self._path_local_storage).filePath(subdir_name))
 

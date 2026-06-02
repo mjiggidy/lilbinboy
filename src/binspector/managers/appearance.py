@@ -89,6 +89,10 @@ class BSBinAppearanceSettingsManager(QtCore.QObject):
 		if self._use_bin_appearance:
 			self.sig_active_font_changed.emit(bin_font)
 
+	def binFont(self) -> QtGui.QFont:
+
+		return self._bin_font
+
 
 	@QtCore.Slot(QtGui.QColor, QtGui.QColor)
 	def setBinColors(self, fg_color:QtGui.QColor, bg_color:QtGui.QColor):
@@ -100,6 +104,19 @@ class BSBinAppearanceSettingsManager(QtCore.QObject):
 
 		from ..utils import palettes
 		self.setBinPalette(palettes.build_palette(fg_color, bg_color))
+
+	def binColors(self) -> tuple[QtGui.QColor, QtGui.QColor]:
+		"""Return `(fg_color, bg_color)`"""
+
+		fg_color = self._bin_palette.color(QtGui.QPalette.ColorRole.Text)
+		bg_color = self._bin_palette.color(QtGui.QPalette.ColorRole.Base)
+
+		return (fg_color, bg_color,)
+	
+	def binPalette(self) -> QtGui.QPalette:
+		"""Return the resolved `QPalette` for the bin"""
+
+		return self._bin_palette
 
 	@QtCore.Slot(QtGui.QPalette)
 	def setBinPalette(self, bin_palette:QtGui.QPalette):
