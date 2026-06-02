@@ -42,6 +42,7 @@ class BSBinViewManager(QtCore.QObject):
 	"""All items have been toggled on/off (opposite of `sig_bin_filters_toggled`)"""
 
 	def __init__(self, *args, **kwargs):
+
 		super().__init__(*args, **kwargs)
 
 		self._default_sort_columns:list[list[int,str]] = []
@@ -94,9 +95,9 @@ class BSBinDisplaySettingsManager(QtCore.QObject):
 
 	sig_bin_display_changed = QtCore.Signal(object)
 
-	def __init__(self):
+	def __init__(self, *args, **kwargs):
 
-		super().__init__()
+		super().__init__(*args, **kwargs)
 
 	@QtCore.Slot(object)
 	def setBinDisplayFlags(self, bin_display:avbutils.BinDisplayItemTypes):

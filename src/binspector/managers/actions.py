@@ -100,7 +100,7 @@ class ActionsManager(QtCore.QObject):
 
 
 		# Bin settings
-		self._act_toggle_bindisplay_settings  = QtGui.QAction(self.tr("Show Bin Display Settings"), checkable=True, parent=self._parent)
+		self._act_toggle_bindisplay_settings  = QtGui.QAction(self.tr("Show Bin Display Settings"), parent=self._parent)
 		"""Toggle visibility of Bin Display Settings toolbox"""
 		self._act_toggle_bindisplay_settings.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentPageSetup))
 

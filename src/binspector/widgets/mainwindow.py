@@ -13,6 +13,7 @@ from ..binwidget import binwidget
 from ..binitems import binitemsmodel, binitemtypes
 from ..binview import binviewmodel, binviewitemtypes
 from ..managers import actions, binproperties, appearance
+from ..toolwindowmanager import toolwindowmanager
 from ..widgets import menus, toolboxes, buttons, about, overlaywidget
 from ..core import binloader, icon_engines, icon_providers
 from ..binvieweditor import editorwidget
@@ -45,45 +46,40 @@ class BSMainWindow(QtWidgets.QMainWindow):
 
 		super().__init__()
 
-		self._bin_item_model  = binitemsmodel.BSBinItemModel()
-		self._bin_view_model   = binviewmodel.BSBinViewModel()
+		self._bin_item_model   = binitemsmodel.BSBinItemModel(parent=self)
+		self._bin_view_model   = binviewmodel.BSBinViewModel(parent=self)
 
 		self._settings         = QtCore.QSettings()
 		self._man_actions      = actions.ActionsManager(self)	# NOTE: Investigate ownership
 
 		# Define managers
 
-		self._binview_provider = providermodel.BSBinViewProviderModel()
+		self._binview_provider = providermodel.BSBinViewProviderModel(parent=self)
 
-		self._find_in_bin_timer = QtCore.QTimer(parent=self, singleShot=True, interval=DEFAULT_FIND_IN_BIN_REFRESH_INTERVAL_MSEC)
-		self._find_in_bin_timer.timeout.connect(lambda: self._bin_widget.setSearchText(self._bin_widget.topWidgetBar().searchBox().text()))
-#		self._last_search_text = ""
-
-
-
-		self._man_binview      = binproperties.BSBinViewManager()
-#		self._man_siftsettings = binproperties.BSBinSiftSettingsManager()
-		self._man_appearance   = appearance.BSBinAppearanceSettingsManager()
-#		self._man_sorting      = binproperties.BSBinSortingPropertiesManager()
-		self._man_bindisplay   = binproperties.BSBinDisplaySettingsManager()
-#		self._man_viewmode     = binproperties.BSBinViewModeManager()
+		self._man_binview      = binproperties.BSBinViewManager(parent=self)
+		self._man_appearance   = appearance.BSBinAppearanceSettingsManager(parent=self)
+		self._man_bindisplay   = binproperties.BSBinDisplaySettingsManager(parent=self)
+		
+		self._man_tool_windows = toolwindowmanager.BSToolWindowManager(parent=self)
 
 		# Define signals
 		self._queue_size       = 500  # Mobs to batch-load
 		self._use_animation    = True # Use animated progress bar
 		self._use_sift         = True 
-		self._sigs_binloader   = binloader.BSBinViewLoader.Signals()
+		self._sigs_binloader   = binloader.BSBinViewLoader.Signals(parent=self)
 
 		# Define animators
 		self._anim_progress    = QtCore.QPropertyAnimation(parent=self)
-		self._time_last_chunk  = QtCore.QElapsedTimer()
-		self._time_last_load   = QtCore.QElapsedTimer()
+		self._time_last_chunk  = QtCore.QElapsedTimer(parent=self)
+		self._time_last_load   = QtCore.QElapsedTimer(parent=self)
+		
+		self._find_in_bin_timer= QtCore.QTimer(parent=self, singleShot=True, interval=DEFAULT_FIND_IN_BIN_REFRESH_INTERVAL_MSEC)
 
 		# Define widgets
 		self._bin_widget       = binwidget.BSBinContentsWidget(bin_items_model=self._bin_item_model, bin_view_model=self._bin_view_model)
 
-		self._tool_bindisplay  = toolboxes.BSBinDisplaySettingsView(icon_registry=icon_registry.BIN_ITEM_TYPE_ICON_REGISTRY)
-		self._dock_bindisplay  = QtWidgets.QDockWidget(self.tr("Bin Display Settings"))
+#		self._tool_bindisplay  = toolboxes.BSBinDisplaySettingsView(icon_registry=icon_registry.BIN_ITEM_TYPE_ICON_REGISTRY)
+#		self._dock_bindisplay  = QtWidgets.QDockWidget(self.tr("Bin Display Settings"))
 		
 		self._tool_sifting     = siftwidget.BSSiftSettingsWidget(sift_filter_model=self._bin_widget.siftFilter())
 		self._dock_sifting     = QtWidgets.QDockWidget(self.tr("Sift Settings"))
@@ -120,12 +116,12 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		self.setCentralWidget(self._bin_widget)
 		self.setAcceptDrops(True)
 
-		self._dock_bindisplay.setWidget(self._tool_bindisplay)
+#		self._dock_bindisplay.setWidget(self._tool_bindisplay)
 		self._dock_sifting.setWidget(self._tool_sifting)
 		self._dock_appearance.setWidget(self._tool_appearance)
 		self._dock_binview.setWidget(self._tool_binview)
 		
-		self._dock_bindisplay.hide()
+#		self._dock_bindisplay.hide()
 		self._dock_sifting.hide()
 		self._dock_appearance.hide()
 		self._dock_binview.hide()
@@ -220,8 +216,8 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		
 		self.addDockWidget(QtCore.Qt.DockWidgetArea.NoDockWidgetArea, self._dock_binview)
 		self._dock_binview.setFloating(True)
-		self.addDockWidget(QtCore.Qt.DockWidgetArea.NoDockWidgetArea, self._dock_bindisplay)
-		self._dock_bindisplay.setFloating(True)
+#		self.addDockWidget(QtCore.Qt.DockWidgetArea.NoDockWidgetArea, self._dock_bindisplay)
+#		self._dock_bindisplay.setFloating(True)
 		self.addDockWidget(QtCore.Qt.DockWidgetArea.NoDockWidgetArea, self._dock_sifting)
 		self._dock_sifting.setFloating(True)
 		self.addDockWidget(QtCore.Qt.DockWidgetArea.NoDockWidgetArea, self._dock_appearance)
@@ -263,8 +259,8 @@ class BSMainWindow(QtWidgets.QMainWindow):
 
 		# Toolbox Toggle Actions
 		# NOTE: Dock widgets have a toggleViewAction() butuhhhhh
-		self._man_actions.showBinDisplaySettings().toggled   .connect(self._dock_bindisplay.setVisible)
-		self._dock_bindisplay.visibilityChanged              .connect(self._man_actions.showBinDisplaySettings().setChecked)
+		self._man_actions.showBinDisplaySettings().triggered .connect(lambda: self.showToolWindow(toolwindowmanager.BSToolWindowTypes.BinDisplayEditor))
+#		self._dock_bindisplay.visibilityChanged              .connect(self._man_actions.showBinDisplaySettings().setChecked)
 
 		self._man_actions.showBinAppearanceSettings().toggled.connect(self._dock_appearance.setVisible)
 		self._dock_appearance.visibilityChanged              .connect(self._man_actions.showBinAppearanceSettings().setChecked)
@@ -284,9 +280,9 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		self._man_actions.showSettingsWindow().triggered     .connect(self.sig_request_show_settings)
 
 		# Bin Settings Toolboxes
-		self._man_bindisplay.sig_bin_display_changed         .connect(self._tool_bindisplay.setFlags)
+#		self._man_bindisplay.sig_bin_display_changed         .connect(self._tool_bindisplay.setFlags)
 		self._man_bindisplay.sig_bin_display_changed         .connect(self._bin_widget.itemDisplayFilter().setAcceptedItemTypes)
-		self._tool_bindisplay.sig_flags_changed              .connect(self._man_bindisplay.setBinDisplayFlags)
+#		self._tool_bindisplay.sig_flags_changed              .connect(self._man_bindisplay.setBinDisplayFlags)
 
 		# Appearance to binwidget
 		self._man_appearance.sig_active_font_changed          .connect(self._bin_widget.setBinFont)
@@ -327,6 +323,9 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		self._tool_sifting.sig_live_sift_enabled             .connect(self._bin_widget.siftFilter().setLiveSiftEnabled)
 		self._bin_widget.siftFilter().sig_live_sift_enabled  .connect(self._tool_sifting.setLiveSiftEnabled)
 		self._bin_widget.siftFilter().sig_criteria_changed   .connect(self._tool_sifting.setCriteria)
+
+		# Find In Bin Sifter
+		self._find_in_bin_timer.timeout.connect(lambda: self._bin_widget.setSearchText(self._bin_widget.topWidgetBar().searchBox().text()))
 
 		# Bin Contents Toolbars
 		self._bin_widget.topWidgetBar().searchBox().textChanged.connect(self.userChangedSearchText)
@@ -523,7 +522,6 @@ class BSMainWindow(QtWidgets.QMainWindow):
 
 #		self._bin_widget.topWidgetBar()._cmb_binviews.setCurrentIndex(0)
 
-
 	@QtCore.Slot(str)
 	def prepareForBinLoading(self, bin_path:str):
 		"""Bin load is about to begin. Prepare UI elements."""
@@ -667,6 +665,43 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		
 		if file_path:
 			self.loadBinFromPath(file_path)
+
+	@QtCore.Slot()
+	def showToolWindow(self, tool_type:toolwindowmanager.BSToolWindowTypes) -> bool:
+
+		tool_window = self._man_tool_windows.toolWindow(tool_type)
+
+		if tool_window:
+			
+			tool_window.show()
+			tool_window.raise_()
+			return True
+		
+		print(f"Create new {tool_type}")
+		
+		if tool_type == toolwindowmanager.BSToolWindowTypes.BinDisplayEditor:
+
+			tool_window = toolboxes.BSBinDisplaySettingsView(parent=self, icon_registry=icon_registry.BIN_ITEM_TYPE_ICON_REGISTRY)
+
+			tool_window.setWindowTitle(self.tr("Bin Display Settings"))
+			tool_window.setFlags(self._bin_widget.itemDisplayFilter().acceptedItemTypes())			
+			tool_window.sig_flags_changed.connect(self._man_bindisplay.setBinDisplayFlags)
+			self._man_bindisplay.sig_bin_display_changed.connect(tool_window.setFlags)
+			
+
+		tool_window.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
+		tool_window.setWindowFlag(QtCore.Qt.WindowType.Tool)
+
+		self._man_tool_windows.registerToolWindow(tool_type, tool_window)
+		
+		tool_window.show()
+		tool_window.raise_()
+		return True
+
+
+
+		
+
 
 	@QtCore.Slot(object)
 	def loadBinFromPath(self, bin_path:PathLike):
