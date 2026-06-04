@@ -45,6 +45,34 @@ class BSMainApplication(QtWidgets.QApplication):
 			basepath = self._path_local_storage
 		)
 
+		if self._man_settings.showFirstRunMessage():
+
+			self._man_settings.setShowFirstRunMessage(False)
+
+			dev_message = QtWidgets.QMessageBox()
+			dev_message.setOption(QtWidgets.QMessageBox.Option.DontUseNativeDialog)
+			dev_message.setWindowTitle(self.tr("Bless This Mess"))
+			dev_message.setIcon(QtWidgets.QMessageBox.Icon.Information)
+			dev_message.setTextFormat(QtCore.Qt.TextFormat.RichText)
+			dev_message.setText("Welcome to Binspector: The Pre-Alpha Nightmare!")
+
+			dev_message.setInformativeText(
+			"""
+				<p>Binspector is still under heavy development and is feature-incomplete.  There will be things that don't work so great.  
+				Most things, in fact.  Kinda <em>everything</em> is a mess right now, really.  Just so you know what's goin' on.
+				</p>
+				<p>
+				Although Binspector is a read-only program and will never modify your Avid bin files, use this development build at your own risk.
+				</p>
+				<p>
+				If you encounter any bugs that you'd really like me to prioritize, please report them to <strong><code>michael@glowingpixel.com</code></strong>.
+				</p>
+				<hr/>
+				<p>Please consider supporting development on Ko-Fi:<br/><strong><code>https://ko-fi.com/lilbinboy</code></strong></p>
+				"""
+			)
+			dev_message.exec()
+
 		self._man_binwindows       = windows.BSWindowManager()
 		self._man_software_updates = software_updates.BSUpdatesManager()
 
@@ -74,33 +102,7 @@ class BSMainApplication(QtWidgets.QApplication):
 
 		self._setupBinViewStorage()
 
-		if self._man_settings.showFirstRunMessage():
 
-			self._man_settings.setShowFirstRunMessage(False)
-
-			dev_message = QtWidgets.QMessageBox()
-			dev_message.setOption(QtWidgets.QMessageBox.Option.DontUseNativeDialog)
-			dev_message.setWindowTitle(self.tr("Bless This Mess"))
-			dev_message.setIcon(QtWidgets.QMessageBox.Icon.Information)
-			dev_message.setTextFormat(QtCore.Qt.TextFormat.RichText)
-			dev_message.setText("Welcome to Binspector: The Pre-Alpha Nightmare!")
-
-			dev_message.setInformativeText(
-			"""
-				<p>Binspector is still under heavy development and is feature-incomplete.  There will be things that don't work so great.  
-				Most things, in fact.  Kinda <em>everything</em> is a mess right now, really.  Just so you know what's goin' on.
-				</p>
-				<p>
-				Although Binspector is a read-only program and will never modify your Avid bin files, use this development build at your own risk.
-				</p>
-				<p>
-				If you encounter any bugs that you'd really like me to prioritize, please report them to <strong><code>michael@glowingpixel.com</code></strong>.
-				</p>
-				<hr/>
-				<p>Please consider supporting development on Ko-Fi:<br/><strong><code>https://ko-fi.com/lilbinboy</code></strong></p>
-				"""
-			)
-			dev_message.exec()
 
 		
 	def _setupSignals(self):
@@ -110,28 +112,28 @@ class BSMainApplication(QtWidgets.QApplication):
 		self._man_software_updates.sig_newReleaseAvailable.connect(self.showUpdatesWindow)
 		self._man_software_updates.sig_autoCheckChanged.connect(self._man_settings.setSoftwareUpdateAutocheckEnabled)
 
-	def _setupApplicationMenu(self):
-		"""Setup global menu"""
-
-		raise DeprecationWarning("I don't think we doin this")
-		# Setup default menu bar/actions (for macOS when no bin windows are open)
-		# NOTE: This is currently clumsy and weird.  I'll uh, come back to this
-
-		self.setQuitOnLastWindowClosed(False)
-
-		from ..managers import actions
-		from ..widgets import menus
-
-		self._actionmanager   = actions.ActionsManager()
-		self._default_menubar = menus.DefaultMenuBar(self._actionmanager)
-
-		self._actionmanager.newWindowAction().triggered.connect(self.createMainWindow)
-		self._actionmanager.fileBrowserAction().triggered.connect(lambda: self.createMainWindow(show_file_browser=True))
-		self._actionmanager.showSettingsWindow().triggered.connect(self.showSettingsWindow)
-		self._actionmanager.quitApplicationAction().triggered.connect(self.exit)
+#	def _setupApplicationMenu(self):
+#		"""Setup global menu"""
+#
+#		raise DeprecationWarning("I don't think we doin this")
+#		# Setup default menu bar/actions (for macOS when no bin windows are open)
+#		# NOTE: This is currently clumsy and weird.  I'll uh, come back to this
+#
+#		self.setQuitOnLastWindowClosed(False)
+#
+#		from ..managers import actions
+#		from ..widgets import menus
+#
+#		self._actionmanager   = actions.ActionsManager()
+#		self._default_menubar = menus.DefaultMenuBar(self._actionmanager)
+#
+#		self._actionmanager.newWindowAction().triggered.connect(self.createMainWindow)
+#		self._actionmanager.fileBrowserAction().triggered.connect(lambda: self.createMainWindow(show_file_browser=True))
+#		self._actionmanager.showSettingsWindow().triggered.connect(self.showSettingsWindow)
+#		self._actionmanager.quitApplicationAction().triggered.connect(self.exit)
 
 	def _setupBinViewStorage(self):
-
+		"""Watch for bin views"""
 
 		path_binviews = QtCore.QDir(self._path_local_storage).filePath(BIN_VIEW_PATH)
 		logging.getLogger(__name__).debug("Setting up binview storage provider at %s", QtCore.QDir.toNativeSeparators(path_binviews))
@@ -437,8 +439,8 @@ class BSMainApplication(QtWidgets.QApplication):
 		if not self._wnd_log_viewer:
 
 			self._wnd_log_viewer = logwidget.BSLogViewerWidget()
-			self._wnd_log_viewer.setWindowTitle("Log Viewer")
-			self._wnd_log_viewer.setWindowFlag(QtCore.Qt.WindowType.Tool)
+			self._wnd_log_viewer.setWindowTitle(self.tr("Log Viewer"))
+			self._wnd_log_viewer.setWindowFlags(QtCore.Qt.WindowType.Tool|QtCore.Qt.WindowType.WindowStaysOnTopHint)
 
 			start_geo = self.activeWindow().geometry().translated(QtCore.QPoint(100,100)) if self.activeWindow() else self._wnd_log_viewer.geometry()
 			start_geo.setSize(QtCore.QSize(900,200))
