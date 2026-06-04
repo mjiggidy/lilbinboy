@@ -1,5 +1,5 @@
 """
-Binspector Bootstrap (bb4u)
+Lil' Bin Boy Bootstrap (lbbb4u)
 """
 
 # Compilation configuration for Nuitka
@@ -7,7 +7,7 @@ Binspector Bootstrap (bb4u)
 # nuitka-project: --mode=app
 # nuitka-project: --onefile-tempdir-spec="{CACHE_DIR}/{COMPANY}/{PRODUCT}/{VERSION}"
 # nuitka-project: --deployment
-# nuitka-project: --output-filename="binspector"
+# nuitka-project: --output-filename="lilbinboy"
 # nuitka-project: --output-dir="dist"
 # nuitka-project: --remove-output
 # nuitka-project: --plugin-enable=pyside6

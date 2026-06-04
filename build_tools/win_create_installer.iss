@@ -1,10 +1,10 @@
-; Binspector Install v0.1
+; Lil' Bin Boy Install v0.1
 ; October 14, 2025
 
-#define MyAppName "Binspector"
+#define MyAppName "Lil' Bin Boy"
 #define MyAppPublisher "GlowingPixel"
-#define MyAppURL "https://github.com/mjiggidy/binspector/"
-#define MyAppExeName "binspector.exe"
+#define MyAppURL "https://github.com/mjiggidy/lilbinboy/"
+#define MyAppExeName "lilbinboy.exe"
 #define AppGUID "d114e8d0-975b-4f0f-8661-3fade5acc82f"
 
 
@@ -29,13 +29,13 @@ ArchitecturesAllowed=x64compatible
 ; the 64-bit view of the registry.
 ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
-;LicenseFile=..\EULA
+LicenseFile=..\DISCLAIMER.md
 ; lowest means "user level" btw
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 
 OutputDir=..\installer
-OutputBaseFilename=binspector_windows_v{#MyAppVersion}_x86-64
+OutputBaseFilename=lilbinboy_windows_v{#MyAppVersion}_x86-64
 Compression=lzma
 SolidCompression=yes
 WizardStyle=classic
