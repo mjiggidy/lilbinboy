@@ -4,7 +4,7 @@ from PySide6 import QtCore, QtWidgets
 class BSApplicationConfig:
 	"""Binspector Global Config"""
 
-	APPLICATION_NAME    = "Binspector"
+	APPLICATION_NAME    = "Lil' Bin Boy"
 	"""Name o' the app"""
 
 	APPLICATION_VERSION = QtCore.QVersionNumber(0,0,24)

@@ -83,14 +83,14 @@ class BSAboutDialog(QtWidgets.QDialog):
 	
 		self.layout().setSizeConstraints(self.layout().SizeConstraint.SetFixedSize, self.layout().SizeConstraint.SetFixedSize)
 
-if __name__ == "__main__":
-
-	app = QtWidgets.QApplication()
-	
-	app.setApplicationName("Binspector")
-	app.setApplicationVersion("0.0.1")
-	
-	about = BSAboutDialog()
-	about.setWindowTitle(QtCore.QObject.tr("About {application_name}").format(application_name=QtWidgets.QApplication.instance().applicationDisplayName()))
-	about.show()
-	app.exec()
+#if __name__ == "__main__":
+#
+#	app = QtWidgets.QApplication()
+#	
+#	app.setApplicationName("Binspector")
+#	app.setApplicationVersion("0.0.1")
+#	
+#	about = BSAboutDialog()
+#	about.setWindowTitle(QtCore.QObject.tr("About {application_name}").format(application_name=QtWidgets.QApplication.instance().applicationDisplayName()))
+#	about.show()
+#	app.exec()

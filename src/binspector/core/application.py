@@ -54,23 +54,25 @@ class BSMainApplication(QtWidgets.QApplication):
 			dev_message.setWindowTitle(self.tr("Bless This Mess"))
 			dev_message.setIcon(QtWidgets.QMessageBox.Icon.Information)
 			dev_message.setTextFormat(QtCore.Qt.TextFormat.RichText)
-			dev_message.setText("Welcome to Binspector: The Pre-Alpha Nightmare!")
+			dev_message.setText(self.tr("Welcome to {app_name}: The Pre-Alpha Nightmare!").format(app_name=self.applicationName()))
 
 			dev_message.setInformativeText(
 			"""
-				<p>Binspector is still under heavy development and is feature-incomplete.  There will be things that don't work so great.  
+				<p>{app_name} is still under heavy development and is feature-incomplete.  There will be things that don't work so great.  
 				Most things, in fact.  Kinda <em>everything</em> is a mess right now, really.  Just so you know what's goin' on.
 				</p>
 				<p>
-				Although Binspector is a read-only program and will never modify your Avid bin files, use this development build at your own risk.
-				</p>
-				<p>
-				If you encounter any bugs that you'd really like me to prioritize, please report them to <strong><code>michael@glowingpixel.com</code></strong>.
+				If you encounter any bugs that you'd really like me to prioritize, please report them to <strong><code><a href="mailto:michael@glowingpixel.com">michael@glowingpixel.com</a></code></strong>.
 				</p>
 				<hr/>
-				<p>Please consider supporting development on Ko-Fi:<br/><strong><code>https://ko-fi.com/lilbinboy</code></strong></p>
-				"""
+				<p>
+				Although {app_name} is read-only and will never modify your Avid bin files, use this development build at your own risk.
+				</p>
+				<hr/>
+				<p>If this program seems like it might be useful to you once/if/assuming it theoretically ever actually works, please consider supporting development on Ko-Fi:<br/><strong><code><a href="https://ko-fi.com/lilbinboy">https://ko-fi.com/lilbinboy</a></code></strong></p>
+				""".format(app_name=self.applicationName())
 			)
+			
 			dev_message.exec()
 
 		self._man_binwindows       = windows.BSWindowManager()
