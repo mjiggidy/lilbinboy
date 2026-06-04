@@ -38,7 +38,7 @@ class BSToolWindowManager(QtCore.QObject):
 	def toolWindows(self) -> typing.Iterable[tuple[enum.Enum, QtWidgets.QWidget]]:
 		"""Get all valid tool windows"""
 
-		for tool_type in self._tool_windows:
+		for tool_type in set(self._tool_windows):
 
 			tool_window = self.toolWindow(tool_type)
 
