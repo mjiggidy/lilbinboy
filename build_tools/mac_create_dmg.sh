@@ -13,7 +13,7 @@ mv build/main.app "build/Lil' Bin Boy.app"
 ls -l build
 
 # Bake the app info into the DMG background image
-magick build_tools/bkgs/macos_dmg_bkg_src.png -gravity southeast -pointsize 24 -fill black -annotate +20+20 "Lil' Bin Boy  |  macOS ${arch}  |  Version ${version_number}" build_tools/bkgs/macos_dmg_bkg@2x.png
+magick build_tools/bkgs/macos_dmg_bkg_src.png -gravity southeast -pointsize 24 -fill black -annotate +20+20 "Lil' Bin Boy  |  macOS ${arch}  |  Version ${version_number}" -font "/System/Library/Fonts/Helvetica.ttc" build_tools/bkgs/macos_dmg_bkg@2x.png
 magick build_tools/bkgs/macos_dmg_bkg@2x.png -scale 50% build_tools/bkgs/macos_dmg_bkg.png
 
 # Make the hi-dpi background image
