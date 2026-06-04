@@ -28,19 +28,19 @@ Binspector Bootstrap (bb4u)
 
 # macOS Stuff
 # ---
-# nuitka-project: --macos-app-name="Binspector!"
-### nuitka-project: --macos-app-icon="build_tools/icons/macos_lilbinboy.icns"
-# nuitka-project: --macos-app-version=
-# nuitka-project: --macos-signed-app-name="com.glowingpixel.binspector"
+# nuitka-project: --macos-app-name="Lil' Bin Boy!"
+### nuitka-project: --macos-app-icon="../build_tools/icons/macos_lilbinboy.icns"
+# nuitka-project: --macos-app-version=0.0.1
+# nuitka-project: --macos-signed-app-name="com.glowingpixel.lilbinboy"
 # ---
 
 # Metadata Stuff
 # ---
 # nuitka-project: --company-name="GlowingPixel"
-# nuitka-project: --product-name="binspector"
+# nuitka-project: --product-name="lilbinboy"
 # nuitka-project: --product-version=0.0.0.1
 # nuitka-project: --file-version=0.0.0.1
-# nuitka-project: --copyright="(c) Copyright Michael Jordan 2025"
+# nuitka-project: --copyright="(c) Copyright Michael Jordan 2026"
 # ---
 
 import binspector

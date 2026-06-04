@@ -3,6 +3,7 @@ Big ol' mess for now
 """
 
 from PySide6 import QtCore, QtGui, QtWidgets
+from ..res import icons_app
 
 class BSAboutWidget(QtWidgets.QWidget):
 
@@ -10,14 +11,17 @@ class BSAboutWidget(QtWidgets.QWidget):
 
 		super().__init__(*args, **kwargs)
 
-		self.setLayout(QtWidgets.QVBoxLayout())
+		self.setLayout(QtWidgets.QHBoxLayout())
+
+		self._lbl_icon = QtWidgets.QLabel(movie=QtGui.QMovie(":/app/dance_64.gif"))
+		self._lbl_icon.movie().start()
 
 		self._lbl_title = QtWidgets.QLabel(QtWidgets.QApplication.instance().applicationDisplayName() + "!")
 		self._lbl_version = QtWidgets.QLabel(self.tr("Version ") + QtWidgets.QApplication.instance().applicationVersion())
 		self._lbl_version.setTextInteractionFlags(QtGui.Qt.TextInteractionFlag.TextSelectableByKeyboard|QtGui.Qt.TextInteractionFlag.TextSelectableByMouse)
 
 		self._lbl_quote  = QtWidgets.QLabel(
-			self.tr("\"Look at that bin real good and see the items and things in there until we've see it all!\"")
+			self.tr("\"To take a look into those bins and see all those little items with their little datas in there until we don't care no mores and that's okay thank you!\"")
 		)
 
 		self._lbl_author = QtWidgets.QLabel(self.tr("Written by Michael Jordan"))
@@ -56,15 +60,26 @@ class BSAboutWidget(QtWidgets.QWidget):
 	
 	def setupWidgets(self):
 
-		self.layout().addWidget(self._lbl_title)
-		self.layout().addWidget(self._lbl_version)
+		layout_icon = QtWidgets.QVBoxLayout()
+		layout_icon.addWidget(self._lbl_icon)
+		layout_icon.addStretch()
 
-		self.layout().addWidget(self._lbl_quote)
-		
-		self.layout().addWidget(self._lbl_author)
-		self.layout().addWidget(self._lbl_thanks)
+		self.layout().addLayout(layout_icon)
 
-		self.layout().addLayout(self._lay_links)
+		layout_text = QtWidgets.QVBoxLayout()
+
+
+		layout_text.addWidget(self._lbl_title)
+		layout_text.addWidget(self._lbl_version)
+
+		layout_text.addWidget(self._lbl_quote)
+		layout_text
+		layout_text.addWidget(self._lbl_author)
+		layout_text.addWidget(self._lbl_thanks)
+
+		layout_text.addLayout(self._lay_links)
+
+		self.layout().addLayout(layout_text)
 
 class BSAboutDialog(QtWidgets.QDialog):
 
@@ -74,23 +89,14 @@ class BSAboutDialog(QtWidgets.QDialog):
 
 		self.setLayout(QtWidgets.QVBoxLayout())
 
-		self._btns = QtWidgets.QDialogButtonBox(standardButtons=QtWidgets.QDialogButtonBox.StandardButton.Ok)
+		self.setWindowFlags(QtCore.Qt.WindowType.Tool|QtCore.Qt.WindowType.WindowStaysOnTopHint)
+		self.setWindowTitle(self.tr("A Lil' 'Bout The Boy"))
 
+		self._btns = QtWidgets.QDialogButtonBox(standardButtons=QtWidgets.QDialogButtonBox.StandardButton.Ok)
+		
 		self.layout().addWidget(BSAboutWidget())
 		self.layout().addWidget(self._btns)
 
 		self._btns.accepted.connect(self.close)
 	
 		self.layout().setSizeConstraints(self.layout().SizeConstraint.SetFixedSize, self.layout().SizeConstraint.SetFixedSize)
-
-#if __name__ == "__main__":
-#
-#	app = QtWidgets.QApplication()
-#	
-#	app.setApplicationName("Binspector")
-#	app.setApplicationVersion("0.0.1")
-#	
-#	about = BSAboutDialog()
-#	about.setWindowTitle(QtCore.QObject.tr("About {application_name}").format(application_name=QtWidgets.QApplication.instance().applicationDisplayName()))
-#	about.show()
-#	app.exec()
