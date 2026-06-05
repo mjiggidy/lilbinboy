@@ -3,7 +3,7 @@ from PySide6 import QtCore, QtWidgets
 from lilbinboy.binviewprovider import providermodel
 from lilbinboy.storage import storagemodel
 
-PATH = "/Users/mjordan/Library/Application Support/GlowingPixel/Binspector/binviews"
+PATH = "/Users/mjordan/Library/Application Support/GlowingPixel/Lil' Bin Boy/binviews"
 
 if __name__ == "__main__":
 

@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.DEBUG)
 app = QtWidgets.QApplication()
 
 model_storage = storagemodel.BSFileSystemModel()
-model_storage.setRootPath("/Users/mjordan/Library/Application Support/GlowingPixel/Binspector")
+model_storage.setRootPath("/Users/mjordan/Library/Application Support/GlowingPixel/Lil' Bin Boy")
 model_storage.setFilter(
 	QtCore.QDir.Filter.AllDirs|\
 	QtCore.QDir.Filter.Files|\

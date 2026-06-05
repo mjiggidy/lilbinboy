@@ -38,7 +38,7 @@ class BSAboutWidget(QtWidgets.QWidget):
 		title_font.setBold(True)
 		self._lbl_title.setFont(title_font)
 
-		self._lbl_link_github = QtWidgets.QLabel("<a href=\"https://github.com/mjiggidy/binspector/\">https://github.com/mjiggidy/binspector/</a>")
+		self._lbl_link_github = QtWidgets.QLabel("<a href=\"https://github.com/mjiggidy/lilbinboy/\">https://github.com/mjiggidy/lilbinboy/</a>")
 		self._lbl_link_github.setTextInteractionFlags(QtGui.Qt.TextInteractionFlag.LinksAccessibleByKeyboard|QtGui.Qt.TextInteractionFlag.LinksAccessibleByMouse)
 		self._lbl_link_github.setOpenExternalLinks(True)
 

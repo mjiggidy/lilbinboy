@@ -5,7 +5,7 @@ from timecode import Timecode, TimecodeRange
 from PySide6 import QtCore, QtGui, QtWidgets
 from functools import singledispatch
 
-#from binspector.binitems import binitemtypes
+#from lilbinboy.binitems import binitemtypes
 
 @dataclasses.dataclass(frozen=True)
 class BSBinItemInfo:

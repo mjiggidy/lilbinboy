@@ -189,9 +189,9 @@ class BSMainApplication(QtWidgets.QApplication):
 		#logging.basicConfig(level=logging.DEBUG)
 		
 		logging.basicConfig(level=logging.ERROR)
-#		logging.getLogger("binspector.binfilters").setLevel(logging.DEBUG)
-#		logging.getLogger("binspector.siftwidget").setLevel(logging.DEBUG)
-		logging.getLogger("binspector.widgets.mainwindow").setLevel(logging.DEBUG)
+#		logging.getLogger("lilbinboy.binfilters").setLevel(logging.DEBUG)
+#		logging.getLogger("lilbinboy.siftwidget").setLevel(logging.DEBUG)
+		logging.getLogger("lilbinboy.widgets.mainwindow").setLevel(logging.DEBUG)
 
 		base_dir = QtCore.QDir(QtCore.QDir(self._path_local_storage).filePath(subdir_name))
 
@@ -290,7 +290,7 @@ class BSMainApplication(QtWidgets.QApplication):
 		window.sig_request_show_settings     .connect(self.showSettingsWindow)
 		window.sig_request_show_log_viewer   .connect(self.showLogWindow)
 		window.sig_request_show_user_folder  .connect(self.showLocalStorage)
-		window.sig_request_visit_discussions .connect(lambda: QtGui.QDesktopServices.openUrl("https://github.com/mjiggidy/binspector/discussions/"))
+		window.sig_request_visit_discussions .connect(lambda: QtGui.QDesktopServices.openUrl("https://github.com/mjiggidy/lilbinboy/discussions/"))
 		window.sig_request_visit_donations   .connect(lambda: QtGui.QDesktopServices.openUrl("https://ko-fi.com/lilbinboy/"))
 		window.sig_request_check_updates     .connect(self.showUpdatesWindow)
 		window.sig_bin_changed               .connect(self._man_settings.setLastBinPath)

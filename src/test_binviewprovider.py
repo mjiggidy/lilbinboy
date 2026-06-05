@@ -8,7 +8,7 @@ from lilbinboy.storage import storagemodel
 from lilbinboy.widgets import binviewcombobox
 
 # Hack me bra
-DEFAULT_FOLDER       = "/Users/mjordan/Library/Application Support/GlowingPixel/Binspector"
+DEFAULT_FOLDER       = "/Users/mjordan/Library/Application Support/GlowingPixel/Lil' Bin Boy"
 SUPPORTED_FILE_TYPES = ["*.avb"]
 
 class BinViewSelectorWidget(QtWidgets.QWidget):

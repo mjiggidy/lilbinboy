@@ -1,7 +1,7 @@
 import dataclasses, logging
 from PySide6 import QtCore, QtNetwork
 
-URL_RELEASES = "https://api.github.com/repos/mjiggidy/binspector/releases"
+URL_RELEASES = "https://api.github.com/repos/mjiggidy/lilbinboy/releases"
 """GitHub API Releases URL"""
 
 TIMEOUT_DURATION_MSEC = 5_000

@@ -2,7 +2,7 @@ import avbutils
 from PySide6 import QtCore, QtWidgets
 
 class BSApplicationConfig:
-	"""Binspector Global Config"""
+	"""Lil' Bin Boy Global Config"""
 
 	APPLICATION_NAME    = "Lil' Bin Boy"
 	"""Name o' the app"""
