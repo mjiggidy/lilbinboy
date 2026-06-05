@@ -7,7 +7,7 @@ class BSApplicationConfig:
 	APPLICATION_NAME    = "Lil' Bin Boy"
 	"""Name o' the app"""
 
-	APPLICATION_VERSION = QtCore.QVersionNumber(0,0,24)
+	APPLICATION_VERSION = QtCore.QVersionNumber(0,0,25)
 	"""Version Number (major.minor.revision)"""
 
 	APPLICATION_STORAGE_PATH = QtCore.QStandardPaths.StandardLocation.AppDataLocation
