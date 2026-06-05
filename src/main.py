@@ -30,7 +30,7 @@ Lil' Bin Boy Bootstrap (lbbb4u)
 # ---
 # nuitka-project: --macos-app-name="Lil' Bin Boy!"
 # nuitka-project: --macos-app-icon="build_tools/icons/macos_lilbinboy.icns"
-# nuitka-project: --macos-app-version=0.0.1
+### nuitka-project: --macos-app-version=0.0.1
 # nuitka-project: --macos-signed-app-name="com.glowingpixel.lilbinboy"
 # ---
 
@@ -38,8 +38,8 @@ Lil' Bin Boy Bootstrap (lbbb4u)
 # ---
 # nuitka-project: --company-name="GlowingPixel"
 # nuitka-project: --product-name="lilbinboy"
-# nuitka-project: --product-version=0.0.0.1
-# nuitka-project: --file-version=0.0.0.1
+### nuitka-project: --product-version=0.0.0.1
+### nuitka-project: --file-version=0.0.0.1
 # nuitka-project: --copyright="(c) Copyright Michael Jordan 2026"
 # ---
 
