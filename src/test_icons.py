@@ -2,10 +2,10 @@ import sys
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from binspector.binwidget import scrollwidgets
-from binspector.widgets import buttons
-from binspector.core import icon_engines
-from binspector.res import icons_gui
+from lilbinboy.binwidget import scrollwidgets
+from lilbinboy.widgets import buttons
+from lilbinboy.core import icon_engines
+from lilbinboy.res import icons_gui
 
 class MyKewlTestWindow(QtWidgets.QWidget):
 

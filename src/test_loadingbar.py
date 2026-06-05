@@ -1,6 +1,6 @@
 import sys, random
 from PySide6 import QtCore, QtWidgets
-from binspector.widgets import loadingbar
+from lilbinboy.widgets import loadingbar
 
 class ProgressTester(QtWidgets.QWidget):
 	

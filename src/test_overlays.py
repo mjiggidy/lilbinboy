@@ -1,8 +1,8 @@
 import sys
 from PySide6 import QtCore, QtGui, QtWidgets
-from binspector.frameview import frameview, sceneitems, painters
-from binspector.overlays import manager
-from binspector.overlays import frameruler, framemap
+from lilbinboy.frameview import frameview, sceneitems, painters
+from lilbinboy.overlays import manager
+from lilbinboy.overlays import frameruler, framemap
 
 class CoolFrameOverlayView(QtWidgets.QMainWindow):
 	

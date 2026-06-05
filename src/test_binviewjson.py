@@ -1,6 +1,6 @@
 import sys, json
 import avb
-from binspector.binview import jsonadapter, binviewitemtypes, binviewmodel
+from lilbinboy.binview import jsonadapter, binviewitemtypes, binviewmodel
 
 # GO ON, HACK ME
 FIRST_OUTPUT  = "/Users/mjordan/Desktop/01_bin_to_json.json"

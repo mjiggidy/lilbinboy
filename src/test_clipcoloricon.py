@@ -2,8 +2,8 @@ import sys
 import avbutils
 from os import PathLike
 from PySide6 import QtCore, QtSvg, QtGui, QtWidgets
-from binspector.res import icons_gui
-from binspector.core.icon_engines import BSPalettedClipColorIconEngine, BSPaletteWatcherForSomeReason, BSPalettedMarkerIconEngine
+from lilbinboy.res import icons_gui
+from lilbinboy.core.icon_engines import BSPalettedClipColorIconEngine, BSPaletteWatcherForSomeReason, BSPalettedMarkerIconEngine
 
 app = QtWidgets.QApplication()
 app.setStyle("Fusion")

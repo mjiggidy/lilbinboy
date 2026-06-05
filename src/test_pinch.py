@@ -4,7 +4,7 @@ Quick n sloppy test of some trackpad event filters here
 
 import sys
 from PySide6 import QtCore, QtGui, QtWidgets
-from binspector.utils import gestures
+from lilbinboy.utils import gestures
 
 class MichaelsCoolVisualizerOfThePinch(QtWidgets.QWidget):
 

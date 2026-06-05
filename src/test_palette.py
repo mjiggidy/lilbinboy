@@ -1,8 +1,8 @@
 import sys
 from PySide6 import QtCore, QtGui, QtWidgets
-from binspector.utils import stylewatcher, palettes
+from lilbinboy.utils import stylewatcher, palettes
 
-from binspector.binwidget import binwidget
+from lilbinboy.binwidget import binwidget
 
 ORDERED_COLOR_ROLES = [
 	QtGui.QPalette.ColorRole.Base,

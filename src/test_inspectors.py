@@ -2,7 +2,7 @@ import sys
 import avb, avbutils
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from binspector.widgets import toolboxes
+from lilbinboy.widgets import toolboxes
 
 if __name__ == "__main__":
 

@@ -1,11 +1,11 @@
 import avb, avbutils
 from PySide6 import QtCore, QtWidgets
-from binspector.siftwidget import siftwidget
-from binspector.textview import bincompositemodel
-from binspector.binview import binviewmodel, binviewitemtypes
-from binspector.binfilters import binviewproxymodel
-from binspector.binfilters.siftfilter import sifters, siftproxymodel
-from binspector.binitems import binitemtypes, binitemsmodel
+from lilbinboy.siftwidget import siftwidget
+from lilbinboy.textview import bincompositemodel
+from lilbinboy.binview import binviewmodel, binviewitemtypes
+from lilbinboy.binfilters import binviewproxymodel
+from lilbinboy.binfilters.siftfilter import sifters, siftproxymodel
+from lilbinboy.binitems import binitemtypes, binitemsmodel
 
 app = QtWidgets.QApplication()
 app.setStyle("Fusion")

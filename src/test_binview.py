@@ -1,16 +1,16 @@
 import sys
 from PySide6 import QtCore, QtWidgets
 
-from binspector.siftwidget import scopesmodel
-from binspector.binview  import binviewitemtypes, binviewmodel, jsonadapter
-from binspector.binitems import binitemsmodel
-from binspector.textview import bincompositemodel
-from binspector.core import binparser
+from lilbinboy.siftwidget import scopesmodel
+from lilbinboy.binview  import binviewitemtypes, binviewmodel, jsonadapter
+from lilbinboy.binitems import binitemsmodel
+from lilbinboy.textview import bincompositemodel
+from lilbinboy.core import binparser
 
-from binspector.binvieweditor import editorwidget
-from binspector.textview import textview
+from lilbinboy.binvieweditor import editorwidget
+from lilbinboy.textview import textview
 
-from binspector.binfilters import binviewproxymodel, bindisplayproxymodel
+from lilbinboy.binfilters import binviewproxymodel, bindisplayproxymodel
 
 import avb, avbutils
 

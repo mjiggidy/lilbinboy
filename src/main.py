@@ -43,12 +43,12 @@ Lil' Bin Boy Bootstrap (lbbb4u)
 # nuitka-project: --copyright="(c) Copyright Michael Jordan 2026"
 # ---
 
-import binspector
+import lilbinboy
 
 if __name__ == "__main__":
 	
 	import sys
 	
 	sys.exit(
-		binspector.main(sys.argv[1:])
+		lilbinboy.main(sys.argv[1:])
 	)

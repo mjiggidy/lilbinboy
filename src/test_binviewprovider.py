@@ -2,10 +2,10 @@ import sys, random
 import avb
 from PySide6 import QtCore, QtWidgets
 
-from binspector.binview import binviewitemtypes
-from binspector.binviewprovider import binviewsources, providermodel
-from binspector.storage import storagemodel
-from binspector.widgets import binviewcombobox
+from lilbinboy.binview import binviewitemtypes
+from lilbinboy.binviewprovider import binviewsources, providermodel
+from lilbinboy.storage import storagemodel
+from lilbinboy.widgets import binviewcombobox
 
 # Hack me bra
 DEFAULT_FOLDER       = "/Users/mjordan/Library/Application Support/GlowingPixel/Binspector"

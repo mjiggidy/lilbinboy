@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from os import PathLike
 
-from binspector import binwatcher
+from lilbinboy import binwatcher
 
 def watch_bin(bin_path:PathLike):
 

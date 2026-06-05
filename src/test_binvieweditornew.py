@@ -3,8 +3,8 @@ import avb, avbutils
 
 from PySide6 import QtCore, QtWidgets, QtTest
 
-from binspector.binview import binviewmodel, binviewitemtypes
-from binspector.binvieweditor import editorproxymodel, editorview, editorwidget
+from lilbinboy.binview import binviewmodel, binviewitemtypes
+from lilbinboy.binvieweditor import editorproxymodel, editorview, editorwidget
 
 if not len(sys.argv) > 1:
 

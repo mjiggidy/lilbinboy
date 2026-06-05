@@ -1,7 +1,7 @@
 import sys, logging
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from binspector.storage import storagemodel, flatfilelistproxy
+from lilbinboy.storage import storagemodel, flatfilelistproxy
 
 logging.basicConfig(level=logging.DEBUG)
 

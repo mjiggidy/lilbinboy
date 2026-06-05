@@ -3,7 +3,7 @@ import sys, enum, typing, os, dataclasses
 import avb, avbutils
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from binspector.binitems import binitemtypes
+from lilbinboy.binitems import binitemtypes
 
 class BSBinViewColumnEditorColumns(enum.Enum):
 
