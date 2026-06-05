@@ -26,6 +26,6 @@ icon_locations = {
 license = {
 	"default-language": "en_US",
 	"licenses": {
-		"en_US": "EULA"
+		"en_US": "DISCLAIMER.md"
 	}
 }
