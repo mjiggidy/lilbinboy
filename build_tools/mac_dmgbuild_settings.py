@@ -10,7 +10,8 @@ show_sidebar    = False
 
 sidebar_width = 10
 
-badge_icon = "build_tools/icons/macos_lilbinboy.icns"
+icon = "build_tools/icons/macos_lilbinboy.icns"
+#badge_icon = "build_tools/icons/macos_lilbinboy.icns"
 background = "build_tools/bkgs/macos_dmg_bkg.tiff"
 default_view = "icon-view"
 include_icon_view_settings = True

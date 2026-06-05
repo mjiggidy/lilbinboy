@@ -29,7 +29,7 @@ Lil' Bin Boy Bootstrap (lbbb4u)
 # macOS Stuff
 # ---
 # nuitka-project: --macos-app-name="Lil' Bin Boy!"
-### nuitka-project: --macos-app-icon="../build_tools/icons/macos_lilbinboy.icns"
+# nuitka-project: --macos-app-icon="../build_tools/icons/macos_lilbinboy.icns"
 # nuitka-project: --macos-app-version=0.0.1
 # nuitka-project: --macos-signed-app-name="com.glowingpixel.lilbinboy"
 # ---
