@@ -4,7 +4,7 @@ Also used by `.binloader`
 """
 
 import avb, avbutils, timecode
-from ..binitems import binitemtypes
+from ..binitems import binitemtypes, timecoderoles
 from ..binview  import binviewitemtypes
 from ..binfilters.siftfilter import sifters, siftmatchtypes
 from ..siftwidget import rangesmodel
@@ -107,7 +107,12 @@ def load_item_from_bin(bin_item:avb.bin.BinItem) -> binitemtypes.BSBinItemInfo:
 		# TODO: Should be at least, like, some sort of struct
 		tape_name = None
 		source_file_name = None
-		timecode_range = None
+
+		timecode_ranges = {}
+
+		mas_timecode_range = None #TAKE THIS OUT
+		
+		
 		user_attributes = dict()
 		source_drive = None
 
@@ -116,7 +121,11 @@ def load_item_from_bin(bin_item:avb.bin.BinItem) -> binitemtypes.BSBinItemInfo:
 		mark_range = None
 
 		if avbutils.BinDisplayItemTypes.SEQUENCE in mob_types:
-			timecode_range = avbutils.get_timecode_range_for_composition(comp)
+			mas_timecode_range = avbutils.get_timecode_range_for_composition(comp)
+
+			if mas_timecode_range:
+				timecode_ranges[timecoderoles.BSTimecodeTrackRoles.MASTER_TC] = mas_timecode_range
+
 			user_attributes = comp.attributes.get("_USER",{})
 
 		else:
@@ -146,15 +155,19 @@ def load_item_from_bin(bin_item:avb.bin.BinItem) -> binitemtypes.BSBinItemInfo:
 			# Timecode
 			# NOTE: This is all pretty sloppy here.
 			try:
-				timecode_range = avbutils.get_timecode_range_for_composition(comp)
+				mas_timecode_range = avbutils.get_timecode_range_for_composition(comp)
+				if mas_timecode_range:
+					timecode_ranges[timecoderoles.BSTimecodeTrackRoles.MASTER_TC] = mas_timecode_range
 			except Exception as e:
 				pass
 
 			# NOTE: UNRELIABLE
-			if timecode_range and "attributes" in comp.property_data:
-				mark_in = timecode_range.start + timecode.Timecode(comp.attributes.get("_IN"), rate=timecode_range.rate)   if "_IN"  in comp.attributes else None
+			if timecoderoles.BSTimecodeTrackRoles.MASTER_TC in timecode_ranges and "attributes" in comp.property_data:
+
+				mas_timecode_range = timecode_ranges[timecoderoles.BSTimecodeTrackRoles.MASTER_TC]
+				mark_in = mas_timecode_range.start + timecode.Timecode(comp.attributes.get("_IN"), rate=mas_timecode_range.rate)   if "_IN"  in comp.attributes else None
 #				print("***", comp.name, mark_in)
-				mark_out = timecode_range.start + timecode.Timecode(comp.attributes.get("_OUT"), rate=timecode_range.rate) if "_OUT" in comp.attributes else None
+				mark_out = mas_timecode_range.start + timecode.Timecode(comp.attributes.get("_OUT"), rate=mas_timecode_range.rate) if "_OUT" in comp.attributes else None
 #				print("***", mark_out)
 				if mark_in and mark_out and mark_in < mark_out:
 					mark_range = timecode.TimecodeRange(start=mark_in, end=mark_out)
@@ -181,10 +194,13 @@ def load_item_from_bin(bin_item:avb.bin.BinItem) -> binitemtypes.BSBinItemInfo:
 						logging.getLogger(__name__).error("Got weird TC component for %s: %s", mob_name,tc_component)
 						continue
 					
-					timecode_range = timecode.TimecodeRange(
+					mas_timecode_range = timecode.TimecodeRange(
 						start = timecode.Timecode(tc_component.start + offset.frame_number, rate=offset.rate),
 						duration=comp.length
 					)
+
+					timecode_ranges[timecoderoles.BSTimecodeTrackRoles.MASTER_TC] = mas_timecode_range
+
 			for a in reversed(attributes_reverse):
 				user_attributes.update(a)
 			if "attributes" in comp.property_data:
@@ -195,12 +211,14 @@ def load_item_from_bin(bin_item:avb.bin.BinItem) -> binitemtypes.BSBinItemInfo:
 		except StopIteration:
 			marker = None
 
+		mas_timecode_range = timecode_ranges.get(timecoderoles.BSTimecodeTrackRoles.MASTER_TC, None)
+
 		item = {
 			avbutils.bins.BinColumnFieldIDs.Name:         binitemtypes.BSStringViewItem(mob_name),
 			avbutils.bins.BinColumnFieldIDs.Color:        binitemtypes.BSClipColorViewItem(mob_color),
-			avbutils.bins.BinColumnFieldIDs.Start:        binitemtypes.get_viewitem_for_item(timecode_range.start if timecode_range else ""),
-			avbutils.bins.BinColumnFieldIDs.End:          binitemtypes.get_viewitem_for_item(timecode_range.end if timecode_range else ""),
-			avbutils.bins.BinColumnFieldIDs.Duration:     binitemtypes.BSDurationViewItem(timecode_range.duration) if timecode_range else binitemtypes.BSStringViewItem(""),
+			avbutils.bins.BinColumnFieldIDs.Start:        binitemtypes.get_viewitem_for_item(mas_timecode_range.start if mas_timecode_range else ""),
+			avbutils.bins.BinColumnFieldIDs.End:          binitemtypes.get_viewitem_for_item(mas_timecode_range.end if mas_timecode_range else ""),
+			avbutils.bins.BinColumnFieldIDs.Duration:     binitemtypes.BSDurationViewItem(mas_timecode_range.duration) if mas_timecode_range else binitemtypes.BSStringViewItem(""),
 			avbutils.bins.BinColumnFieldIDs.ModifiedDate: binitemtypes.get_viewitem_for_item(comp.last_modified),
 			avbutils.bins.BinColumnFieldIDs.CreationDate: binitemtypes.get_viewitem_for_item(comp.creation_time),
 			avbutils.bins.BinColumnFieldIDs.BinItemIcon:  binitemtypes.get_viewitem_for_item(mob_types),
@@ -230,6 +248,8 @@ def load_item_from_bin(bin_item:avb.bin.BinItem) -> binitemtypes.BSBinItemInfo:
 
 		# New
 		item.update({40: user_attributes})
+
+		# Package timecodes
 		
 		return binitemtypes.BSBinItemInfo(
 			name = mob_name,
@@ -240,5 +260,5 @@ def load_item_from_bin(bin_item:avb.bin.BinItem) -> binitemtypes.BSBinItemInfo:
 			mob_id = mob_id,
 			tracks=mob_tracks,
 			clip_color=mob_color,
-			primary_timecode=timecode_range
+			timecodes=timecode_ranges
 		)

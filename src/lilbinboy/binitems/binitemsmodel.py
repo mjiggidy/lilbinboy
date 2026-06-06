@@ -3,7 +3,7 @@ import typing
 from PySide6 import QtCore
 from avbutils import bins
 
-from . import binitemtypes
+from . import binitemtypes, timecoderoles
 
 type BSBinItemModelEntry = dict[bins.BinColumnFieldIDs, binitemtypes.BSAbstractViewItem]
 """Each bin item in the model is a dict of BinColumnFieldID and respective view item pairs"""
@@ -77,8 +77,23 @@ class BSBinItemModel(QtCore.QAbstractItemModel):
 		elif role == binitemtypes.BSBinItemDataRoles.FrameThumbnailRole:
 			return bin_item.keyframe_offset
 		
-		elif role == binitemtypes.BSBinItemDataRoles.TimecodeRangeRole:
-			return bin_item.primary_timecode
+		elif role == binitemtypes.BSBinItemDataRoles.MasTCRangeRole:
+			return bin_item.timecodes.get(timecoderoles.BSTimecodeTrackRoles.MASTER_TC, None)
+		
+		elif role == binitemtypes.BSBinItemDataRoles.AuxTC1RangeRole:
+			return bin_item.timecodes.get(timecoderoles.BSTimecodeTrackRoles.AUX_TC_1, None)
+		
+		elif role == binitemtypes.BSBinItemDataRoles.AuxTC2RangeRole:
+			return bin_item.timecodes.get(timecoderoles.BSTimecodeTrackRoles.AUX_TC_2, None)
+		
+		elif role == binitemtypes.BSBinItemDataRoles.AuxTC3RangeRole:
+			return bin_item.timecodes.get(timecoderoles.BSTimecodeTrackRoles.AUX_TC_3, None)
+		
+		elif role == binitemtypes.BSBinItemDataRoles.AuxTC4RangeRole:
+			return bin_item.timecodes.get(timecoderoles.BSTimecodeTrackRoles.AUX_TC_4, None)
+		
+		elif role == binitemtypes.BSBinItemDataRoles.AuxTC5RangeRole:
+			return bin_item.timecodes.get(timecoderoles.BSTimecodeTrackRoles.AUX_TC_5, None)
 
 #		NOTE: I don't remember why this would be here and it would need work anyway
 #
