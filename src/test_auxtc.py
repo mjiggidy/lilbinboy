@@ -3,30 +3,32 @@ import avb, avbutils, timecode
 
 import enum
 
-class TimecodeTrackRoles(enum.Enum):
+from lilbinboy.binitems.timecoderoles import BSTimecodeTrackRoles
+
+def name_for_index(track_index:int):
 	
-	MASTER = 1
-
-	AUX_TC_1 = 3
-	AUX_TC_2 = 4
-	AUX_TC_3 = 5
-	AUX_TC_4 = 6
-	AUX_TC_5 = 7
-	AUX_TC_6 = 8
-
-	AUX_TC_24 = 12
+	try:
+		return BSTimecodeTrackRoles(track_index).name
+	except:
+		return f"UNKNOWN {track_index}"
 
 
 def inspect_timecode_component(timecode_component:avb.components.Timecode):
 
-	rate  = timecode_component.fps
-	frame = timecode_component.start
-	lenth = timecode_component.length
-	
-	return timecode.TimecodeRange(
-		start=timecode.Timecode(frame, rate=rate),
-		duration=lenth
-	)
+	try:
+		rate  = timecode_component.fps
+		frame = timecode_component.start
+		lenth = timecode_component.length
+		
+		tc_range = timecode.TimecodeRange(
+			start=timecode.Timecode(frame, rate=rate),
+			duration=lenth
+		)
+
+	except:
+		tc_range = "Huh"
+
+	return str(tc_range)
 
 
 
@@ -52,34 +54,29 @@ if __name__ == "__main__":
 
 				for track in item.mob.tracks:
 
-	#				if not track.media_kind == "timecode":
-	#					continue
-
-					
+					if not track.media_kind == "timecode":
+						continue
 
 					tc_component = track.component
 
-					if track.media_kind == "timecode" and isinstance(tc_component, avb.components.Timecode):
+					if isinstance(tc_component, avb.components.Timecode):
 
-						print("STD TC:", TimecodeTrackRoles(track.index), inspect_timecode_component(tc_component))
+						print("STD TC:", BSTimecodeTrackRoles(track.index).name, name_for_index(track.index),  inspect_timecode_component(tc_component))
 					
-					elif track.media_kind == "timecode" and isinstance(tc_component, avb.components.Sequence):
-
-						#print(tc_component.property_data)
-
+					elif isinstance(tc_component, avb.components.Sequence):
 						
 						if len(tc_component.components) == 1:
 
-							print("AUX TC:", TimecodeTrackRoles(track.index), "EMPTY")
+							print("\t".join(["AUX TC:", str(track.index), name_for_index(track.index),  "EMPTY"]))
 							continue
 						
 						elif not len(tc_component.components) == 3:
 
-							print("WEIRD", tc_component.components)
+							print("\t".join(["COMPLEX TC:", str(tc_component.components)]))
 							continue
 
-						print("AUX TC:", TimecodeTrackRoles(track.index),inspect_timecode_component(tc_component.components[1]))
+						print("\t".join(["AUX TC:", str(track.index), name_for_index(track.index), inspect_timecode_component(tc_component.components[1])]))
 
 					else:
-						print("OTHER :", track.index)
+						print("\t".join(["OTHER :", str(track.index)]))
 
