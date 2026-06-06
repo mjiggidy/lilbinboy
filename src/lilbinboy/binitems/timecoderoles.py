@@ -10,6 +10,8 @@ class BSTimecodeTrackRoles(enum.Enum):
 	AUX_TC_4  = 6
 	AUX_TC_5  = 7
 
+	TC_24     = 8
+
 	TC_25     = 10
 
 	AUX_TC_24 = 12
