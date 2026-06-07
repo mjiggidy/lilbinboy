@@ -3,12 +3,12 @@ import avb, avbutils, timecode
 
 import enum
 
-from lilbinboy.binitems.timecoderoles import BSTimecodeTrackRoles
+import avbutils
 
 def name_for_index(track_index:int):
 	
 	try:
-		return BSTimecodeTrackRoles(track_index).name
+		return avbutils.timeline.TimecodeTrackRoles(track_index).name
 	except:
 		return f"UNKNOWN {track_index}"
 
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
 					if isinstance(tc_component, avb.components.Timecode):
 
-						print("STD TC:", BSTimecodeTrackRoles(track.index).name, name_for_index(track.index),  inspect_timecode_component(tc_component))
+						print("STD TC:", name_for_index(track.index),  inspect_timecode_component(tc_component))
 					
 					elif isinstance(tc_component, avb.components.Sequence):
 						
