@@ -333,6 +333,7 @@ class BSMainApplication(QtWidgets.QApplication):
 #		window.binContentsWidget().siftFilter().sig_live_sift_enabled.connect(self._man_settings.setUseLiveSift)
 
 		window.setUseSiftCriteriaFromBin(self._man_settings.useSiftCriteria())
+		window.setMoveToolWindows(self._man_settings.moveToolWindows())
 
 #		window.binViewProviderModel().addStoredBinViewSources(self._man_binview_storage.lastBinViews())
 #		self._man_binview_storage.sig_binviews_added.connect(window.binViewProviderModel().addStoredBinViewSources)
@@ -517,6 +518,9 @@ class BSMainApplication(QtWidgets.QApplication):
 			self._wnd_settings.sig_use_sift_settings_changed.connect(self._man_settings.setUseSiftCriteria)
 			self._wnd_settings.sig_use_sift_settings_changed.connect(lambda use_sift: [w.setUseSiftCriteriaFromBin(use_sift) for w in self._man_binwindows.windows()])
 
+			self._wnd_settings.sig_move_tool_windows_changed.connect(self._man_settings.setMoveToolWindows)
+			self._wnd_settings.sig_move_tool_windows_changed.connect(lambda move_tools: [w.setMoveToolWindows(move_tools) for w in self._man_binwindows.windows()])
+
 			self._wnd_settings.sig_mob_queue_size_changed.connect(self._man_settings.setMobQueueSize)
 			self._wnd_settings.sig_startup_behavior_changed.connect(self._man_settings.setStartupBehavior)
 			self._wnd_settings.sig_mob_queue_size_changed.connect(lambda queue_size: [w.setMobQueueSize(queue_size) for w in self._man_binwindows.windows()])
@@ -535,6 +539,7 @@ class BSMainApplication(QtWidgets.QApplication):
 			self._wnd_settings.setStartupBehavior(self._man_settings.startupBehavior())
 			self._wnd_settings.setListItemPadding(self._man_settings.listItemPadding())
 			self._wnd_settings.setLiveSiftEnabled(self._man_settings.useLiveSift())
+			self._wnd_settings.setMoveToolWindows(self._man_settings.moveToolWindows())
 			self._wnd_settings.setUseSiftSettingsFromBin(self._man_settings.useSiftCriteria())
 
 		if self._wnd_settings.isMinimized():

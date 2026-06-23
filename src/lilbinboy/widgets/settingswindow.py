@@ -11,6 +11,7 @@ class BSSettingsPanel(QtWidgets.QWidget):
 	sig_use_column_widths_changed= QtCore.Signal(bool)
 	sig_use_live_sift_changed    = QtCore.Signal(bool)
 	sig_use_sift_settings_changed= QtCore.Signal(bool)
+	sig_move_tool_windows_changed= QtCore.Signal(bool)
 
 	def __init__(self, *args, **kwargs):
 
@@ -43,6 +44,9 @@ class BSSettingsPanel(QtWidgets.QWidget):
 		self._spn_padding_height = QtWidgets.QSpinBox()
 		self._spn_padding_height.valueChanged.connect(self.calculateNewPadding)
 
+		self._chk_move_tool_windows = QtWidgets.QCheckBox()
+		self._chk_move_tool_windows.toggled.connect(self.sig_move_tool_windows_changed)
+
 		self._sld_scrollbar_scale = QtWidgets.QSlider()
 		self._sld_scrollbar_scale.valueChanged.connect(lambda val: self.sig_scrollbar_scale_changed.emit(val/100))
 		self._sld_scrollbar_scale.valueChanged.connect(lambda val: self._sld_scrollbar_scale.setToolTip(str(round(val/100,2))))
@@ -67,6 +71,7 @@ class BSSettingsPanel(QtWidgets.QWidget):
 		self.layout().addRow(self.tr("List Item (W)"), self._spn_padding_width)
 		self.layout().addRow(self.tr("List Item (H)"), self._spn_padding_height)
 		self.layout().addRow(self.tr("Use Fancy Animations"), self._chk_use_animations)
+		self.layout().addRow(self.tr("Move Tool Windows With Main Window"), self._chk_move_tool_windows)
 		self.layout().addRow(self.tr("Bottom Scrollbar Scale"), self._sld_scrollbar_scale)
 		self.layout().addRow(self.tr("Mob Queue Size"), self._sld_mob_queue)
 
@@ -120,3 +125,7 @@ class BSSettingsPanel(QtWidgets.QWidget):
 	def setUseSiftSettingsFromBin(self, is_enabled:bool):
 
 		self._chk_use_sift_settings.setChecked(is_enabled)
+
+	@QtCore.Slot(bool)
+	def setMoveToolWindows(self, is_enabled:bool):
+		self._chk_move_tool_windows.setChecked(is_enabled)
