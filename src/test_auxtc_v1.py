@@ -75,6 +75,7 @@ if __name__ == "__main__":
 							print("\t".join(["COMPLEX TC:", str(tc_component.components)]))
 							continue
 
+						print(f"{tc_component.nearest_component_at_time(722678)=}")
 						print("\t".join(["AUX TC:", str(track.index), name_for_index(track.index), inspect_timecode_component(tc_component.components[1])]))
 
 					else:
