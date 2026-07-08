@@ -21,7 +21,7 @@ def resolve_timecode_component_for_compositiion(mob:avb.trackgroups.Composition,
 
 		if not isinstance(source_component, avb.components.SourceClip):
 
-			#print("Got down to ", source_component)
+			print("Got down to ", source_component)
 			return None, next_offset
 		
 		return resolve_timecode_component_for_compositiion(mob=source_component.mob, track=source_component.track, timecode_role=timecode_role, offset=next_offset)
@@ -54,7 +54,7 @@ def print_timecode_tracks_for_bin_item(item:avb.bin.BinItem, timecode_role:avbut
 			print(timecode_role.name, tc)
 
 		else:
-			print(timecode_role.name, timecoe_component, offset)
+			print("No:",timecode_role.name, timecoe_component, offset)
 
 
 
