@@ -18,7 +18,7 @@ def resolve_timecode_component_for_compositiion(mob:avb.trackgroups.Composition,
 	try:
 	
 		# Look for track in mob
-		timecode_track = next(avbutils.timeline.get_tracks_from_composition(mob, type=avbutils.timeline.TrackTypes.TIMECODE, index=int(timecode_role)))
+		timecode_track = next(avbutils.timeline.get_tracks_from_composition(mob, type=avbutils.timeline.TrackTypes.TIMECODE, index=timecode_role))
 		return avbutils.sourcerefs.resolve_base_component_from_component(timecode_track.component, offset=offset)
 	
 	except StopIteration:
@@ -217,7 +217,10 @@ def load_item_from_bin(bin_item:avb.bin.BinItem) -> binitemtypes.BSBinItemInfo:
 
 					tc_component, offset = resolve_timecode_component_for_compositiion(comp, timecode_role=tc_role, offset=offset + source.start_time)
 					
-					if not isinstance(tc_component, avb.components.Timecode):
+					if tc_component is None:
+						continue
+					
+					elif not isinstance(tc_component, avb.components.Timecode):
 						import logging
 						logging.getLogger(__name__).error("Got weird TC component for %s: %s", mob_name,tc_component)
 						continue
