@@ -653,11 +653,8 @@ class BSMainWindow(QtWidgets.QMainWindow):
 			QtWidgets.QApplication.beep()
 			return False
 		
-		tool_window.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
 		tool_window.setWindowFlags(QtCore.Qt.WindowType.Tool|QtCore.Qt.WindowType.WindowStaysOnTopHint)
 		#tool_window.setWindowFlags(QtCore.Qt.WindowType.Window|QtCore.Qt.WindowType.WindowStaysOnTopHint)
-
-		#tool_window.destroyed.connect(lambda: print("Tool window destroyed"))
 
 		self._man_tool_windows.registerToolWindow(tool_type, tool_window)
 		

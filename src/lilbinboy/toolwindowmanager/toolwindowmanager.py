@@ -46,6 +46,8 @@ class BSToolWindowManager(QtCore.QObject):
 
 		logging.getLogger(__name__).debug("Registering tool window for %s", tool_window_type)
 
+		tool_window.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
+		
 		from functools import partial
 		tool_window.destroyed.connect(partial(self.unregisterToolWindow, tool_window_type))
 
