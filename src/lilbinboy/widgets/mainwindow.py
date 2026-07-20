@@ -590,6 +590,7 @@ class BSMainWindow(QtWidgets.QMainWindow):
 			tool_window.show()
 			tool_window.raise_()
 			tool_window.activateWindow()
+
 			return True
 		
 		logging.getLogger(__name__).debug(f"Creating new tool window %s", repr(toolwindowmanager.BSToolWindowTypes(tool_type)))
@@ -599,7 +600,7 @@ class BSMainWindow(QtWidgets.QMainWindow):
 			tool_window = toolboxes.BSBinDisplaySettingsView(parent=self, icon_registry=icon_registry.BIN_ITEM_TYPE_ICON_REGISTRY)
 
 			tool_window.setWindowTitle(self.tr("Bin Display Settings"))
-			tool_window.setFlags(self._bin_widget.itemDisplayFilter().acceptedItemTypes())			
+			tool_window.setFlags(self._bin_widget.itemDisplayFilter().acceptedItemTypes())
 			tool_window.sig_flags_changed.connect(self._man_bindisplay.setBinDisplayFlags)
 			self._man_bindisplay.sig_bin_display_changed.connect(tool_window.setFlags)
 
@@ -626,7 +627,7 @@ class BSMainWindow(QtWidgets.QMainWindow):
 
 		elif tool_type == toolwindowmanager.BSToolWindowTypes.BinAppearanceEditor:
 
-			tool_window = self._tool_appearance  = toolboxes.BSBinAppearanceSettingsView(parent=self)
+			tool_window = toolboxes.BSBinAppearanceSettingsView(parent=self)
 
 			tool_window.setWindowTitle(self.tr("Appearance Settings"))
 
@@ -654,11 +655,16 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		
 		tool_window.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
 		tool_window.setWindowFlags(QtCore.Qt.WindowType.Tool|QtCore.Qt.WindowType.WindowStaysOnTopHint)
+		#tool_window.setWindowFlags(QtCore.Qt.WindowType.Window|QtCore.Qt.WindowType.WindowStaysOnTopHint)
+
+		#tool_window.destroyed.connect(lambda: print("Tool window destroyed"))
 
 		self._man_tool_windows.registerToolWindow(tool_type, tool_window)
 		
 		tool_window.show()
 		tool_window.raise_()
+		tool_window.activateWindow()
+
 		return True
 
 	@QtCore.Slot(object)
