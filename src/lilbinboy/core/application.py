@@ -49,31 +49,7 @@ class BSMainApplication(QtWidgets.QApplication):
 
 			self._man_settings.setShowFirstRunMessage(False)
 
-			dev_message = QtWidgets.QMessageBox()
-			dev_message.setOption(QtWidgets.QMessageBox.Option.DontUseNativeDialog)
-			dev_message.setWindowTitle(self.tr("Bless This Mess"))
-			dev_message.setIcon(QtWidgets.QMessageBox.Icon.Information)
-			dev_message.setTextFormat(QtCore.Qt.TextFormat.RichText)
-			dev_message.setText(self.tr("Welcome to {app_name}: The Pre-Alpha Nightmare!").format(app_name=self.applicationName()))
-
-			dev_message.setInformativeText(
-			"""
-				<p>{app_name} is still under heavy development and is feature-incomplete.  There will be things that don't work so great.  
-				Most things, in fact.  Kinda <em>everything</em> is a mess right now, really.  Just so you know what's goin' on.
-				</p>
-				<p>
-				If you encounter any bugs that you'd really like me to prioritize, please report them to <strong><code><a href="mailto:michael@glowingpixel.com">michael@glowingpixel.com</a></code></strong>.
-				</p>
-				<hr/>
-				<p>
-				Although {app_name} is read-only and will never modify your Avid bin files, use this development build at your own risk.
-				</p>
-				<hr/>
-				<p>If this program seems like it might be useful to you once/if/assuming it theoretically ever actually works, please consider supporting development on Ko-Fi:<br/><strong><code><a href="https://ko-fi.com/lilbinboy">https://ko-fi.com/lilbinboy</a></code></strong></p>
-				""".format(app_name=self.applicationName())
-			)
-			
-			dev_message.exec()
+			self.showFirstRunMessage()
 
 		self._man_binwindows       = windows.BSWindowManager()
 		self._man_software_updates = software_updates.BSUpdatesManager()
@@ -242,7 +218,38 @@ class BSMainApplication(QtWidgets.QApplication):
 			logging.getLogger(__name__).debug("Installed translation for user lang %s", QtCore.QLocale().name())
 
 		else:
-			logging.getLogger(__name__).debug("Falling back to default translation for user lang %s", QtCore.QLocale().name())	
+			logging.getLogger(__name__).debug("Falling back to default translation for user lang %s", QtCore.QLocale().name())
+
+	def showFirstRunMessage(self):
+		"""Show a silly little thing to the peoples so they lose confidence immediately"""
+
+		dev_message = QtWidgets.QMessageBox()
+		dev_message.setOption(QtWidgets.QMessageBox.Option.DontUseNativeDialog)
+		dev_message.setWindowTitle(self.tr("Bless This Mess"))
+		dev_message.setIcon(QtWidgets.QMessageBox.Icon.Information)
+		dev_message.setTextFormat(QtCore.Qt.TextFormat.RichText)
+		dev_message.setText(self.tr("Welcome to {app_name}: The Pre-Alpha Nightmare!").format(app_name=self.applicationName()))
+
+		dev_message.setInformativeText(
+		"""
+			<p>{app_name} is still under heavy development and is feature-incomplete.  There will be things that don't work so great.  
+			Most things, in fact.  Kinda <em>everything</em> is a mess right now, really.  Just so you know what's goin' on.
+			</p>
+			<p>
+			If you encounter any bugs that you'd really like me to prioritize, please report them to <strong><code><a alt="E-Mail Me!" href="mailto:michael@glowingpixel.com?subject={email_subject}">michael@glowingpixel.com</a></code></strong>.
+			</p>
+			<hr/>
+			<p>
+			Although {app_name} is read-only and will never modify your Avid bin files, use this development build at your own risk.
+			</p>
+			<hr/>
+			<p>If this program seems like it might be useful to you once/if/assuming it theoretically ever actually works, please consider supporting development on Ko-Fi:<br/>
+			<strong><code><a alt="Oh wow thanks!" href="https://ko-fi.com/lilbinboy">https://ko-fi.com/lilbinboy</a></code></strong>
+			</p>
+			""".format(app_name=self.applicationName(), email_subject=QtCore.QUrl.toPercentEncoding("This Program Is Broken And You Should Be Ashamed").toStdString())
+		)
+		
+		dev_message.exec()
 
 	def localStoragePath(self) -> PathLike[str]:
 		"""Get the local user storage path"""
