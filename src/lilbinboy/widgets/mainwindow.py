@@ -61,6 +61,7 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		self._man_bindisplay   = binproperties.BSBinDisplaySettingsManager(parent=self)
 		
 		self._man_tool_windows = toolwindowmanager.BSToolWindowManager(parent=self)
+		self._move_tool_windows= True
 
 		# Define signals
 		self._queue_size       = 500  # Mobs to batch-load
@@ -328,6 +329,10 @@ class BSMainWindow(QtWidgets.QMainWindow):
 	@QtCore.Slot(bool)
 	def setUseAnimation(self, use_animation:bool):
 		self._use_animation = use_animation
+
+	@QtCore.Slot(bool)
+	def setMoveToolWindows(self, move_tools:bool):
+		self._move_tool_windows = move_tools
 	
 	def useAnimation(self) -> bool:
 		"""Use fancy animated progress bar"""
@@ -707,10 +712,12 @@ class BSMainWindow(QtWidgets.QMainWindow):
 	
 	def moveEvent(self, event:QtGui.QMoveEvent):
 
-		diff = event.pos() - event.oldPos()
+		if self._move_tool_windows:
 
-		for tool_type, tool_window in self._man_tool_windows.toolWindows():
-			tool_window.move(tool_window.pos() + diff)
+			diff = event.pos() - event.oldPos()
+
+			for tool_type, tool_window in self._man_tool_windows.toolWindows():
+				tool_window.move(tool_window.pos() + diff)
 
 		return super().moveEvent(event)
 	

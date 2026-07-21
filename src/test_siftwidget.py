@@ -46,7 +46,7 @@ wnd_siftwidget.resetAllCriteria()
 my_criteria = [
 	[
 		sifters.BSAnyColumnSifter(),
-		sifters.BSRangeSifter(data_role=binitemtypes.BSBinItemDataRoles.TimecodeRangeRole),
+		sifters.BSRangeSifter(data_role=binitemtypes.BSBinItemDataRoles.MasTCRangeRole),
 		sifters.BSAnyColumnSifter(),
 	],
 	[

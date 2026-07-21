@@ -121,7 +121,7 @@ class BSBinScriptView(textview.BSBinTextView):
 
 		clip_color = index.data(binitemtypes.BSBinItemDataRoles.ClipColorRole)
 
-		frame_range  = index.data(binitemtypes.BSBinItemDataRoles.TimecodeRangeRole)
+		frame_range  = index.data(binitemtypes.BSBinItemDataRoles.MasTCRangeRole)
 		frame_offset = index.data(binitemtypes.BSBinItemDataRoles.FrameThumbnailRole)
 
 		tc_offset    = frame_range.start + frame_offset if frame_range is not None else frame_offset

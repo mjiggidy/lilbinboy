@@ -296,6 +296,18 @@ class BSSettingsManager:
 		return use_sift
 	
 	@QtCore.Slot(bool)
+	def setMoveToolWindows(self, move_tools:bool):
+
+		self.settings("bs").setValue("BinSettingsToggles/move_tool_windows", move_tools)
+		logging.getLogger(__name__).debug("Set move_tool_windows: %s", move_tools)
+	
+	def moveToolWindows(self) -> bool:
+		
+		move_tools = self.settings("bs").value("BinSettingsToggles/move_tool_windows", True, bool)
+		logging.getLogger(__name__).debug("Returning move_tool_windows: %s", move_tools)
+		return move_tools
+	
+	@QtCore.Slot(bool)
 	def setShowFirstRunMessage(self, show_first_run_message:bool):
 
 		self.settings("bs").setValue("UserInterface/show_first_run_message", show_first_run_message)
