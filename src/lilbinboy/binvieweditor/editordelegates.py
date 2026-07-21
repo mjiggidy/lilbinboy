@@ -130,7 +130,7 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 			button_option.iconSize = QtCore.QSize(*[view_widget.style().pixelMetric(QtWidgets.QStyle.PixelMetric.PM_SmallIconSize) * 0.75]*2)
 			button_option.state    = option_item.state
 
-			if all((
+			if not is_hidden or all((
 				option_item.state & QtWidgets.QStyle.StateFlag.State_Selected,
 				QtWidgets.QApplication.mouseButtons() & QtCore.Qt.MouseButton.LeftButton,
 				view_widget.currentIndex().column() == index.column()
