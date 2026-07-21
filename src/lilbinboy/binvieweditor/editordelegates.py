@@ -8,9 +8,6 @@ from ..binview import binviewitemtypes
 from ..utils import palettes
 import avbutils
 
-if typing.TYPE_CHECKING:
-	from . import editorwidget
-
 class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 	
 #	sig_user_clicking_remove_buttons = QtCore.Signal()
