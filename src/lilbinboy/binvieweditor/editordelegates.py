@@ -6,7 +6,11 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from . import editorproxymodel
 from ..binview import binviewitemtypes
 from ..utils import palettes
+
 import avbutils
+
+SHOW_VISIBLE_COLUMNS_AS_DEPRESSED = True
+"""Show the little show/hide column as being depressed like I am"""
 
 class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 	
@@ -127,7 +131,7 @@ class BSBinViewColumnDelegate(QtWidgets.QStyledItemDelegate):
 			button_option.iconSize = QtCore.QSize(*[view_widget.style().pixelMetric(QtWidgets.QStyle.PixelMetric.PM_SmallIconSize) * 0.75]*2)
 			button_option.state    = option_item.state
 
-			if not is_hidden or all((
+			if all((SHOW_VISIBLE_COLUMNS_AS_DEPRESSED, not is_hidden)) or all((
 				option_item.state & QtWidgets.QStyle.StateFlag.State_Selected,
 				QtWidgets.QApplication.mouseButtons() & QtCore.Qt.MouseButton.LeftButton,
 				view_widget.currentIndex().column() == index.column()
