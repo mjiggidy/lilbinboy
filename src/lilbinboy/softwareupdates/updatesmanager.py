@@ -1,8 +1,7 @@
-import dataclasses, logging
+import logging
 from PySide6 import QtCore, QtNetwork
 
-URL_RELEASES = "https://api.github.com/repos/mjiggidy/lilbinboy/releases"
-"""GitHub API Releases URL"""
+from .releaseinfo import ReleaseInfo
 
 TIMEOUT_DURATION_MSEC = 5_000
 """Network timeout duration"""
@@ -12,23 +11,6 @@ TIMER_COOLDOWN_MSEC   = 10_000
 
 TIMER_AUTOCHECK_MSEC  = 60_000
 """Default autocheck interval"""
-
-@dataclasses.dataclass
-class ReleaseInfo:
-	name:str
-	"""Release Name"""
-
-	date:str
-	"""Release datetime (UTC)"""
-
-	version:str
-	"""Version number"""
-
-	release_notes:str
-	"""Release notes (Markdown)"""
-
-	release_url:str
-	"""Github Release Page"""
 
 class BSUpdatesManager(QtCore.QObject):
 	"""Controller for checking for version updates via Github releases"""
@@ -44,25 +26,31 @@ class BSUpdatesManager(QtCore.QObject):
 	sig_newReleaseAvailable  = QtCore.Signal(object)
 	sig_releaseIsCurrent     = QtCore.Signal(object)
 
-	def __init__(self, url_releases:QtCore.QUrl=QtCore.QUrl(URL_RELEASES), *args, **kwargs):
+	def __init__(self,
+		url_releases:QtCore.QUrl|str,
+		current_version:QtCore.QVersionNumber|str=QtCore.QVersionNumber(0,0,0),
+		start_enabled:bool=True,
+		autocheck_enabled:bool=True,
+		*args,
+		**kwargs
+	):
+
+		super().__init__(*args, **kwargs)
+
+		self._current_version   = QtCore.QVersionNumber.fromString(current_version) if isinstance(current_version, str) else current_version
+
+		self._url_releases      = QtCore.QUrl(url_releases)
+		self._is_enabled        = start_enabled
+		self._autocheck_enabled = autocheck_enabled
 
 		self._netman = QtNetwork.QNetworkAccessManager()
 		self._netman.setTransferTimeout(TIMEOUT_DURATION_MSEC)
-
-		self._url_releases = url_releases
 		self._current_request = None
-		self._cooldown_timer = QtCore.QTimer(interval=TIMER_COOLDOWN_MSEC, singleShot=True)  # 10 seconds
-
-		self._autocheck_timer = QtCore.QTimer(interval=TIMER_AUTOCHECK_MSEC, singleShot=True) # 30 seconds
-		self._autocheck_enabled = False
-
 		self._latest_release_info = None
 		"""The last latest release found"""
 
-		self._is_enabled = True
-		"""Ultimately, is this enabled"""
-
-		super().__init__(*args, **kwargs)
+		self._cooldown_timer  = QtCore.QTimer(interval=TIMER_COOLDOWN_MSEC, singleShot=True)
+		self._autocheck_timer = QtCore.QTimer(interval=TIMER_AUTOCHECK_MSEC, singleShot=True)
 
 		# Signals
 		self._cooldown_timer.timeout.connect(self.sig_cooldownExpired)
@@ -71,6 +59,9 @@ class BSUpdatesManager(QtCore.QObject):
 		self._netman.finished.connect(self._cooldown_timer.start)
 		self._netman.finished.connect(self.processNetworkReply)
 		self._netman.finished.connect(self.sig_networkCheckFinished)
+
+		if self._autocheck_enabled:
+			self.checkForUpdates()
 	
 	# ---
 	# Releases URL
@@ -78,10 +69,12 @@ class BSUpdatesManager(QtCore.QObject):
 	
 	def releasesUrl(self) -> QtCore.QUrl:
 		"""URL for Release Info JSON"""
+
 		return self._url_releases
 	
 	def setReleasesUrl(self, url_releases:QtCore.QUrl):
 		"""Set the URL for Release Info JSON"""
+
 		self._url_releases = url_releases
 
 	# ---
@@ -174,11 +167,10 @@ class BSUpdatesManager(QtCore.QObject):
 	# Version/Release info
 	# ---
 
-	def currentVersion(self) -> str:
+	def currentVersion(self) -> QtCore.QVersionNumber:
 		"""Get Lil' Bin Boy current version"""
 
-		from PySide6 import QtWidgets
-		return QtWidgets.QApplication.instance().applicationVersion()
+		return self._current_version
 	
 	def latestReleaseInfo(self) -> ReleaseInfo|None:
 
@@ -247,11 +239,11 @@ class BSUpdatesManager(QtCore.QObject):
 		# Latest version to `ReleaseInfo` struct
 		try:
 			latest_release_info = ReleaseInfo(
-				name = latest_release["name"],
-				version = latest_release["tag_name"][1:], # Strip 'v'
+				name          = latest_release["name"],
+				version       = QtCore.QVersionNumber.fromString(latest_release["tag_name"][1:]), # Strip 'v'
 				release_notes = latest_release["body"],
-				release_url = latest_release["html_url"],
-				date = latest_release["published_at"]
+				release_url   = QtCore.QUrl(latest_release["html_url"]),
+				date          = QtCore.QDateTime.fromString(latest_release["published_at"], QtCore.Qt.DateFormat.ISODate)
 			)
 		
 		except KeyError as e:	# Maybe do this
@@ -265,7 +257,7 @@ class BSUpdatesManager(QtCore.QObject):
 			
 			return
 		
-		if self.currentVersion() != latest_release_info.version:
+		if self.currentVersion() < latest_release_info.version:
 			# Store and emit new release info
 			self._latest_release_info = latest_release_info
 			logging.getLogger(__name__).info("Network update check found new version (currentVersion=%s; newVersion=%s)", self.currentVersion(), latest_release_info.version)

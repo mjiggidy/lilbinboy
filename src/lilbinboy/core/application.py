@@ -6,12 +6,14 @@ import qtlogrelay
 from   PySide6 import QtCore, QtGui, QtWidgets
 from   os import PathLike
 
+from ..softwareupdates import updatesmanager
+
 from ..storage import storagemodel
 
 from ..binviewprovider import binviewsources
 
 from . import settings, config
-from ..managers import windows, software_updates
+from ..managers import windows
 from ..widgets  import mainwindow, settingswindow
 from ..logs   import logmodels, logwidget
 from ..res      import translations
@@ -45,6 +47,10 @@ class BSMainApplication(QtWidgets.QApplication):
 			basepath = self._path_local_storage
 		)
 
+		self._qt_log_handler       = qtlogrelay.QtLogRelayHandler()
+		self._qt_log_model         = logmodels.BSLogDataModel()
+		self._setupLogging()
+
 		if self._man_settings.showFirstRunMessage():
 
 			self._man_settings.setShowFirstRunMessage(False)
@@ -76,14 +82,17 @@ class BSMainApplication(QtWidgets.QApplication):
 			dev_message.exec()
 
 		self._man_binwindows       = windows.BSWindowManager()
-		self._man_software_updates = software_updates.BSUpdatesManager()
-
-		self._qt_log_handler       = qtlogrelay.QtLogRelayHandler()
-		self._qt_log_model         = logmodels.BSLogDataModel()
-		self._setupLogging()
-
-		self._disable_updates_counter = 0
 		
+		self._man_software_updates = updatesmanager.BSUpdatesManager(
+			parent            = self,
+			url_releases      = config.BSSoftwareUpdatesConfig.URL_RELEASES,
+			current_version   = config.BSApplicationConfig.APPLICATION_VERSION,
+			autocheck_enabled = self._man_settings.softwareUpdateAutocheckEnabled(),
+		)
+		
+		self._disable_updates_counter = 0
+		"""Counter for how many things have requested updates to be disabled (for example, during bin loading)"""
+
 		self._wnd_log_viewer       = None
 		self._wnd_settings         = None
 		self._wnd_software_updates = None
@@ -98,15 +107,11 @@ class BSMainApplication(QtWidgets.QApplication):
 		self._setupSignals()
 
 		# Restore user settings for session
-		self._man_software_updates.setAutoCheckEnabled(self._man_settings.softwareUpdateAutocheckEnabled())
 
 		self._bin_view_storage_model = storagemodel.BSFileSystemModel(parent=self)
 
 		self._setupBinViewStorage()
 
-
-
-		
 	def _setupSignals(self):
 
 		self._man_binwindows.windowGeometryWatcher().sig_window_geometry_changed.connect(self._man_settings.setLastWindowGeometry)
@@ -259,7 +264,7 @@ class BSMainApplication(QtWidgets.QApplication):
 	def settingsManager(self) -> settings.BSSettingsManager:
 		return self._man_settings
 	
-	def updatesManager(self) -> software_updates.BSUpdatesManager:
+	def updatesManager(self) -> updatesmanager.BSUpdatesManager:
 		return self._man_software_updates
 	
 	@QtCore.Slot()
@@ -416,6 +421,7 @@ class BSMainApplication(QtWidgets.QApplication):
 	@QtCore.Slot()
 	@QtCore.Slot(bool)
 	def setUpdateCheckEnabled(self, is_enabled:bool=True):
+		"""Prevent software update checks when one or more processes place a hold on it"""
 
 		self._man_software_updates.setEnabled(bool(is_enabled))
 
@@ -465,12 +471,12 @@ class BSMainApplication(QtWidgets.QApplication):
 	@QtCore.Slot()
 	def showUpdatesWindow(self):
 
-		from ..widgets import software_updates
+		from ..softwareupdates import updatesviewer
 		
 		# Create window if it's not already open
 		if not self._wnd_software_updates:
 
-			self._wnd_software_updates = software_updates.BSCheckForUpdatesWindow()
+			self._wnd_software_updates = updatesviewer.BSUpdatesWindow()
 			
 			self._wnd_software_updates.setWindowFlag(QtCore.Qt.WindowType.Tool)
 			self._wnd_software_updates.setUpdateManager(self.updatesManager())

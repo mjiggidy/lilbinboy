@@ -1,7 +1,7 @@
 from PySide6 import QtCore, QtGui, QtWidgets, QtNetwork
-from ..managers import software_updates
+from . import releaseinfo, updatesmanager
 
-class BSCheckForUpdatesWindow(QtWidgets.QWidget):
+class BSUpdatesWindow(QtWidgets.QWidget):
 	"""Window for displaying LBB version update info"""
 
 	sig_requestCheckForUpdates = QtCore.Signal()
@@ -26,9 +26,9 @@ class BSCheckForUpdatesWindow(QtWidgets.QWidget):
 		self._prg_checking = QtWidgets.QProgressBar()
 
 		# New release info
-		self._grp_new_release_info = QtWidgets.QGroupBox()
-		self._lbl_new_version_name = QtWidgets.QLabel()
-		self._lbl_new_release_date = QtWidgets.QLabel()
+		self._grp_new_release_info  = QtWidgets.QGroupBox()
+		self._lbl_new_version_name  = QtWidgets.QLabel()
+		self._lbl_new_release_date  = QtWidgets.QLabel()
 		self._txt_new_release_notes = QtWidgets.QTextBrowser()
 
 		# No updates info
@@ -102,7 +102,7 @@ class BSCheckForUpdatesWindow(QtWidgets.QWidget):
 		
 		self.layout().addWidget(self._grp_no_update)
 
-		self.layout().addStretch()
+		#self.layout().addStretch()
 
 		# Check for updates
 		self._chk_automatic.setText(self.tr("Automatically check for updates"))
@@ -116,7 +116,7 @@ class BSCheckForUpdatesWindow(QtWidgets.QWidget):
 	# ---
 	# Manager setup
 	# ---
-	def setUpdateManager(self, manager:software_updates.BSUpdatesManager):
+	def setUpdateManager(self, manager:updatesmanager.BSUpdatesManager):
 		"""Attach to an update manager"""
 
 		# Signals to manager
@@ -132,7 +132,7 @@ class BSCheckForUpdatesWindow(QtWidgets.QWidget):
 		manager.sig_releaseIsCurrent.connect(self.releaseIsCurrent)
 
 		# Initial state
-		self._lbl_current_version.setText(manager.currentVersion())
+		self._lbl_current_version.setText(manager.currentVersion().toString())
 		self._chk_automatic.setChecked(manager.autoCheckEnabled())
 		self._btn_checkForUpdates.setDisabled(manager.cooldownInProgress())
 
@@ -185,29 +185,31 @@ class BSCheckForUpdatesWindow(QtWidgets.QWidget):
 		
 		self.adjustSize()
 
-	@QtCore.Slot(software_updates.ReleaseInfo)
-	def newReleaseAvailable(self, release_info:software_updates.ReleaseInfo):
+	@QtCore.Slot(releaseinfo.ReleaseInfo)
+	def newReleaseAvailable(self, release_info:releaseinfo.ReleaseInfo):
 
-		self._lbl_latest_release_version.setText(release_info.version)
+		self._lbl_latest_release_version.setText(release_info.version.toString())
 
 		self._btn_new_release_download.setVisible(True)
 		self._btn_new_release_download.setDefault(True)
 
 		self._lbl_new_version_name.setText(release_info.name)
 		self._lbl_new_release_date.setText(self.tr("Released {date_of_release}").format(
-			date_of_release=QtCore.QDateTime.fromString(release_info.date, QtCore.Qt.DateFormat.ISODate).toLocalTime().toString("dd MMMM yyyy"))
+			date_of_release=release_info.date.toLocalTime().toString(
+				QtCore.QLocale().dateFormat(QtCore.QLocale.FormatType.LongFormat)
+			))
 		)
-		self._btn_new_release_download.clicked.connect(lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl(release_info.release_url)))
+		self._btn_new_release_download.clicked.connect(lambda: QtGui.QDesktopServices.openUrl(release_info.release_url))
 		self._txt_new_release_notes.setMarkdown(release_info.release_notes)
 		
 		self._grp_new_release_info.setVisible(True)
 
 		self.adjustSize()
 
-	@QtCore.Slot(software_updates.ReleaseInfo)
-	def releaseIsCurrent(self, release_info:software_updates.ReleaseInfo|None=None):
+	@QtCore.Slot(releaseinfo.ReleaseInfo)
+	def releaseIsCurrent(self, release_info:releaseinfo.ReleaseInfo|None=None):
 
-		version_string = release_info.version if release_info else self._lbl_current_version.text()
+		version_string = release_info.version.toString() if release_info else self._lbl_current_version.text()
 		self._lbl_latest_release_version.setText(version_string)
 		self._grp_new_release_info.setHidden(True)
 		self._lbl_no_update_status.setText(self.tr("You are on the latest version.  So that's nice!"))

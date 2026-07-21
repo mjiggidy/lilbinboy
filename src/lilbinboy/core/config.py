@@ -83,3 +83,9 @@ class BSScriptViewModeConfig:
 
 	DEFAULT_COLUMN_RESIZE_MODE = QtWidgets.QHeaderView.ResizeMode.ResizeToContents
 	"""Default mode for Script view column resizing"""
+
+class BSSoftwareUpdatesConfig:
+	"""Config for software updates"""
+
+	URL_RELEASES = "https://api.github.com/repos/mjiggidy/lilbinboy/releases"
+	"""GitHub API Releases URL"""
