@@ -1,5 +1,5 @@
 from __future__ import annotations
-import typing, enum
+import typing, enum, logging
 from PySide6 import QtCore
 
 from . import binviewitemtypes
@@ -216,6 +216,7 @@ class BSBinViewModel(QtCore.QAbstractItemModel):
 		
 #		print(f"Hey I got {sourceRow=} {count=} {destinationChild=}")
 		
+		logging.getLogger(__name__).debug("Begin move rows")
 		self.beginMoveRows(sourceParent, sourceRow, sourceRow + count-1, destinationParent, destinationChild)
 
 		# NOTE: This confuses me every time I look at it.  Imanita do better here.
@@ -231,6 +232,7 @@ class BSBinViewModel(QtCore.QAbstractItemModel):
 		# Insert at the adjusted destination
 		self._bin_view_columns[destinationChild:destinationChild] = moving_rows
 
+		logging.getLogger(__name__).debug("End move rows")
 		self.endMoveRows()
 
 		# NOTE: I think this all works at this point from any entry point

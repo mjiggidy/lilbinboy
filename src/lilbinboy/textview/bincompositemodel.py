@@ -1,5 +1,5 @@
 """TextViewModel to combine Item Model and View Models"""
-import typing
+import typing, logging
 from PySide6 import QtCore
 
 from ..binitems import binitemsmodel, binitemtypes
@@ -120,10 +120,12 @@ class BSBinCompositeModel(QtCore.QAbstractItemModel):
 
 	@QtCore.Slot(QtCore.QModelIndex, int, int, QtCore.QModelIndex, int)
 	def binColumnsAboutToBeMoved(self, sourceParent:QtCore.QModelIndex, sourceStart:int, sourceEnd:int, destinationParent:QtCore.QModelIndex, destinationRow:int):
+
+		logging.getLogger(__name__).debug("Begin columns move")
 		#print("BIN")
 
-		source_name = self.headerData(sourceStart, QtCore.Qt.Orientation.Horizontal, binviewitemtypes.BSBinViewColumnInfoRole.DisplayNameRole)
-		dest_name   = self.headerData(destinationRow-1, QtCore.Qt.Orientation.Horizontal, binviewitemtypes.BSBinViewColumnInfoRole.DisplayNameRole) if destinationRow > 0 else "<<FRONT>>"
+#		source_name = self.headerData(sourceStart, QtCore.Qt.Orientation.Horizontal, binviewitemtypes.BSBinViewColumnInfoRole.DisplayNameRole)
+#		dest_name   = self.headerData(destinationRow-1, QtCore.Qt.Orientation.Horizontal, binviewitemtypes.BSBinViewColumnInfoRole.DisplayNameRole) if destinationRow > 0 else "<<FRONT>>"
 
 #		print(f"Text view model knows it's about to move {source_name} to before {dest_name}")
 
@@ -133,6 +135,8 @@ class BSBinCompositeModel(QtCore.QAbstractItemModel):
 	
 	@QtCore.Slot(QtCore.QModelIndex, int, int, QtCore.QModelIndex, int)
 	def binColumnsMoved(self, sourceParent:QtCore.QModelIndex, sourceStart:int, sourceEnd:int, destinationParent:QtCore.QModelIndex, destinationRow:int):
+
+		logging.getLogger(__name__).debug("End columns moved")
 
 		self.endMoveColumns()
 
@@ -170,12 +174,12 @@ class BSBinCompositeModel(QtCore.QAbstractItemModel):
 
 		# NOTE: Bin View Model reports these as a vertical change since they're listed as rows
 		# doing a translation to Horizontal here
-
+		logging.getLogger(__name__).debug("Begin column layout change")
 		self.layoutAboutToBeChanged.emit()
 
 	@QtCore.Slot()
 	def binColumnLayoutChanged(self):
-
+		logging.getLogger(__name__).debug("End column layout change")
 		self.layoutChanged.emit()
 
 	@QtCore.Slot(QtCore.QModelIndex, QtCore.QModelIndex, object)

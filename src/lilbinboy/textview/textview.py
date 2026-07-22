@@ -134,6 +134,8 @@ class BSBinTextView(QtWidgets.QTreeView):
 	def binColumnDragged(self, col_logical_old:int, col_vis_old:int, col_vis_new:int):
 		"""User dragged column to reorder"""
 
+		logging.getLogger(__name__).debug("Bincolumn was dragged")
+
 		# NOTE: This method I think is alright
 		
 		col_logical_new = (self.header().logicalIndex(col_vis_new - 1) + 1) if col_vis_new > 0 else 0
@@ -203,6 +205,8 @@ class BSBinTextView(QtWidgets.QTreeView):
 		model.modelReset      .connect(lambda: self.sortByColumn(-1, QtCore.Qt.SortOrder.AscendingOrder))
 #		model.modelReset.connect(lambda: self.binColumnsInserted(QtCore.QModelIndex(), 0, self.model().columnCount(QtCore.QModelIndex())), QtCore.Qt.ConnectionType.QueuedConnection)
 #		model.headerDataChanged.connect(self.updateBinColumns)
+
+		model.columnsMoved.connect(lambda *x: print("HELLO THERE COLUMNS MOVET",x))
 
 		super().setModel(model)
 
