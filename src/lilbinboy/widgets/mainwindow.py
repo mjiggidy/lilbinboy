@@ -607,8 +607,9 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		elif tool_type == toolwindowmanager.BSToolWindowTypes.BinViewEditor:
 
 			tool_window = editorwidget.BSBinViewColumnEditor(parent=self, bin_view_model=self._bin_view_model, bin_view_provider=self._binview_provider)
-			
+
 			tool_window.setWindowTitle(self.tr("Bin View Settings"))
+			tool_window.resize(tool_window.size().width(), tool_window.size().width() * 4)
 
 			tool_window.sig_focus_column_requested.connect(self._bin_widget.focusBinColumn)
 			tool_window.sig_bin_view_source_selected.connect(self.binViewSourceSelected)
