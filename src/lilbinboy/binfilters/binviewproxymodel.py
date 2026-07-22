@@ -130,15 +130,9 @@ class BSBinViewFilterProxyModel(abstractfiltermodel.BSAbstractBinSortFilterProxy
 		self.sig_filter_toggled.emit(is_enabled)
 
 	def moveRows(self, sourceParent:QtCore.QModelIndex, sourceRow:int, count:int, destinationParent:QtCore.QModelIndex, destinationChild:int) -> bool:
-
-#		if count > 1:
-#			# TODO
-#			raise NotImplementedError("TODO: Multiple row moves not yet implemented")
 		
 		if sourceParent.isValid() or destinationParent.isValid():
 			return False
-		
-#		mapped_source_idx      = self.mapToSource(self.index(sourceRow, 0, QtCore.QModelIndex())).row()
 
 		# NOTE TO SELF ABOUT ALLA THIS:
 		# 
@@ -148,7 +142,6 @@ class BSBinViewFilterProxyModel(abstractfiltermodel.BSAbstractBinSortFilterProxy
 		# 
 		# ALSO, want to move any hidden rows within the clump.  So first and last clump indexes should be used as a range for the count, 
 		# rather than relying on the number of indexes in the clump, if that makes any sense to me later.
-
 
 
 		mapped_source_row_first = self.mapToSource(self.index(sourceRow, 0, QtCore.QModelIndex())).row()
@@ -161,63 +154,7 @@ class BSBinViewFilterProxyModel(abstractfiltermodel.BSAbstractBinSortFilterProxy
 
 		mapped_count = mapped_source_row_last - mapped_source_row_first + 1
 
-#		print(f"Moving {count} visible rows and {mapped_count - count} ")
-
 		return self.sourceModel().moveRows(QtCore.QModelIndex(), mapped_source_row_first, mapped_count, QtCore.QModelIndex(), mapped_destination_row)
-
-		#return True
-	
-	# Olde waye
-		source_row_offset = 0
-		dest_row_offset   = 0
-		
-		for index_clump in clumper.clumpValues(
-			(
-				self.mapToSource(
-					self.index(row, 0, QtCore.QModelIndex())
-				) for row in range(sourceRow, sourceRow+count)
-			),
-			key=lambda i: i.row(),
-			reverse=True
-		):
-			
-			mapped_clump_length = index_clump[0].row() - index_clump[-1].row() + 1
-
-			if index_clump[-1].row() > mapped_destination_row:
-
-				# Movin' the under-clumps, as I call them in computery schience
-				
-				names = []
-				for row in reversed(range(index_clump[-1].row(), index_clump[-1].row() + mapped_clump_length)):
-					names.append(self.sourceModel().index(row+source_row_offset, 0, QtCore.QModelIndex()).data(QtCore.Qt.ItemDataRole.DisplayRole))
-				print(f"Move a under-clump: {names}")
-
-				self.sourceModel().moveRows(
-					QtCore.QModelIndex(),
-					index_clump[-1].row() + source_row_offset,
-					mapped_clump_length,
-					QtCore.QModelIndex(),
-					mapped_destination_row # + dest_row_offset
-				)
-
-				source_row_offset += mapped_clump_length
-
-			elif index_clump[-1].row() < mapped_destination_row:
-
-				print("Move a overboy")
-
-				self.sourceModel().moveRows(
-					QtCore.QModelIndex(),
-					index_clump[-1].row(), # + source_row_offset,
-					mapped_clump_length,
-					QtCore.QModelIndex(),
-					mapped_destination_row + dest_row_offset
-				)
-
-
-				dest_row_offset -= mapped_clump_length
-		
-		return True
 	
 	def sort(self,  role:binviewitemtypes.BSBinViewColumnInfoRole, /, order:QtCore.Qt.SortOrder):
 		"""REDEFINED SORT ROLE: Accepts `BSBinViewColumnInfoRole` instead of a column index, since this is a flat list"""
