@@ -1,4 +1,4 @@
-import typing
+import typing, logging
 from PySide6 import QtWidgets, QtGui, QtCore
 
 from . import editordelegates, editorproxymodel
@@ -130,12 +130,12 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 
 		if event.dropAction() != QtCore.Qt.DropAction.MoveAction:
 
-			print("NAH")
+			logging.getLogger(__name__).debug("Ignoring drop action %s", str(event.dropAction()))
 			
 			event.ignore()
 			return super().dropEvent(event)
 		
-		print(event.dropAction())
+		logging.getLogger(__name__).debug("Handling drop action %s", str(event.dropAction()))
 		
 		# Don't do anything fancy
 		event.setDropAction(QtCore.Qt.DropAction.IgnoreAction)
@@ -281,14 +281,13 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		"""Move the given bin column row to the given destination"""
 
 		if not destination_index.isValid():
-
-			print("Invalid drop target index hmmmmmmm")
+			logging.getLogger(__name__).error("Invalid drop target index %s for source indexes %s", str(destination_index), str(source_indexes))
 			return
 		
-		drop_target_row   = destination_index.row() if self.dropIndicatorPosition() == QtWidgets.QTableView.DropIndicatorPosition.AboveItem else destination_index.row() + 1
+		# Adjust drop target row to always refer to the one we're dropping ABOVE
+		drop_target_row = destination_index.row() if self.dropIndicatorPosition() == QtWidgets.QTableView.DropIndicatorPosition.AboveItem else destination_index.row() + 1
 
 		# Clump together contiguous ranges... in reverse!
-		
 		source_row_index_clumps = list(
 			clumper.clumpValues(
 				source_indexes,
@@ -298,7 +297,8 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 		)
 
 		if not source_row_index_clumps:
-			print("No rows to move")
+			
+			logging.getLogger(__name__).debug("No rows to move")
 			return False
 
 		source_row_offset = 0
@@ -308,38 +308,48 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 
 			mapped_clump_length = source_row_index_clump[0].row() - source_row_index_clump[-1].row() + 1
 
+			logging.getLogger(__name__).debug("Drop indicator position: %s", str(self.dropIndicatorPosition()))
+
 			if self.dropIndicatorPosition() != QtWidgets.QTableView.DropIndicatorPosition.AboveItem:
+
 				if source_row_index_clump[0].row() == drop_target_row:
 
-					print("Nah")
+					logging.getLogger(__name__).debug("Ignoring identical source and destination")
 					continue
-				print(f"Moving below {destination_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({source_row_index_clump[-1].row()=} {drop_target_row=}):")
+
+				logging.getLogger(__name__).debug(
+					"Moving below %s (last source_row_index_clump=%s; drop_target_row=%s):",
+					str(destination_index.data(QtCore.Qt.ItemDataRole.DisplayRole)),
+					str(source_row_index_clump[-1].row()),
+					str(drop_target_row)
+				)
 
 			else:
-				print(self.dropIndicatorPosition())
 
-				print(f"{source_row_index_clump[-1].row()=} { drop_target_row+1=}")
+				logging.getLogger(__name__).debug("last source_row_index=%s; drop_target_row+1=%s", str(source_row_index_clump[-1].row()), str(drop_target_row+1))
 				
 				if source_row_index_clump[0].row() == drop_target_row-1:
 
-					print("Nah")
+					logging.getLogger(__name__).debug("Ignoring identical source and destination")
 					continue
 				
-				print(f"Moving above {destination_index.data(QtCore.Qt.ItemDataRole.DisplayRole)} ({source_row_index_clump[-1].row()=} {drop_target_row=}):")
+				logging.getLogger(__name__).debug(
+					"Moving clump to above %s (last source_row=%s} {drop_target_row=%s}):",
+					str(destination_index.data(QtCore.Qt.ItemDataRole.DisplayRole)),
+					str(source_row_index_clump[-1].row()),
+					str(drop_target_row)
+				)
 
 			if source_row_index_clump[-1].row() > drop_target_row:
 
 				# Movin' the under-clumps, as I call them in computery schience
 				# Since we're moving it up, make sure the destination index is not the same as the first element
-				
-				print(f"{source_row_index_clump[0].row()=} {drop_target_row=}")
 
-				
 				names = []
 				for row in reversed(range(source_row_index_clump[-1].row(), source_row_index_clump[-1].row() + mapped_clump_length)):
 					names.append(self.model().index(row+source_row_offset, 0, QtCore.QModelIndex()).data(QtCore.Qt.ItemDataRole.DisplayRole))
 
-				print(f"Move a under-clump: {names}")
+				logging.getLogger(__name__).debug("Moving underclip: %s (first source_row_index=%s; drop_target_row=%s)", str(names), str(source_row_index_clump[0].row()), str(drop_target_row))
 
 				self.model().moveRows(
 					QtCore.QModelIndex(),
@@ -353,7 +363,7 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 
 			elif source_row_index_clump[-1].row() < drop_target_row + dest_row_offset:
 
-				print(f"Move a overboy {source_row_index_clump[-1].row()=} {drop_target_row=}")
+				logging.getLogger(__name__).debug("Movin a overboy (last source_row_index=%s; drop_target_row=%s)", str(source_row_index_clump[-1].row()), str(drop_target_row))
 
 				self.model().moveRows(
 					QtCore.QModelIndex(),
@@ -363,11 +373,11 @@ class BSBinViewColumnListView(QtWidgets.QTableView):
 					drop_target_row + dest_row_offset
 				)
 
-
 				dest_row_offset -= mapped_clump_length
 
 			else:
-				print("BRUH?")
+
+				logging.getLogger(__name__).error("Neither an under nor an over clump? This is unexpected.")
 				continue
 
 
