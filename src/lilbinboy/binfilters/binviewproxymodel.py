@@ -161,7 +161,7 @@ class BSBinViewFilterProxyModel(abstractfiltermodel.BSAbstractBinSortFilterProxy
 
 		mapped_count = mapped_source_row_last - mapped_source_row_first + 1
 
-		print(f"Moving {count} visible rows and {mapped_count - count} ")
+#		print(f"Moving {count} visible rows and {mapped_count - count} ")
 
 		return self.sourceModel().moveRows(QtCore.QModelIndex(), mapped_source_row_first, mapped_count, QtCore.QModelIndex(), mapped_destination_row)
 
