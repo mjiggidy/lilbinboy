@@ -196,7 +196,9 @@ class BSMainApplication(QtWidgets.QApplication):
 		logging.basicConfig(level=logging.ERROR)
 #		logging.getLogger("lilbinboy.binfilters").setLevel(logging.DEBUG)
 #		logging.getLogger("lilbinboy.siftwidget").setLevel(logging.DEBUG)
-		logging.getLogger("lilbinboy.widgets.mainwindow").setLevel(logging.DEBUG)
+#		logging.getLogger("lilbinboy.widgets.mainwindow").setLevel(logging.DEBUG)
+		logging.getLogger("lilbinboy.binvieweditor").setLevel(logging.DEBUG)
+		logging.getLogger("lilbinboy.textview").setLevel(logging.DEBUG)
 
 		base_dir = QtCore.QDir(QtCore.QDir(self._path_local_storage).filePath(subdir_name))
 

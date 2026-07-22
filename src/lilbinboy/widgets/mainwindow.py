@@ -723,10 +723,9 @@ class BSMainWindow(QtWidgets.QMainWindow):
 		if event.type() == QtCore.QEvent.Type.ActivationChange:
 
 			active_window = QtWidgets.QApplication.activeWindow()
-			print(f"{active_window=}")
 
 			if self.isActiveWindow():
-				print("Is active")
+				logging.getLogger(__name__).debug("Mainwindow is active (active_window=%s)", str(active_window))
 
 				for _, tool_window in self._man_tool_windows.toolWindows():
 					tool_window.show()
@@ -736,7 +735,7 @@ class BSMainWindow(QtWidgets.QMainWindow):
 				for _, tool_window in self._man_tool_windows.toolWindows():
 					tool_window.hide()
 
-				print("Is inactive")
+				logging.getLogger(__name__).debug("Mainwindow is inactive (active_window=%s)", str(active_window))
 
 		#return super().changeEvent(event)
 	
