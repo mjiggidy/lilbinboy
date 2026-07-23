@@ -219,7 +219,11 @@ class BSBinTextView(QtWidgets.QTreeView):
 
 		
 		for idx_log_current in range(idx_log_first, idx_log_last+1):
+
 			self.resizeColumnToContents(idx_log_current)
+
+		# NOTE: For now, clear selection so new rows don't appear unselected.  Don't like this.
+		self.selectionModel().clearSelection()
 
 
 	@QtCore.Slot(object)
