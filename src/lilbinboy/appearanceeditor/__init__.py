@@ -1,0 +1,3 @@
+"""
+Bin fonts & colors editor
+"""

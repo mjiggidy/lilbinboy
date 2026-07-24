@@ -3,11 +3,12 @@ from os import PathLike
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from ..siftwidget import siftwidget
+from ..core import icon_registry, renaming, binloader, icon_engines, icon_providers
 
+from ..appearanceeditor import appearancewidget
+from ..siftwidget import siftwidget
 from ..binviewprovider import binviewsources, providermodel
 
-from ..core import icon_registry, renaming
 
 from ..binwidget import binwidget
 from ..binitems import binitemsmodel, binitemtypes
@@ -15,7 +16,6 @@ from ..binview import binviewmodel, binviewitemtypes
 from ..managers import actions, binproperties, appearance
 from ..toolwindowmanager import toolwindowmanager
 from ..widgets import menus, toolboxes, buttons, about, overlaywidget
-from ..core import binloader, icon_engines, icon_providers
 from ..binvieweditor import editorwidget
 from ..binfilters.siftfilter import sifters
 
@@ -628,7 +628,7 @@ class BSMainWindow(QtWidgets.QMainWindow):
 
 		elif tool_type == toolwindowmanager.BSToolWindowTypes.BinAppearanceEditor:
 
-			tool_window = toolboxes.BSBinAppearanceSettingsView(parent=self)
+			tool_window = appearancewidget.BSBinAppearanceSettingsView(parent=self)
 
 			tool_window.setWindowTitle(self.tr("Appearance Settings"))
 
@@ -641,7 +641,7 @@ class BSMainWindow(QtWidgets.QMainWindow):
 
 			self._man_appearance.sig_bin_font_changed            .connect(tool_window.setBinFont)
 			self._man_appearance.sig_bin_colors_changed          .connect(tool_window.setBinColors)
-			self._man_appearance.sig_window_rect_changed         .connect(tool_window.setBinRect)
+			self._man_appearance.sig_window_rect_changed         .connect(tool_window.setBinWindowGeometry)
 			self._man_appearance.sig_was_iconic_changed          .connect(tool_window.setWasIconic)
 
 			# Toolbox to Appearance
