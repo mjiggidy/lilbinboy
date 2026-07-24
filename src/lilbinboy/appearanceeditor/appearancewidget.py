@@ -61,6 +61,9 @@ class BSBinAppearanceSettingsView(QtWidgets.QWidget):
 		self.layout().addLayout(lay_fonts)
 
 		lay_colors = QtWidgets.QHBoxLayout()
+
+		self._btn_fg_color.setText(self.tr("Text"))
+		self._btn_bg_color.setText(self.tr("Background"))
 		lay_colors.addWidget(self._btn_fg_color)
 		lay_colors.addWidget(self._btn_bg_color)
 
