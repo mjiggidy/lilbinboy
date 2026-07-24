@@ -7,7 +7,7 @@ class BSApplicationConfig:
 	APPLICATION_NAME    = "Lil' Bin Boy"
 	"""Name o' the app"""
 
-	APPLICATION_VERSION = QtCore.QVersionNumber(0,0,26)
+	APPLICATION_VERSION = QtCore.QVersionNumber(0,0,27)
 	"""Version Number (major.minor.revision)"""
 
 	APPLICATION_STORAGE_PATH = QtCore.QStandardPaths.StandardLocation.AppDataLocation
@@ -33,7 +33,7 @@ class BSTextViewModeConfig:
 	DEFAULT_SELECTION_BEHAVIOR = QtWidgets.QTreeView.SelectionBehavior.SelectRows
 	"""Default selection behavior (select rows, columns, or items)"""
 
-	DEFAULT_SELECTION_MODE     = QtWidgets.QTreeView.SelectionMode    .ExtendedSelection
+	DEFAULT_SELECTION_MODE     = QtWidgets.QTreeView.SelectionMode.ExtendedSelection
 	"""Default selection mode (continuous, extended, etc)"""
 
 	USE_BIN_COLUMN_WIDTHS = True
