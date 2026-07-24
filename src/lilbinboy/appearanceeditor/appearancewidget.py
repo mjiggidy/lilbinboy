@@ -116,22 +116,48 @@ class BSBinAppearanceSettingsView(QtWidgets.QWidget):
 	def bgColorPickerRequested(self):
 		"""Request background color"""
 
-		_,bg_color = self.binColors()
-		new_color = QtWidgets.QColorDialog.getColor(bg_color, self._btn_bg_color, self.tr("Choose a background color"))
+		dlg_color = QtWidgets.QColorDialog(
+			parent=self._btn_bg_color,
+			currentColor=self.binBackgroundColor(),
+			options=QtWidgets.QColorDialog.ColorDialogOption.NoButtons
+		)
 
-		if new_color.isValid():
-			self.setBinBackgroundColor(new_color)
+		dlg_color.currentColorChanged.connect(self.setBinBackgroundColor)
+		dlg_color.setWindowTitle(self.tr("Choose a background color"))
+#		dlg_color.finished.connect(lambda x: print("DONE:", x))
+
+		dlg_color.exec()
+		dlg_color.disconnect(self)
+
+#		_,bg_color = self.binColors()
+#		new_color = QtWidgets.QColorDialog.getColor(bg_color, self._btn_bg_color, self.tr("Choose a background color"))
+#
+#		if new_color.isValid():
+#			self.setBinBackgroundColor(new_color)
 
 	@QtCore.Slot()
 	def fgColorPickerRequested(self):
 		"""Request foreground (text) color"""
 
-		fg_color,_ = self.binColors()
-		new_color = QtWidgets.QColorDialog.getColor(fg_color, self._btn_fg_color, self.tr("Choose a text color"))
+		dlg_color = QtWidgets.QColorDialog(
+			parent=self._btn_bg_color,
+			currentColor=self.binForegroundColor(),
+			options=QtWidgets.QColorDialog.ColorDialogOption.NoButtons
+		)
 
-		if new_color.isValid():
-			self.setBinForegroundColor(new_color)
+		dlg_color.currentColorChanged.connect(self.setBinForegroundColor)
+		dlg_color.setWindowTitle(self.tr("Choose a foreground color"))
+#		dlg_color.finished.connect(lambda x: print("DONE:", x))
 
+		dlg_color.exec()
+		dlg_color.disconnect(self)
+
+#		fg_color,_ = self.binColors()
+#		new_color = QtWidgets.QColorDialog.getColor(fg_color, self._btn_fg_color, self.tr("Choose a text color"))
+#
+#		if new_color.isValid():
+#			self.setBinForegroundColor(new_color)
+#
 	@QtCore.Slot(QtCore.QRect)
 	def setBinWindowGeometry(self, rect:QtCore.QRect):
 		"""Set the bin window size and position"""
