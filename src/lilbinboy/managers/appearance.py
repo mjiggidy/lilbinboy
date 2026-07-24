@@ -128,8 +128,8 @@ class BSBinAppearanceSettingsManager(QtCore.QObject):
 		self._bin_palette = bin_palette
 		
 		self.sig_bin_colors_changed.emit(
-			bin_palette.windowText().color(),
-			bin_palette.window().color()
+			bin_palette.text().color(),
+			bin_palette.base().color()
 		)
 
 		if self._use_bin_appearance:
