@@ -297,7 +297,18 @@ class BSMainWindow(QtWidgets.QMainWindow):
 	def addBinItems(self, bin_items:list[binitemtypes.BSBinItemInfo]):
 
 		self.updateLoadingBar(bin_items)
+
+		old_count = self._bin_item_model.rowCount(QtCore.QModelIndex())
 		self._bin_item_model.addBinItems(bin_items)
+
+		# If these are the first insertions and there are no saved widths,
+		# do an initial resize when the first items are added
+
+		# NOTE: If none of the first items are visible, this won't work as intended
+		# sooooooooo hahahahahhhahahahahaa I don't know man
+		if old_count == 0 and not self._bin_widget.useSavedBinColumnWidths():
+			self._bin_widget.setTextColumnWidthsFromBin()
+
 			
 	def actionsManager(self) -> actions.ActionsManager:
 		return self._man_actions
