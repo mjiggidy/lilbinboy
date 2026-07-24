@@ -316,13 +316,7 @@ class BSBinContentsWidget(QtWidgets.QWidget):
 		elif current_view_mode == avbutils.bins.BinDisplayModes.SCRIPT:
 
 			# Sync header widths
-			for col in filter(
-				lambda c: not self._viewmode_text.header().isSectionHidden(c),
-				range(self._viewmode_text.header().count())
-			):
-
-				col_size = self._viewmode_text.header().sectionSize(col)
-				self._viewmode_script.header().resizeSection(col+1, col_size)
+			self.syncScriptModeWidths()
 
 			# Sync selection models
 			self._viewmode_script.selectionModel().select(
@@ -335,6 +329,17 @@ class BSBinContentsWidget(QtWidgets.QWidget):
 			self._viewmode_script.setUpdatesEnabled(True)
 
 		self.sig_view_mode_changed.emit(current_view_mode)
+
+	def syncScriptModeWidths(self):
+		"""Using Text view as daddi, sync column widths over to Script view mode"""
+
+		for col in filter(
+			lambda c: not self._viewmode_text.header().isSectionHidden(c),
+			range(self._viewmode_text.header().count())
+		):
+
+			col_size = self._viewmode_text.header().sectionSize(col)
+			self._viewmode_script.header().resizeSection(col+1, col_size)
 
 	
 	@QtCore.Slot(object)
@@ -442,6 +447,10 @@ class BSBinContentsWidget(QtWidgets.QWidget):
 			# Resize all columns to contents
 			logging.getLogger(__name__).debug("Auto-sizing all columns")
 			self.textView().header().resizeSections(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+
+		if self.viewMode() == avbutils.BinDisplayModes.SCRIPT:
+			logging.getLogger(__name__).debug("Syncing Script mode")
+			self.syncScriptModeWidths()
 
 
 	###
