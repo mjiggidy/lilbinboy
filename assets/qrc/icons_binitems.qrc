@@ -11,6 +11,11 @@
 	<file alias="item_source.svg">../binitems/item_source_v04_themed.svg</file>
 	<file alias="item_effect.svg">../binitems/item_effect_v05_themed.svg</file>
 
+	<file alias="item_masterclip_sound.svg">../binitems/item_masterclip_sound_v01_themed.svg</file>
+	<file alias="item_subclip_sound.svg">../binitems/item_subclip_sound_v01_themed.svg</file>
+
+
+
 	<!-- TODO: Thinking of superimposing these elements (Not Yet Implemented) -->
 	<file alias="deco_audio.svg">../binitems/deco_audio_v01_themed.svg</file>
 	<file alias="deco_group.svg">../binitems/deco_group_v01_themed.svg</file>
