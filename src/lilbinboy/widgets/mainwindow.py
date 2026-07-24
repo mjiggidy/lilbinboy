@@ -648,6 +648,8 @@ class BSMainWindow(QtWidgets.QMainWindow):
 			tool_window.sig_font_changed               .connect(self._man_appearance.setBinFont)
 			tool_window.sig_colors_changed             .connect(self._man_appearance.setBinColors)
 
+			tool_window.layout().setSizeConstraint(QtWidgets.QLayout.SizeConstraint.SetFixedSize)
+
 		else:
 			# lol dunno
 			logging.getLogger(__name__).error("Tool window setup not specified for %s", repr(toolwindowmanager.BSToolWindowTypes(tool_type)))
