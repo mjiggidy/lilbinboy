@@ -378,15 +378,25 @@ class BSBinTextView(QtWidgets.QTreeView):
 		if self._item_padding == padding:
 			return
 		
+		logging.getLogger(__name__).debug("Setting padding to %s", str(self._item_padding))
+
+		old_padding_x = self._item_padding.left() + self._item_padding.right()
+		new_padding_x = padding.left() + padding.right()
+
 		self._item_padding = QtCore.QMarginsF(padding)
 
 		for delegate in self._delegate_provider.delegates():
 			delegate.setItemPadding(padding)
 
-		logging.getLogger(__name__).debug("Setting padding to %s", str(self._item_padding))
 		
 		self.updateMinimumSectionWidths()
-		#self.scheduleDelayedItemsLayout()
+
+		if old_padding_x != new_padding_x:
+			padding_delta_x = new_padding_x - old_padding_x
+			for col in range(self.header().count()):
+				self.header().resizeSection(col, self.header().sectionSize(col) + padding_delta_x)
+
+		self.scheduleDelayedItemsLayout()
 
 		#self.update()
 		self.sig_item_padding_changed.emit(padding)
