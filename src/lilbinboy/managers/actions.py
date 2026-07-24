@@ -103,18 +103,25 @@ class ActionsManager(QtCore.QObject):
 		self._act_toggle_bindisplay_settings  = QtGui.QAction(self.tr("Show Bin Display Settings"), parent=self._parent)
 		"""Toggle visibility of Bin Display Settings toolbox"""
 		self._act_toggle_bindisplay_settings.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.DocumentPageSetup))
+		self._act_toggle_bindisplay_settings.setToolTip(self.tr("Choose which bin items to display, and which to filter out"))
+		self._act_toggle_bindisplay_settings.setShortcut(QtGui.QKeySequence(QtCore.Qt.KeyboardModifier.ControlModifier|QtCore.Qt.KeyboardModifier.ShiftModifier|QtCore.Qt.Key.Key_D))
 
 		self._act_toggle_binview_settings    = QtGui.QAction(self.tr("Show Bin View Settings"), parent=self._parent)
 		"""Toggle visibility of Binview Settings toolbox"""
 		self._act_toggle_binview_settings.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.ViewRestore))
+		self._act_toggle_binview_settings.setToolTip(self.tr("Choose which bin columns to display, and in which order"))
+		self._act_toggle_binview_settings.setShortcut(QtGui.QKeySequence(QtCore.Qt.KeyboardModifier.ControlModifier|QtCore.Qt.KeyboardModifier.ShiftModifier|QtCore.Qt.Key.Key_V))
 		
 		self._act_toggle_appearance_options = QtGui.QAction(self.tr("Show Appearance Settings"), parent=self._parent)
 		"""Toggle visibility of Fonts & Colors toolbox"""
 		self._act_toggle_appearance_options.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.Battery))
+		self._act_toggle_appearance_options.setToolTip(self.tr("Choose the font, colors, and positioning of the bin"))
+		self._act_toggle_appearance_options.setShortcut(QtGui.QKeySequence(QtCore.Qt.KeyboardModifier.ControlModifier|QtCore.Qt.KeyboardModifier.ShiftModifier|QtCore.Qt.Key.Key_A))
 
 		self._act_toggle_sift_settings = QtGui.QAction(self.tr("Show Sift Settings"), parent=self._parent)
 		"""Toggle visibility of Sift Settings toolbox"""
 		self._act_toggle_sift_settings.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.AudioVolumeHigh))
+		self._act_toggle_sift_settings.setToolTip(self.tr("Filter bin items by given criteria"))
 		self._act_toggle_sift_settings.setShortcut(QtGui.QKeySequence.StandardKey.Find)
 
 
@@ -166,6 +173,8 @@ class ActionsManager(QtCore.QObject):
 		self._act_check_updates = QtGui.QAction(self.tr("Check For Updates..."), parent=self._parent)
 		self._act_check_updates.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.SoftwareUpdateAvailable))
 		self._act_check_updates.setMenuRole(QtGui.QAction.MenuRole.ApplicationSpecificRole)
+		self._act_check_updates.setToolTip(self.tr("Check online for the latest version of {app_name}").format(app_name=QtWidgets.QApplication.instance().applicationName()))
+		self._act_check_updates.setShortcut(QtGui.QKeySequence(QtCore.Qt.KeyboardModifier.ControlModifier|QtCore.Qt.KeyboardModifier.ShiftModifier|QtCore.Qt.Key.Key_U))
 
 		self._act_show_about = QtGui.QAction(self.tr("About {application_name}...").format(application_name=QtWidgets.QApplication.instance().applicationDisplayName()), parent=self._parent)
 		"""Show About Box"""
