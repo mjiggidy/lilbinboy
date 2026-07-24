@@ -1,8 +1,7 @@
 import sys
-import avb, avbutils
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
-from lilbinboy.widgets import toolboxes
+from lilbinboy.appearanceeditor import appearancewidget
 
 if __name__ == "__main__":
 
@@ -10,7 +9,7 @@ if __name__ == "__main__":
 
 	app.setStyle("Fusion")
 
-	win_appearance = toolboxes.BSBinAppearanceSettingsView()
+	win_appearance = appearancewidget.BSBinAppearanceSettingsView()
 
 	win_appearance.setWindowFlag(QtCore.Qt.WindowType.Tool)
 
