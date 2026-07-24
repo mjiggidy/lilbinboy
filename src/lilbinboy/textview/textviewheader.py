@@ -1,21 +1,28 @@
+import logging
 from PySide6 import QtCore, QtGui, QtWidgets
+
+DEFAULT_RESIZE_PRECISION:int = 20
+"""How many rows to consider when resizing columns to fit contents"""
 
 class BSTextViewColumnHeaderView(QtWidgets.QHeaderView):
 	"""Bin View Column Header"""
 
-	def __init__(self, *args, **kwargs):
+	def __init__(self, *args, column_resize_precision:int=DEFAULT_RESIZE_PRECISION, **kwargs):
 
 		super().__init__(*args, **kwargs)
 
+		self.setResizeContentsPrecision(column_resize_precision)
+
 	def moveSection(self, idx_vis_start:int, idx_vis_dest:int):
+
+		logging.getLogger(__name__).debug("Moving section from visual index %s to %s", idx_vis_start, idx_vis_dest)
 		
 		width_start = self.sectionSize(self.logicalIndex(idx_vis_dest))
 		width_dest  = self.sectionSize(self.logicalIndex(idx_vis_start))
 		
-		
-#		print("MOVING")
 		super().moveSection(idx_vis_start, idx_vis_dest)
 
+		# Swap column widths as well
 		self.resizeSection(self.logicalIndex(idx_vis_start), width_dest)
 		self.resizeSection(self.logicalIndex(idx_vis_dest), width_start)
 
