@@ -210,8 +210,6 @@ class BSBinTextView(QtWidgets.QTreeView):
 #		model.modelReset.connect(lambda: self.binColumnsInserted(QtCore.QModelIndex(), 0, self.model().columnCount(QtCore.QModelIndex())), QtCore.Qt.ConnectionType.QueuedConnection)
 #		model.headerDataChanged.connect(self.updateBinColumns)
 
-		model.columnsMoved.connect(lambda *x: print("HELLO THERE COLUMNS MOVET",x))
-
 		super().setModel(model)
 
 	@QtCore.Slot(QtCore.QModelIndex, int, int)
