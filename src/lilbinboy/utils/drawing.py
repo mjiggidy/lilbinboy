@@ -76,6 +76,8 @@ def draw_frame_thumbnail(
 
 	shadow_color :QtGui.QColor|None=None,
 	shadow_offset:QtCore.QPointF|None=None,
+
+	draw_debug   :bool=False,
 ):
 	
 		clip_color    = clip_color    or QtGui.QColor()
@@ -125,12 +127,12 @@ def draw_frame_thumbnail(
 
 
 		# Draw text
-
-		size_hint = canvas.size()
-		pen_fg.setStyle(QtCore.Qt.PenStyle.SolidLine)
-		painter.setPen(pen_fg)
-		painter.drawText(active_rect, f"{size_hint.width()} x {size_hint.height()}", QtCore.Qt.AlignmentFlag.AlignTop)
-		painter.drawText(active_rect, str(frame_offset), QtCore.Qt.AlignmentFlag.AlignBottom)
+		if draw_debug:
+			size_hint = canvas.size()
+			pen_fg.setStyle(QtCore.Qt.PenStyle.SolidLine)
+			painter.setPen(pen_fg)
+			painter.drawText(active_rect, f"{size_hint.width()} x {size_hint.height()}", QtCore.Qt.AlignmentFlag.AlignTop)
+			painter.drawText(active_rect, str(frame_offset), QtCore.Qt.AlignmentFlag.AlignBottom)
 
 		painter.restore()
 
