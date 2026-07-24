@@ -1,3 +1,4 @@
+import logging
 from PySide6 import QtCore, QtGui, QtWidgets
 
 DEFAULT_FONT_FAMILIES = ["Tuffy", "Arial", "Helvetica", "sans-serif"]
@@ -170,6 +171,7 @@ class BSBinAppearanceSettingsView(QtWidgets.QWidget):
 		self._spn_geo_w.setValue(rect.width())
 		self._spn_geo_h.setValue(rect.height())
 
+		logging.getLogger(__name__).debug("Window geometry set to %s", rect)
 		self.sig_geometry_changed.emit(self.binWindowGeometry())
 
 	def binWindowGeometry(self) -> QtCore.QRect:
@@ -194,6 +196,7 @@ class BSBinAppearanceSettingsView(QtWidgets.QWidget):
 
 		self._chk_was_iconic.setChecked(was_iconic)
 
+		logging.getLogger(__name__).debug("Is Iconic set to %s", was_iconic)
 		self.sig_was_iconic_changed.emit(self.wasIconic())
 
 	def wasIconic(self) -> bool:
@@ -209,8 +212,19 @@ class BSBinAppearanceSettingsView(QtWidgets.QWidget):
 	def setBinFont(self, font:QtGui.QFont):
 		"""Set the bin font"""
 
+		old_font = self.binFont()
+		if old_font.pointSize() == font.pointSize() and old_font.family() == font.family():
+			return
+		
+		self.blockSignals(True)
+
 		self._cmb_fonts.setCurrentFont(font)
 		self._spn_size.setValue(font.pointSize())
+
+		self.blockSignals(False)
+
+		logging.getLogger(__name__).debug("Bin font changed to %s", font)
+		self.sig_font_changed.emit(self.binFont())
 
 	def binFont(self) -> QtGui.QFont:
 		"""The currently-selected bin font"""
@@ -235,8 +249,9 @@ class BSBinAppearanceSettingsView(QtWidgets.QWidget):
 		fg.setColor(QtGui.QPalette.ColorRole.Button, color)
 
 		self._btn_fg_color.setPalette(fg)
-		self._btn_fg_color.setToolTip(self._format_color_text(fg.color(QtGui.QPalette.ColorRole.Button)))
+		self._btn_fg_color.setToolTip(self._format_color_text(color))
 
+		logging.getLogger(__name__).debug("Foreground color set to %s", color)
 		self.sig_colors_changed.emit(*self.binColors())
 
 	@QtCore.Slot(QtGui.QColor)
@@ -250,8 +265,9 @@ class BSBinAppearanceSettingsView(QtWidgets.QWidget):
 		bg.setColor(QtGui.QPalette.ColorRole.Button, color)
 
 		self._btn_bg_color.setPalette(bg)
-		self._btn_bg_color.setToolTip(self._format_color_text(bg.color(QtGui.QPalette.ColorRole.Button)))
+		self._btn_bg_color.setToolTip(self._format_color_text(color))
 
+		logging.getLogger(__name__).debug("Background color set to %s", color)
 		self.sig_colors_changed.emit(*self.binColors())
 
 	def binForegroundColor(self) -> QtGui.QColor:
