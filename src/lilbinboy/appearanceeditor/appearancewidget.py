@@ -1,7 +1,7 @@
 import logging
 from PySide6 import QtCore, QtGui, QtWidgets
 
-DEFAULT_FONT_FAMILIES = ["Tuffy", "Arial", "Helvetica", "sans-serif"]
+DEFAULT_FONT_FAMILIES = ["Open Sans", "Tuffy", "Arial", "Helvetica", "sans-serif"]
 DEFAULT_FONT_SIZE_PT  = 10
 
 class BSBinAppearanceSettingsView(QtWidgets.QWidget):
@@ -252,7 +252,12 @@ class BSBinAppearanceSettingsView(QtWidgets.QWidget):
 		fg.setColor(QtGui.QPalette.ColorRole.Button, color)
 
 		self._btn_fg_color.setPalette(fg)
-		self._btn_fg_color.setToolTip(self._format_color_text(color))
+		self._btn_fg_color.setToolTip(
+			"<strong>{color_role}</strong><hr/>{color_rgb}".format(
+				color_role=self.tr("Text Color"),
+				color_rgb=self._format_color_text(color)
+			)
+		)
 
 		logging.getLogger(__name__).debug("Foreground color set to %s", color)
 		self.sig_colors_changed.emit(*self.binColors())
@@ -268,7 +273,12 @@ class BSBinAppearanceSettingsView(QtWidgets.QWidget):
 		bg.setColor(QtGui.QPalette.ColorRole.Button, color)
 
 		self._btn_bg_color.setPalette(bg)
-		self._btn_bg_color.setToolTip(self._format_color_text(color))
+		self._btn_bg_color.setToolTip(
+			"<strong>{color_role}</strong><hr/>{color_rgb}".format(
+				color_role=self.tr("Background Color"),
+				color_rgb=self._format_color_text(color)
+			)
+		)
 
 		logging.getLogger(__name__).debug("Background color set to %s", color)
 		self.sig_colors_changed.emit(*self.binColors())
