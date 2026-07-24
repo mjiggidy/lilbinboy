@@ -90,6 +90,10 @@ class BSBinTextView(QtWidgets.QTreeView):
 		self._act_autofit_columns.triggered.connect(self.resizeAllColumnsToContents)
 		self.addAction(self._act_autofit_columns)
 
+	def setColumnWidth(self, column:int, width:int):
+
+		return super().setColumnWidth(column, width + self._item_padding.left() + self._item_padding.right())
+
 	def setShowColumnEditorAction(self, action:QtGui.QAction):
 
 		self._act_show_column_editor = action	
