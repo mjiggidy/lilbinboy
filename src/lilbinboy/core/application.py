@@ -6,6 +6,7 @@ import qtlogrelay
 from   PySide6 import QtCore, QtGui, QtWidgets
 from   os import PathLike
 
+from ..settingseditor import settingswidget
 from ..softwareupdates import updatesmanager
 
 from ..storage import storagemodel
@@ -14,7 +15,7 @@ from ..binviewprovider import binviewsources
 
 from . import settings, config
 from ..managers import windows
-from ..widgets  import mainwindow, settingswindow
+from ..widgets  import mainwindow
 from ..logs   import logmodels, logwidget
 from ..res      import translations
 from ..binview  import binviewitemtypes
@@ -508,7 +509,7 @@ class BSMainApplication(QtWidgets.QApplication):
 
 		if not self._wnd_settings:
 			
-			self._wnd_settings = settingswindow.BSSettingsPanel()
+			self._wnd_settings = settingswidget.BSSettingsPanel()
 
 			self._wnd_settings.setWindowTitle(f"{self.applicationDisplayName()} Settings")
 			self._wnd_settings.setWindowFlag(QtCore.Qt.WindowType.Tool)
