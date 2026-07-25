@@ -18,7 +18,7 @@ SIFT_RANGE_COLUMN_DEPENDENCIES:dict[avbutils.bins.BinColumnFieldIDs, BSSiftRange
 
 	avbutils.bins.BinColumnFieldIDs.Start: BSSiftRangeInfo(
 		range_name = "Start to End Range",
-		range_role= binitemtypes.BSBinItemDataRoles.TimecodeRangeRole,
+		range_role= binitemtypes.BSBinItemDataRoles.MasTCRangeRole,
 	),
 
 	avbutils.bins.BinColumnFieldIDs.AuxiliaryTC1: BSSiftRangeInfo(
