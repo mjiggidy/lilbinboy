@@ -70,10 +70,12 @@ class BSSettingsUserInterface(QtWidgets.QWidget):
 
 		self._spn_list_pad_w.setRange(DEFAULT_PADDING_RANGE.start, DEFAULT_BOTTOM_RANGE.stop)
 		self._spn_list_pad_w.setSuffix(" px")
+		self._spn_list_pad_w.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
 		self._spn_list_pad_w.setValue(DEFAULT_PADDING[0])
 
 		self._spn_list_pad_h.setRange(DEFAULT_PADDING_RANGE.start, DEFAULT_BOTTOM_RANGE.stop)
 		self._spn_list_pad_h.setSuffix(" px")
+		self._spn_list_pad_h.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
 		self._spn_list_pad_h.setValue(DEFAULT_PADDING[1])
 
 		lay_list_pad = QtWidgets.QHBoxLayout()
@@ -96,12 +98,17 @@ class BSSettingsUserInterface(QtWidgets.QWidget):
 
 		# Tools follow main window
 
-		self._chk_tools_follow.setText(self.tr("Tools follow main window"))
+		#self._chk_tools_follow.setText()
 		self._chk_tools_follow.setChecked(DEFAULT_TOOLS_FOLLOW)
+
+		lay_tools_follow = QtWidgets.QHBoxLayout()
+		lay_tools_follow.addWidget(QtWidgets.QLabel(self.tr("Tools follow main window:")))
+		lay_tools_follow.addStretch()
+		lay_tools_follow.addWidget(self._chk_tools_follow)
 
 		grp_tools_follow = QtWidgets.QGroupBox()
 		grp_tools_follow.setLayout(QtWidgets.QVBoxLayout())
-		grp_tools_follow.layout().addWidget(self._chk_tools_follow)
+		grp_tools_follow.layout().addLayout(lay_tools_follow)
 
 		lbl_tools_follow_info = QtWidgets.QLabel(self.tr("As main bin viewer is moved around, any open tool windows will follow"))
 		lbl_tools_follow_info.setWordWrap(True)
@@ -110,12 +117,16 @@ class BSSettingsUserInterface(QtWidgets.QWidget):
 		
 		self.layout().addWidget(grp_tools_follow)
 
-		self._chk_fancy_animation.setText(self.tr("Use fancy and extra-cool animations"))
 		self._chk_fancy_animation.setChecked(DEFAULT_FANCY_ANIMATIONS)
+
+		lay_fancy_animation = QtWidgets.QHBoxLayout()
+		lay_fancy_animation.addWidget(QtWidgets.QLabel(self.tr("Use fancy and extra-cool animations:")))
+		lay_fancy_animation.addStretch()
+		lay_fancy_animation.addWidget(self._chk_fancy_animation)
 
 		grp_fancy_animations = QtWidgets.QGroupBox()
 		grp_fancy_animations.setLayout(QtWidgets.QVBoxLayout())
-		grp_fancy_animations.layout().addWidget(self._chk_fancy_animation)
+		grp_fancy_animations.layout().addLayout(lay_fancy_animation)
 
 		lbl_fancy_animations = QtWidgets.QLabel(self.tr("Some elements are animated or updated live; disable if the UI feels sluggish"))
 		lbl_fancy_animations.setWordWrap(True)
