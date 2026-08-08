@@ -50,7 +50,7 @@ class BSSettingsUserInterface(QtWidgets.QWidget):
 		self._sld_scroll_scale.setValue(DEFAULT_BOTTOM_SCALE)
 		self._sld_scroll_scale.setOrientation(QtCore.Qt.Orientation.Horizontal)
 
-		self._lbl_scroll_scale.setMinimumWidth(self._lbl_scroll_scale.fontMetrics().maxWidth() * 3)
+		self._lbl_scroll_scale.setFixedWidth(self._lbl_scroll_scale.fontMetrics().maxWidth() * 3) # Arbitrary lol
 		self._lbl_scroll_scale.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
 		self._lbl_scroll_scale.setText(f"{self._sld_scroll_scale.value()}%")
 
@@ -176,5 +176,5 @@ class BSSettingsUserInterface(QtWidgets.QWidget):
 
 	@QtCore.Slot()
 	def _userChangedFancyAnimations(self):
-		
+
 		self.sig_use_fancy_animations_changed.emit(self._chk_fancy_animation.isChecked())
