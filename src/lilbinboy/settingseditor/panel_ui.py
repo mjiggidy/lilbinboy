@@ -36,10 +36,10 @@ class BSSettingsUserInterface(QtWidgets.QWidget):
 		self._chk_tools_follow    = QtWidgets.QCheckBox()
 		self._chk_fancy_animation = QtWidgets.QCheckBox()
 
-		self.setupWidgets()
-		self.setupSignals()
+		self._setupWidgets()
+		self._setupSignals()
 
-	def setupWidgets(self):
+	def _setupWidgets(self):
 
 		font_info_lbl = self.font()
 		font_info_lbl.setPointSizeF(font_info_lbl.pointSizeF() * INFO_TEXT_SCALE)
@@ -141,7 +141,9 @@ class BSSettingsUserInterface(QtWidgets.QWidget):
 
 		self.layout().addWidget(grp_fancy_animations)
 
-	def setupSignals(self):
+		self.layout().addStretch()
+
+	def _setupSignals(self):
 
 		self._sld_scroll_scale.valueChanged.connect(self._userSelectedBottomScale)
 
@@ -169,12 +171,12 @@ class BSSettingsUserInterface(QtWidgets.QWidget):
 
 		self.sig_list_padding_changed.emit(list_padding)
 
-	@QtCore.Slot()
-	def _userChangedToolsFollow(self):
+	@QtCore.Slot(QtCore.Qt.CheckState)
+	def _userChangedToolsFollow(self, check_state:QtCore.Qt.CheckState):
 
-		self.sig_tools_follow_window_changed.emit(self._chk_tools_follow.isChecked())
+		self.sig_tools_follow_window_changed.emit(check_state == QtCore.Qt.CheckState.Checked)
 
-	@QtCore.Slot()
-	def _userChangedFancyAnimations(self):
+	@QtCore.Slot(QtCore.Qt.CheckState)
+	def _userChangedFancyAnimations(self, check_state:QtCore.Qt.CheckState):
 
-		self.sig_use_fancy_animations_changed.emit(self._chk_fancy_animation.isChecked())
+		self.sig_use_fancy_animations_changed.emit(check_state == QtCore.Qt.CheckState.Checked)
